@@ -4,8 +4,10 @@ import 'package:get/get.dart';
 import '../../infrastructure/routes/admin_routes.dart';
 
 class AdminDrawer extends StatefulWidget {
+  const AdminDrawer({super.key});
+
   @override
-  _AdminDrawerState createState() => _AdminDrawerState();
+  State<AdminDrawer> createState() => _AdminDrawerState();
 }
 
 class _AdminDrawerState extends State<AdminDrawer> {
@@ -21,7 +23,7 @@ class _AdminDrawerState extends State<AdminDrawer> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // ==================== UPDATED HEADER ====================
+            // ==================== HEADER ====================
             Container(
               width: double.infinity,
               height: 150.h,
@@ -39,7 +41,7 @@ class _AdminDrawerState extends State<AdminDrawer> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    "ATTENDANCE APP", // SHOP NAME
+                    "ATTENDANCE APP",
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 20.sp,
@@ -48,7 +50,7 @@ class _AdminDrawerState extends State<AdminDrawer> {
                   ),
                   SizedBox(height: 8.h),
                   Text(
-                    "***********", // GST NUMBER
+                    "monteage it solution private limited",
                     style: TextStyle(
                       color: Colors.yellow[300],
                       fontSize: 16.sp,
@@ -59,76 +61,78 @@ class _AdminDrawerState extends State<AdminDrawer> {
               ),
             ),
 
-            // ==================== ELEVATED CARDS ====================
+            // ==================== HOME STYLE CARDS ====================
             Padding(
               padding: EdgeInsets.all(16.w),
               child: Column(
                 children: [
-                  _elevatedCard(
-                    title: "ATTENDANCE",
-                    gradient: LinearGradient(
-                      colors: [
-                        Color(0xFFC71585), // Red Violet
-                        Color(0xFF4A0000), // Oxblood
-                      ],                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    indicatorColor: Colors.yellow,
-                    textColor: Colors.white,
+                  _actionCard(
+                    title: "Attendance",
+                    subtitle: "Face verification & location based",
+                    icon: Icons.face_retouching_natural,
+                    gradient: const [
+                      Color(0xFF16A34A),
+                      Color(0xFF22C55E),
+                    ],
+                    isActive: currentRoute == AdminRoutes.faceRegister,
                     onTap: () => Get.toNamed(AdminRoutes.faceRegister),
                   ),
-                   SizedBox(height: 10.h),
-                   _elevatedCard(
-                     title: "ATTENDANCE 2",
-                     gradient: LinearGradient(
-                       colors: [Colors.green.shade500, Colors.green.shade900],
-                       begin: Alignment.topLeft,
-                       end: Alignment.bottomRight,
-                     ),
-                     indicatorColor: Colors.white,
-                     textColor: Colors.white,
-                     onTap: () => Get.toNamed(AdminRoutes.attendanceHistory),
-                   ),
-                   SizedBox(height: 10.h),
-                   _elevatedCard(
-                     title: "ATTENDANCE 3",
-                     gradient: LinearGradient(
-                       colors: [Colors.grey.shade600, Colors.grey.shade900],
-                       begin: Alignment.topLeft,
-                       end: Alignment.bottomRight,
-                     ),
-                     indicatorColor: Colors.lightGreen,
-                     textColor: Colors.white,
-                     onTap: () => Get.toNamed(AdminRoutes.attendanceDetails),
-                   ),
-                  SizedBox(height: 10.h),
+
+                  SizedBox(height: 12.h),
+
+                  _actionCard(
+                    title: "Attendance History",
+                    subtitle: "View daily attendance records",
+                    icon: Icons.history,
+                    gradient: const [
+                      Color(0xFF2563EB),
+                      Color(0xFF3B82F6),
+                    ],
+                    isActive: currentRoute == AdminRoutes.attendanceHistory,
+                    onTap: () => Get.toNamed(AdminRoutes.attendanceHistory),
+                  ),
+
+                  SizedBox(height: 12.h),
+
+                  _actionCard(
+                    title: "Attendance Details",
+                    subtitle: "Verification status & details",
+                    icon: Icons.fact_check,
+                    gradient: [
+                      Colors.grey.shade700,
+                      Colors.grey.shade900,
+                    ],
+                    isActive: currentRoute == AdminRoutes.attendanceDetails,
+                    onTap: () => Get.toNamed(AdminRoutes.attendanceDetails),
+                  ),
+
+                  SizedBox(height: 12.h),
+
                   // ==================== LOGOUT CARD ====================
-                  _elevatedCard(
+                  _actionCard(
                     title: "Logout",
-                    gradient: LinearGradient(
-                      colors: [Colors.red.shade500, Colors.red.shade900], // Red gradient
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    indicatorColor: Colors.white,
-                    textColor: Colors.white,
+                    subtitle: "Exit from your account",
+                    icon: Icons.logout,
+                    gradient: [
+                      Colors.red.shade600,
+                      Colors.red.shade900,
+                    ],
+                    isActive: false,
                     onTap: () {
-                      // Clear the session or logout logic
-                      Get.offAllNamed(AdminRoutes.LOGIN); // Navigate to the login screen
+                      // TODO: clear storage/session if needed
+                      Get.offAllNamed(AdminRoutes.LOGIN);
                     },
                   ),
                 ],
               ),
             ),
 
-            // ==================== MENU ITEMS ====================
+            // ==================== EXTRA MENU ITEMS (optional) ====================
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
-                  children: [
-                    // You can add additional items here if needed
-                    // _buildDrawerItem("Dashboard", Icons.dashboard, AdminRoutes.LOADING_SCREEN, currentRoute),
-                    // _buildDrawerItem("Logout", Icons.logout, "", currentRoute, isLogout: true),
+                  children: const [
+                    // keep empty as your previous code
                   ],
                 ),
               ),
@@ -139,51 +143,81 @@ class _AdminDrawerState extends State<AdminDrawer> {
     );
   }
 
-  // Elevated Card Widget
-  Widget _elevatedCard({
+  // ✅ HomeScreen style card
+  Widget _actionCard({
     required String title,
-    required LinearGradient gradient,
-    required Color indicatorColor,
-    required Color textColor,
-    required Function() onTap,
+    required String subtitle,
+    required IconData icon,
+    required List<Color> gradient,
+    required VoidCallback onTap,
+    required bool isActive,
   }) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(16.r),
       child: Container(
-        padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 18.w),
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 14.w),
         decoration: BoxDecoration(
-          gradient: gradient,
-          borderRadius: BorderRadius.circular(15),
-          boxShadow: [
+          borderRadius: BorderRadius.circular(16.r),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: gradient,
+          ),
+          boxShadow: const [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              offset: Offset(0, 4),
-              blurRadius: 6,
+              color: Color(0x33000000),
+              blurRadius: 12,
+              offset: Offset(0, 6),
             ),
           ],
+          border: isActive
+              ? Border.all(color: Colors.white.withOpacity(0.65), width: 1.2)
+              : null,
         ),
         child: Row(
           children: [
+            Container(
+              height: 44.h,
+              width: 44.h,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.18),
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              child: Icon(icon, color: Colors.white, size: 24.sp),
+            ),
+            SizedBox(width: 12.w),
             Expanded(
-              child: Center(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.bold,
-                    color: textColor,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
-                ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 11.5.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ),
-            // Right dot indicator
-            Container(
-              height: 26.w,
-              width: 26.w,
-              decoration: BoxDecoration(
-                color: indicatorColor,
-                shape: BoxShape.circle,
-              ),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.white,
+              size: 16.sp,
             ),
           ],
         ),
