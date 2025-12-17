@@ -2,14 +2,17 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import '../controllers/mark_face_attendance_controller.dart';
+import '../controllers/FaceRegisterController.dart'; // Import your controller
 
-class MarkFaceAttendanceScreen extends StatelessWidget {
-  const MarkFaceAttendanceScreen({super.key});
+class FaceRegisterScreen extends StatelessWidget {
+  const FaceRegisterScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final c = Get.find<MarkFaceAttendanceController>();
+    // Register the FaceRegisterController if not already registered
+    Get.put(FaceRegisterController());
+
+    final controller = Get.find<FaceRegisterController>();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F2F4),
@@ -23,7 +26,7 @@ class MarkFaceAttendanceScreen extends StatelessWidget {
         ),
         centerTitle: true,
         title: Text(
-          "Mark Face Attendance",
+          "Face Registration",
           style: TextStyle(
             color: const Color(0xFF555555),
             fontWeight: FontWeight.w800,
@@ -36,11 +39,14 @@ class MarkFaceAttendanceScreen extends StatelessWidget {
         child: Column(
           children: [
             SizedBox(height: 10.h),
+
+            // Camera Style (Face Mask Frame)
             Obx(() {
-              final File? img = c.selectedImage.value;
+              final File? img = controller.selectedImage.value;
 
               return Stack(
                 children: [
+                  // Photo Frame Container (simulating camera viewfinder)
                   Container(
                     width: double.infinity,
                     height: 220.h,
@@ -63,58 +69,23 @@ class MarkFaceAttendanceScreen extends StatelessWidget {
                     ),
                     child: img == null
                         ? Center(
-                      child: Icon(Icons.person_outline,
-                          size: 80.sp,
-                          color: const Color(0xFFE53935)),
+                      child: Icon(
+                        Icons.camera_alt,
+                        size: 80.sp,
+                        color: const Color(0xFFE53935),
+                      ),
                     )
                         : null,
                   ),
 
-                  // lat/lng overlay
-                  Positioned(
-                    left: 12.w,
-                    bottom: 12.h,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 12.w, vertical: 8.h),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.55),
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                      child: Obx(() {
-                        final loading = c.isLocLoading.value;
-                        return Text(
-                          loading
-                              ? "Fetching location..."
-                              : "Lat: ${c.latText.value}  |  Lng: ${c.lngText.value}",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 11.sp,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        );
-                      }),
-                    ),
-                  ),
-
-                  // refresh location
-                  Positioned(
-                    top: 10.h,
-                    left: 10.w,
-                    child: _circleIcon(
-                      icon: Icons.my_location,
-                      onTap: c.fetchLocationAll,
-                    ),
-                  ),
-
-                  // clear photo
+                  // Clear Photo Button (if an image is selected)
                   if (img != null)
                     Positioned(
                       top: 10.h,
                       right: 10.w,
                       child: _circleIcon(
                         icon: Icons.close,
-                        onTap: c.clearPhoto,
+                        onTap: controller.clearPhoto,
                       ),
                     ),
                 ],
@@ -123,6 +94,7 @@ class MarkFaceAttendanceScreen extends StatelessWidget {
 
             SizedBox(height: 16.h),
 
+            // "Take a Photo" Instruction
             Text(
               "Take a Photo of you",
               style: TextStyle(
@@ -140,73 +112,24 @@ class MarkFaceAttendanceScreen extends StatelessWidget {
 
             SizedBox(height: 22.h),
 
-            _gradientButton(text: "Take Photo", onTap: c.takePhoto),
+            // "Take Photo" Gradient Button
+            _gradientButton(text: "Take Photo", onTap: controller.takePhoto),
             SizedBox(height: 14.h),
 
-            OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                minimumSize: Size(double.infinity, 52.h),
-                side: const BorderSide(color: Color(0xFFE53935)),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.r)),
-              ),
-              onPressed: c.uploadPhoto,
-              child: Text(
-                "Upload Photo",
-                style: TextStyle(
-                  color: const Color(0xFFE53935),
-                  fontWeight: FontWeight.w800,
-                  fontSize: 15.sp,
-                ),
-              ),
-            ),
-
-            SizedBox(height: 18.h),
-
-            // Address Card
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(14.w),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14.r),
-                border: Border.all(color: const Color(0x1AE53935)),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.location_on, color: Color(0xFFE53935)),
-                  SizedBox(width: 10.w),
-                  Expanded(
-                    child: Obx(() => Text(
-                      c.addressText.value,
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        color: const Color(0xFF666666),
-                        height: 1.25,
-                      ),
-                    )),
-                  ),
-                ],
-              ),
-            ),
-
-            SizedBox(height: 18.h),
-
-            // SUBMIT ATTENDANCE
+            // "Submit Registration" Gradient Button
             Obx(() {
-              final loading = c.isSubmittingAttendance.value;
+              final loading = controller.isSubmitting.value;
               return SizedBox(
                 width: double.infinity,
                 height: 52.h,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF16A34A),
+                    backgroundColor: const Color(0xFFE53935),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12.r),
                     ),
                   ),
-                  onPressed: loading ? null : c.submitAttendance,
+                  onPressed: loading ? null : controller.submitRegistration,
                   child: loading
                       ? SizedBox(
                     width: 22.w,
@@ -215,7 +138,7 @@ class MarkFaceAttendanceScreen extends StatelessWidget {
                         strokeWidth: 2, color: Colors.white),
                   )
                       : Text(
-                    "Submit Attendance",
+                    "Submit Registration",
                     style: TextStyle(
                       fontSize: 15.sp,
                       fontWeight: FontWeight.w900,
@@ -233,6 +156,7 @@ class MarkFaceAttendanceScreen extends StatelessWidget {
     );
   }
 
+  // Circle Icon Widget (for clearing photo)
   Widget _circleIcon({required IconData icon, required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
@@ -252,6 +176,7 @@ class MarkFaceAttendanceScreen extends StatelessWidget {
     );
   }
 
+  // Gradient Button Widget
   Widget _gradientButton({required String text, required VoidCallback onTap}) {
     return SizedBox(
       width: double.infinity,

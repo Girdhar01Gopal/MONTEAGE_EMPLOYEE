@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
-
-import '../screens/home_screen.dart';
+import '../screens/FaceRegisterScreen.dart';
 
 class LoginController extends GetxController {
   final usernameController = TextEditingController();
@@ -16,7 +15,7 @@ class LoginController extends GetxController {
 
   final box = GetStorage();
 
-  // ✅ Your API
+  //  Your API
   final String loginApi = "http://115.241.73.226/attendance/api/auth/login/";
 
   void togglePassword() => isPasswordHidden.value = !isPasswordHidden.value;
@@ -132,7 +131,7 @@ class LoginController extends GetxController {
         colorText: Colors.white,
       );
 
-      Get.offAll(() => HomeScreen());
+      Get.offAll(() => FaceRegisterScreen());
     } catch (e) {
       Get.snackbar(
         "Error",

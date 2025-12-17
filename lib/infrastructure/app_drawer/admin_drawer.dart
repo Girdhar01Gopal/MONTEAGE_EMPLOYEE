@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../infrastructure/routes/admin_routes.dart';
-import '../../utils/constants/color_constants.dart';
 
 class AdminDrawer extends StatefulWidget {
   @override
@@ -76,7 +75,7 @@ class _AdminDrawerState extends State<AdminDrawer> {
                     ),
                     indicatorColor: Colors.yellow,
                     textColor: Colors.white,
-                    onTap: () => Get.toNamed(AdminRoutes.attendanceDetails),
+                    onTap: () => Get.toNamed(AdminRoutes.faceRegister),
                   ),
                    SizedBox(height: 10.h),
                    _elevatedCard(
@@ -100,7 +99,7 @@ class _AdminDrawerState extends State<AdminDrawer> {
                      ),
                      indicatorColor: Colors.lightGreen,
                      textColor: Colors.white,
-                     onTap: () => Get.toNamed(AdminRoutes.MARK_FACE_ATTENDANCE),
+                     onTap: () => Get.toNamed(AdminRoutes.attendanceDetails),
                    ),
                   SizedBox(height: 10.h),
                   // ==================== LOGOUT CARD ====================

@@ -24,15 +24,10 @@ class MarkFaceAttendanceController extends GetxController {
   // Loading
   final RxBool isLocLoading = false.obs;
   final RxBool isSubmittingAttendance = false.obs;
-  final RxBool isRegisteringFace = false.obs;
 
-  // APIs
+  // API URLs
   final String attendanceUrl =
       "http://115.241.73.226/attendance/api/attendance/mark/";
-  final String faceRegisterUrl =
-      "http://115.241.73.226/attendance/api/face/register/";
-  final String todayAttendanceUrl =
-      "http://115.241.73.226/attendance/api/attendance/today/";
 
   @override
   void onInit() {
@@ -206,108 +201,6 @@ class MarkFaceAttendanceController extends GetxController {
   }
 
   // -----------------------------
-  // FACE REGISTER
-  // -----------------------------
-  Future<void> registerFace() async {
-    final img = selectedImage.value;
-
-    if (img == null) {
-      Get.snackbar("Missing Photo", "Please take/upload a photo first.",
-          snackPosition: SnackPosition.TOP);
-      return;
-    }
-
-    try {
-      isRegisteringFace.value = true;
-
-      final result = await _postMultipart(
-        url: faceRegisterUrl,
-        fields: {}, // only image as you said
-        imageFile: img,
-      );
-
-      if (result.statusCode == 200 || result.statusCode == 201) {
-        Get.snackbar("Success", "Face registered successfully!",
-            snackPosition: SnackPosition.TOP);
-        return;
-      }
-
-      // Handle obstruction style response
-      final j = result.json;
-      if (j != null &&
-          (j["type"] != null || j["error"] != null || j["message"] != null)) {
-        _showFaceErrorDialog(j);
-      } else {
-        Get.snackbar("Failed", "(${result.statusCode}) ${result.rawBody}",
-            snackPosition: SnackPosition.TOP);
-      }
-    } catch (e) {
-      Get.snackbar("Error", "Face register failed: $e",
-          snackPosition: SnackPosition.TOP);
-    } finally {
-      isRegisteringFace.value = false;
-    }
-  }
-
-  void _showFaceErrorDialog(Map<String, dynamic> j) {
-    final title = (j["error"] ?? "Face Verification Failed").toString();
-    final message = (j["message"] ?? "Please try again.").toString();
-
-    final details = (j["details"] is List)
-        ? (j["details"] as List).map((e) => e.toString()).toList()
-        : <String>[];
-
-    final suggestions = (j["suggestions"] is List)
-        ? (j["suggestions"] as List).map((e) => e.toString()).toList()
-        : <String>[];
-
-    Get.dialog(
-      AlertDialog(
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(message),
-              if (details.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                const Text("Issues detected:",
-                    style: TextStyle(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 6),
-                ...details.map((d) => Text("• $d")),
-              ],
-              if (suggestions.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                const Text("Fix & retry:",
-                    style: TextStyle(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 6),
-                ...suggestions.map((s) => Text("• $s")),
-              ],
-              if (j["confidence"] != null) ...[
-                const SizedBox(height: 12),
-                Text("Confidence: ${j["confidence"]}"),
-              ],
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Get.back();
-              takePhoto(); // quick retry
-            },
-            child: const Text("Retake"),
-          ),
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text("Close"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // -----------------------------
   // TODAY'S ATTENDANCE SUBMIT
   // -----------------------------
   Future<void> submitAttendance() async {
@@ -328,11 +221,14 @@ class MarkFaceAttendanceController extends GetxController {
       return;
     }
 
+    final double latitude = double.parse(lat);
+    final double longitude = double.parse(lng);
+
     try {
       isSubmittingAttendance.value = true;
 
       final result = await _postMultipart(
-        url: todayAttendanceUrl,
+        url: attendanceUrl,
         fields: {
           "latitude": lat,
           "longitude": lng,

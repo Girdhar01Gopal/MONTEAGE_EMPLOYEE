@@ -42,7 +42,6 @@ class AttendanceHistoryScreen extends StatelessWidget {
               ],
             ),
           ),
-
           Expanded(
             child: Obx(() {
               if (c.isLoading.value) {
@@ -52,12 +51,12 @@ class AttendanceHistoryScreen extends StatelessWidget {
               return ListView.builder(
                 itemCount: c.list.length,
                 itemBuilder: (_, i) {
-                  final AttendanceHistoryItem item = c.list[i];
+                  final AttendanceHistory item = c.list[i];
                   return Card(
                     margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     child: ListTile(
-                      title: Text(item.date.isEmpty ? "--" : item.date),
-                      subtitle: Text(item.status.isEmpty ? "--" : item.status),
+                      title: Text(item.statistics?.total.toString() ?? "No Data"),
+                      subtitle: Text(item.statistics?.verificationRate ?? "0.0%"),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => _openDetails(item),
                     ),
@@ -90,7 +89,7 @@ class AttendanceHistoryScreen extends StatelessWidget {
     );
   }
 
-  void _openDetails(AttendanceHistoryItem item) {
+  void _openDetails(AttendanceHistory item) {
     Get.bottomSheet(
       Container(
         padding: const EdgeInsets.all(16),
@@ -102,14 +101,12 @@ class AttendanceHistoryScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _kv("Date", item.date),
-            _kv("Status", item.status),
-            _kv("Check In", item.checkIn),
-            _kv("Check Out", item.checkOut),
-            _kv("Address", item.address),
-            _kv("Latitude", item.latitude),
-            _kv("Longitude", item.longitude),
-            _kv("Remarks", item.remarks),
+            _kv("Total", item.statistics?.total.toString() ?? "--"),
+            _kv("Verified", item.statistics?.verified.toString() ?? "--"),
+            _kv("Pending", item.statistics?.pending.toString() ?? "--"),
+            _kv("Rejected", item.statistics?.rejected.toString() ?? "--"),
+            _kv("Verification Rate", item.statistics?.verificationRate ?? "--"),
+            _kv("Results", item.results?.length.toString() ?? "0"),
           ],
         ),
       ),
@@ -122,7 +119,7 @@ class AttendanceHistoryScreen extends StatelessWidget {
       child: Row(
         children: [
           SizedBox(
-            width: 100,
+            width: 150,
             child: Text(k, style: const TextStyle(fontWeight: FontWeight.bold)),
           ),
           Expanded(child: Text(v.isEmpty ? "--" : v)),

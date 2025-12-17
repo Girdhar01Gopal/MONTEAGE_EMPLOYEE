@@ -3,19 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
-
 import '../models/attendance_history_model.dart';
 
 class AttendanceHistoryController extends GetxController {
   final box = GetStorage();
-
-  final String apiUrl =
-      "http://115.241.73.226/attendance/api/attendance/history/";
+  final String apiUrl = "http://115.241.73.226/attendance/api/attendance/history/";
 
   final isLoading = false.obs;
-  final RxList<AttendanceHistoryItem> list = <AttendanceHistoryItem>[].obs;
+  final RxList<AttendanceHistory> list = <AttendanceHistory>[].obs;
 
-  // ✅ Correct type
+  // Date filters
   final Rxn<DateTime> fromDate = Rxn<DateTime>();
   final Rxn<DateTime> toDate = Rxn<DateTime>();
 
@@ -33,6 +30,7 @@ class AttendanceHistoryController extends GetxController {
 
   String _fmt(DateTime d) => d.toIso8601String().split("T").first; // YYYY-MM-DD
 
+  // Fetch attendance history from API
   Future<void> fetchHistory() async {
     try {
       isLoading.value = true;
@@ -54,64 +52,29 @@ class AttendanceHistoryController extends GetxController {
       if (res.statusCode == 200) {
         final decoded = jsonDecode(res.body);
 
-        final List data = decoded is List
-            ? decoded
-            : (decoded["data"] ?? decoded["results"] ?? []);
+        final List data = decoded['results'] ?? [];
 
-        if (data.isEmpty) {
-          _loadDummyData();
-        } else {
-          list.assignAll(
-            data.whereType<Map<String, dynamic>>().map(
-                  (e) => AttendanceHistoryItem.fromJson(e),
-            ),
-          );
-        }
+        // Only populate the list with actual API data
+        list.assignAll(
+          data.whereType<Map<String, dynamic>>().map(
+                (e) => AttendanceHistory.fromJson(e),
+          ),
+        );
       } else {
-        _loadDummyData();
+        // Handle error response, you can display an error message if necessary
+        Get.snackbar("Error", "Failed to fetch attendance history",
+            snackPosition: SnackPosition.TOP);
       }
     } catch (_) {
-      _loadDummyData();
+      // Handle error when API call fails
+      Get.snackbar("Error", "An error occurred while fetching data",
+          snackPosition: SnackPosition.TOP);
     } finally {
       isLoading.value = false;
     }
   }
 
-  void _loadDummyData() {
-    list.assignAll([
-      AttendanceHistoryItem(
-        date: "2025-01-10",
-        status: "Present",
-        checkIn: "09:05 AM",
-        checkOut: "06:10 PM",
-        address: "Noida Sector 62, UP",
-        latitude: "28.6280",
-        longitude: "77.3649",
-        remarks: "On time",
-      ),
-      AttendanceHistoryItem(
-        date: "2025-01-09",
-        status: "Late",
-        checkIn: "09:45 AM",
-        checkOut: "06:00 PM",
-        address: "Noida Sector 62, UP",
-        latitude: "28.6280",
-        longitude: "77.3649",
-        remarks: "Traffic issue",
-      ),
-      AttendanceHistoryItem(
-        date: "2025-01-08",
-        status: "Absent",
-        checkIn: "--",
-        checkOut: "--",
-        address: "--",
-        latitude: "--",
-        longitude: "--",
-        remarks: "Leave",
-      ),
-    ]);
-  }
-
+  // Date picker for "From Date"
   Future<void> pickFromDate() async {
     final picked = await showDatePicker(
       context: Get.context!,
@@ -121,7 +84,6 @@ class AttendanceHistoryController extends GetxController {
     );
     if (picked != null) {
       fromDate.value = picked;
-      // if toDate is before fromDate, reset it (clean UX)
       if (toDate.value != null && toDate.value!.isBefore(picked)) {
         toDate.value = null;
       }
@@ -129,6 +91,7 @@ class AttendanceHistoryController extends GetxController {
     }
   }
 
+  // Date picker for "To Date"
   Future<void> pickToDate() async {
     final base = fromDate.value ?? DateTime(2023);
     final picked = await showDatePicker(
@@ -143,6 +106,7 @@ class AttendanceHistoryController extends GetxController {
     }
   }
 
+  // Clear date filters
   void clearDates() {
     fromDate.value = null;
     toDate.value = null;

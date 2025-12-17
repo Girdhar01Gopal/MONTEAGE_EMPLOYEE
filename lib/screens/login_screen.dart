@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../controllers/login_controller.dart';
+import 'register_screen.dart'; // Import RegisterScreen
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -116,6 +117,25 @@ class LoginScreen extends StatelessWidget {
                         onTap: c.isLoading.value ? null : c.loginUser,
                       );
                     }),
+
+                    // Add Sign Up Text Below the Password Box
+                    SizedBox(height: 10.h),
+                    Center(
+                      child: GestureDetector(
+                        onTap: () {
+                          // Navigate to RegisterScreen
+                          Get.to(() => RegisterScreen());
+                        },
+                        child: Text(
+                          "Don't have an account? Sign Up",
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF3D3D3D),
+                          ),
+                        ),
+                      ),
+                    ),
 
                     SizedBox(height: 16.h),
                   ],
