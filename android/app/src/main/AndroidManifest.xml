@@ -29,7 +29,9 @@
         android:label="monteage_employee"
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="true"
-        android:theme="@style/LaunchTheme">
+        android:theme="@style/LaunchTheme"
+        android:usesCleartextTraffic="true">
+        >
 
         <activity
             android:name=".MainActivity"

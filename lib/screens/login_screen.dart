@@ -19,7 +19,6 @@ class LoginScreen extends StatelessWidget {
             children: [
               SizedBox(height: 18.h),
 
-              // LOGO
               Image.asset(
                 "assets/images/monteage_logo.png",
                 height: 60.h,
@@ -28,7 +27,6 @@ class LoginScreen extends StatelessWidget {
 
               SizedBox(height: 18.h),
 
-              // CARD
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 18.h),
@@ -65,20 +63,11 @@ class LoginScreen extends StatelessWidget {
 
                     SizedBox(height: 18.h),
 
-                    _Label("Company Code"),
+                    _Label("Username"),
                     _Input(
-                      controller: c.companyCodeController,
-                      hint: "Enter Company Code",
+                      controller: c.usernameController,
+                      hint: "Enter Username",
                       keyboardType: TextInputType.text,
-                    ),
-
-                    SizedBox(height: 14.h),
-
-                    _Label("Email Id"),
-                    _Input(
-                      controller: c.emailController,
-                      hint: "Enter Email Id",
-                      keyboardType: TextInputType.emailAddress,
                     ),
 
                     SizedBox(height: 14.h),
@@ -120,7 +109,6 @@ class LoginScreen extends StatelessWidget {
 
                     SizedBox(height: 18.h),
 
-                    // ✅ Watercolor-ish red elevated gradient button
                     Obx(() {
                       return _GradientElevatedButton(
                         text: "Login",
@@ -130,9 +118,6 @@ class LoginScreen extends StatelessWidget {
                     }),
 
                     SizedBox(height: 16.h),
-
-
-
                   ],
                 ),
               ),
@@ -230,7 +215,6 @@ class _GradientElevatedButton extends StatelessWidget {
           child: Ink(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12.r),
-              // "watercolor" feel = multi-stop soft reds
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,

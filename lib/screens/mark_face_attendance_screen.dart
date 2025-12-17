@@ -17,7 +17,8 @@ class MarkFaceAttendanceScreen extends StatelessWidget {
         elevation: 0,
         backgroundColor: Colors.transparent,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: const Color(0xFFE53935), size: 22.sp),
+          icon: Icon(Icons.arrow_back,
+              color: const Color(0xFFE53935), size: 22.sp),
           onPressed: () => Get.back(),
         ),
         centerTitle: true,
@@ -36,7 +37,6 @@ class MarkFaceAttendanceScreen extends StatelessWidget {
           children: [
             SizedBox(height: 10.h),
 
-            // ✅ Rectangular preview + lat/lng overlay
             Obx(() {
               final File? img = c.selectedImage.value;
 
@@ -47,23 +47,26 @@ class MarkFaceAttendanceScreen extends StatelessWidget {
                     height: 220.h,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16.r),
-                      border: Border.all(color: const Color(0xFFE53935), width: 2),
+                      border: Border.all(
+                          color: const Color(0xFFE53935), width: 2),
                       color: Colors.white,
                       image: img != null
-                          ? DecorationImage(image: FileImage(img), fit: BoxFit.cover)
+                          ? DecorationImage(
+                          image: FileImage(img), fit: BoxFit.cover)
                           : null,
                       boxShadow: const [
                         BoxShadow(
                           color: Color(0x14000000),
                           blurRadius: 18,
                           offset: Offset(0, 8),
-                        )
+                        ),
                       ],
                     ),
                     child: img == null
                         ? Center(
                       child: Icon(Icons.person_outline,
-                          size: 80.sp, color: const Color(0xFFE53935)),
+                          size: 80.sp,
+                          color: const Color(0xFFE53935)),
                     )
                         : null,
                   ),
@@ -73,7 +76,8 @@ class MarkFaceAttendanceScreen extends StatelessWidget {
                     left: 12.w,
                     bottom: 12.h,
                     child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 12.w, vertical: 8.h),
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.55),
                         borderRadius: BorderRadius.circular(12.r),
@@ -144,7 +148,8 @@ class MarkFaceAttendanceScreen extends StatelessWidget {
               style: OutlinedButton.styleFrom(
                 minimumSize: Size(double.infinity, 52.h),
                 side: const BorderSide(color: Color(0xFFE53935)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r)),
               ),
               onPressed: c.uploadPhoto,
               child: Text(
@@ -159,7 +164,7 @@ class MarkFaceAttendanceScreen extends StatelessWidget {
 
             SizedBox(height: 18.h),
 
-            // ✅ Current Address Card
+            // Address Card
             Container(
               width: double.infinity,
               padding: EdgeInsets.all(14.w),
@@ -189,9 +194,44 @@ class MarkFaceAttendanceScreen extends StatelessWidget {
 
             SizedBox(height: 18.h),
 
-            // ✅ SUBMIT button
+            // REGISTER FACE
             Obx(() {
-              final loading = c.isSubmitting.value;
+              final loading = c.isRegisteringFace.value;
+              return SizedBox(
+                width: double.infinity,
+                height: 52.h,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2563EB),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                  ),
+                  onPressed: loading ? null : c.registerFace,
+                  child: loading
+                      ? SizedBox(
+                    width: 22.w,
+                    height: 22.w,
+                    child: const CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white),
+                  )
+                      : Text(
+                    "Register Face",
+                    style: TextStyle(
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              );
+            }),
+
+            SizedBox(height: 12.h),
+
+            // SUBMIT ATTENDANCE
+            Obx(() {
+              final loading = c.isSubmittingAttendance.value;
               return SizedBox(
                 width: double.infinity,
                 height: 52.h,
@@ -207,7 +247,8 @@ class MarkFaceAttendanceScreen extends StatelessWidget {
                       ? SizedBox(
                     width: 22.w,
                     height: 22.w,
-                    child: const CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    child: const CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white),
                   )
                       : Text(
                     "Submit Attendance",
@@ -238,7 +279,8 @@ class MarkFaceAttendanceScreen extends StatelessWidget {
           color: Colors.white,
           shape: BoxShape.circle,
           boxShadow: [
-            BoxShadow(color: Color(0x22000000), blurRadius: 8, offset: Offset(0, 3))
+            BoxShadow(
+                color: Color(0x22000000), blurRadius: 8, offset: Offset(0, 3))
           ],
         ),
         child: Icon(icon, size: 18.sp, color: const Color(0xFFE53935)),

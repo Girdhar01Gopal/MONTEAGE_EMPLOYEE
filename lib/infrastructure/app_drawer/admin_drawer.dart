@@ -88,7 +88,7 @@ class _AdminDrawerState extends State<AdminDrawer> {
                      ),
                      indicatorColor: Colors.white,
                      textColor: Colors.white,
-                     onTap: () => Get.toNamed(AdminRoutes.MARK_FACE_ATTENDANCE),
+                     onTap: () => Get.toNamed(AdminRoutes.attendanceHistory),
                    ),
                    SizedBox(height: 10.h),
                    _elevatedCard(
