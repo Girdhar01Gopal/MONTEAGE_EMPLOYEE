@@ -122,6 +122,20 @@ class HomeScreen extends StatelessWidget {
               ],
               onTap: () => Get.toNamed(AdminRoutes.attendanceHistory),
             ),
+            SizedBox(height: 22.h),
+
+            // 🔹 Mark Attendance Card
+            _actionCard(
+              title: "Attendance Details",
+              subtitle: "Verification status & details",
+              icon: Icons.fact_check,
+              gradient: [
+                Colors.grey.shade700,
+                Colors.grey.shade900,
+              ],
+              onTap: () => Get.toNamed(AdminRoutes.attendanceDetails),
+            ),
+
           ],
         ),
       ),

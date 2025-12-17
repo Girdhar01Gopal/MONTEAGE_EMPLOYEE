@@ -12,14 +12,25 @@ class AttendanceHistoryScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back,
+            color: Colors.red, // 🔴 Back arrow
+          ),
+          onPressed: () => Get.back(),
+        ),
         title: const Text("Attendance History"),
         actions: [
           IconButton(
             onPressed: c.fetchHistory,
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(
+              Icons.refresh,
+              color: Colors.green, // 🟢 Refresh icon
+            ),
           ),
         ],
       ),
+
       body: Column(
         children: [
           Padding(
