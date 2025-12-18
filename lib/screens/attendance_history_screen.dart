@@ -1,5 +1,8 @@
+// lib/screens/attendance_history_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import '../controllers/attendance_history_controller.dart';
 import '../models/attendance_history_model.dart';
 
@@ -8,70 +11,63 @@ class AttendanceHistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = Get.find<AttendanceHistoryController>();
+    final c = Get.put(AttendanceHistoryController());
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back,
-            color: Colors.red, // 🔴 Back arrow
-          ),
-          onPressed: () => Get.back(),
-        ),
         title: const Text("Attendance History"),
         actions: [
           IconButton(
             onPressed: c.fetchHistory,
-            icon: const Icon(
-              Icons.refresh,
-              color: Colors.green, // 🟢 Refresh icon
-            ),
+            icon: const Icon(Icons.refresh, color: Colors.green),
           ),
         ],
       ),
-
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Obx(() => InkWell(
-                    onTap: c.pickFromDate,
-                    child: _dateBox("From Date", c.fromDate.value),
-                  )),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Obx(() => InkWell(
-                    onTap: c.pickToDate,
-                    child: _dateBox("To Date", c.toDate.value),
-                  )),
-                ),
-              ],
-            ),
-          ),
+          /// ---------------- STATISTICS BAR ----------------
+          Obx(() {
+            final s = c.statistics.value;
+            if (s == null) return const SizedBox();
+
+            return Container(
+              margin: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: const [
+                  BoxShadow(color: Colors.black12, blurRadius: 6),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _stat("Total", s.total),
+                  _stat("Verified", s.verified),
+                  _stat("Pending", s.pending),
+                  _stat("Rejected", s.rejected),
+                ],
+              ),
+            );
+          }),
+
+          /// ---------------- LIST ----------------
           Expanded(
             child: Obx(() {
               if (c.isLoading.value) {
                 return const Center(child: CircularProgressIndicator());
               }
 
+              if (c.records.isEmpty) {
+                return const Center(child: Text("No attendance history"));
+              }
+
               return ListView.builder(
-                itemCount: c.list.length,
+                itemCount: c.records.length,
                 itemBuilder: (_, i) {
-                  final AttendanceHistory item = c.list[i];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    child: ListTile(
-                      title: Text(item.statistics?.total.toString() ?? "No Data"),
-                      subtitle: Text(item.statistics?.verificationRate ?? "0.0%"),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => _openDetails(item),
-                    ),
-                  );
+                  final Results r = c.records[i];
+                  return _HistoryCard(r);
                 },
               );
             }),
@@ -81,61 +77,131 @@ class AttendanceHistoryScreen extends StatelessWidget {
     );
   }
 
-  Widget _dateBox(String label, DateTime? date) {
-    final text = (date == null)
-        ? label
-        : date.toIso8601String().split("T").first; // YYYY-MM-DD
-
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(fontWeight: FontWeight.bold),
-      ),
+  static Widget _stat(String title, int? value) {
+    return Column(
+      children: [
+        Text(
+          value?.toString() ?? "0",
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          title,
+          style: const TextStyle(color: Colors.grey),
+        ),
+      ],
     );
   }
+}
 
-  void _openDetails(AttendanceHistory item) {
-    Get.bottomSheet(
-      Container(
-        padding: const EdgeInsets.all(16),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-        ),
+/// =======================================================
+/// HISTORY CARD
+/// =======================================================
+
+class _HistoryCard extends StatelessWidget {
+  final Results r;
+  const _HistoryCard(this.r);
+
+  Color _statusColor(String? s) {
+    switch (s?.toUpperCase()) {
+      case "VERIFIED":
+        return Colors.green;
+      case "REJECTED":
+        return Colors.red;
+      default:
+        return Colors.orange;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final statusColor = _statusColor(r.status);
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _kv("Total", item.statistics?.total.toString() ?? "--"),
-            _kv("Verified", item.statistics?.verified.toString() ?? "--"),
-            _kv("Pending", item.statistics?.pending.toString() ?? "--"),
-            _kv("Rejected", item.statistics?.rejected.toString() ?? "--"),
-            _kv("Verification Rate", item.statistics?.verificationRate ?? "--"),
-            _kv("Results", item.results?.length.toString() ?? "0"),
+            /// DATE + STATUS
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    "${r.date ?? "--"} • ${_time(r.timestamp)}",
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    color: statusColor.withOpacity(0.15),
+                    border: Border.all(color: statusColor),
+                  ),
+                  child: Text(
+                    r.status ?? "--",
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 8),
+
+            Text("Name: ${r.userName ?? "--"}"),
+            Text("Employee ID: ${r.employeeId ?? "--"}"),
+
+            const SizedBox(height: 6),
+
+            Text(
+              "Confidence: ${(r.confidenceScore ?? 0).toStringAsFixed(3)}",
+            ),
+            Text("Face Detected: ${r.faceDetected == true ? "Yes" : "No"}"),
+            Text("Verified: ${r.isVerified == true ? "Yes" : "No"}"),
+
+            const SizedBox(height: 6),
+
+            Text(
+              "Lat: ${r.latitude ?? 0}, Lng: ${r.longitude ?? 0} | Accuracy: ${r.locationAccuracy ?? 0}m",
+            ),
+
+            if (r.isSuspicious == true) ...[
+              const SizedBox(height: 6),
+              Text(
+                "Suspicious: ${r.suspiciousReason ?? "Yes"}",
+                style: const TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 
-  Widget _kv(String k, String v) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 150,
-            child: Text(k, style: const TextStyle(fontWeight: FontWeight.bold)),
-          ),
-          Expanded(child: Text(v.isEmpty ? "--" : v)),
-        ],
-      ),
-    );
+  String _time(String? iso) {
+    if (iso == null || iso.isEmpty) return "--";
+    try {
+      final d = DateTime.parse(iso).toLocal();
+      final hh = d.hour.toString().padLeft(2, '0');
+      final mm = d.minute.toString().padLeft(2, '0');
+      return "$hh:$mm";
+    } catch (_) {
+      return "--";
+    }
   }
 }

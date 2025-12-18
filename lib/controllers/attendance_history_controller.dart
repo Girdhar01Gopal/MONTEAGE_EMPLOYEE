@@ -1,20 +1,25 @@
+// lib/controllers/attendance_history_controller.dart
+
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
+
 import '../models/attendance_history_model.dart';
+import '../screens/login_screen.dart';
 
 class AttendanceHistoryController extends GetxController {
   final box = GetStorage();
-  final String apiUrl = "http://115.241.73.226/attendance/api/attendance/history/";
+
+  final String historyApi =
+      "http://115.241.73.226/attendance/api/attendance/history/";
+  final String refreshApi =
+      "http://115.241.73.226/attendance/api/auth/refresh/";
 
   final isLoading = false.obs;
-  final RxList<AttendanceHistory> list = <AttendanceHistory>[].obs;
-
-  // Date filters
-  final Rxn<DateTime> fromDate = Rxn<DateTime>();
-  final Rxn<DateTime> toDate = Rxn<DateTime>();
+  final Rxn<Statistics> statistics = Rxn<Statistics>();
+  final RxList<Results> records = <Results>[].obs;
 
   @override
   void onInit() {
@@ -22,94 +27,115 @@ class AttendanceHistoryController extends GetxController {
     fetchHistory();
   }
 
-  String _token() {
-    final t = (box.read("access_token") ?? "").toString().trim();
-    if (t.isEmpty) throw Exception("Access token missing in GetStorage('access_token')");
-    return t;
-  }
+  String get _accessToken =>
+      (box.read("access_token") ?? "").toString().trim();
 
-  String _fmt(DateTime d) => d.toIso8601String().split("T").first; // YYYY-MM-DD
+  String get _refreshToken =>
+      (box.read("refresh_token") ?? "").toString().trim();
 
-  // Fetch attendance history from API
+  /// ---------------- FETCH HISTORY ----------------
   Future<void> fetchHistory() async {
+    isLoading.value = true;
     try {
-      isLoading.value = true;
-
-      final qp = <String, String>{};
-      if (fromDate.value != null) qp["from"] = _fmt(fromDate.value!);
-      if (toDate.value != null) qp["to"] = _fmt(toDate.value!);
-
-      final uri = Uri.parse(apiUrl).replace(queryParameters: qp);
-
-      final res = await http.get(
-        uri,
-        headers: {
-          "Authorization": "Bearer ${_token()}",
-          "Accept": "application/json",
-        },
-      );
+      final res = await _authorizedGet(Uri.parse(historyApi));
 
       if (res.statusCode == 200) {
-        final decoded = jsonDecode(res.body);
+        final decoded = jsonDecode(res.body) as Map<String, dynamic>;
+        final data = AttendanceHistoryModel.fromJson(decoded);
 
-        final List data = decoded['results'] ?? [];
-
-        // Only populate the list with actual API data
-        list.assignAll(
-          data.whereType<Map<String, dynamic>>().map(
-                (e) => AttendanceHistory.fromJson(e),
-          ),
-        );
-      } else {
-        // Handle error response, you can display an error message if necessary
-        Get.snackbar("Error", "Failed to fetch attendance history",
-            snackPosition: SnackPosition.TOP);
+        statistics.value = data.statistics;
+        records.assignAll(data.results ?? []);
+        return;
       }
-    } catch (_) {
-      // Handle error when API call fails
-      Get.snackbar("Error", "An error occurred while fetching data",
-          snackPosition: SnackPosition.TOP);
+
+      if (res.statusCode == 401) {
+        _forceLogout();
+        return;
+      }
+
+      Get.snackbar(
+        "Error",
+        "Failed to load attendance history (HTTP ${res.statusCode})",
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        e.toString(),
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     } finally {
       isLoading.value = false;
     }
   }
 
-  // Date picker for "From Date"
-  Future<void> pickFromDate() async {
-    final picked = await showDatePicker(
-      context: Get.context!,
-      initialDate: fromDate.value ?? DateTime.now(),
-      firstDate: DateTime(2023),
-      lastDate: DateTime.now(),
+  /// ---------------- AUTH GET WITH AUTO REFRESH ----------------
+  Future<http.Response> _authorizedGet(Uri uri) async {
+    // First attempt with current access token
+    final res = await http.get(
+      uri,
+      headers: {
+        "Authorization": "Bearer $_accessToken",
+        "Accept": "application/json",
+      },
     );
-    if (picked != null) {
-      fromDate.value = picked;
-      if (toDate.value != null && toDate.value!.isBefore(picked)) {
-        toDate.value = null;
-      }
-      fetchHistory();
-    }
+
+    // If not 401, return as-is
+    if (res.statusCode != 401) return res;
+
+    // Try refreshing
+    final refreshed = await _refreshAccessToken();
+    if (!refreshed) return res;
+
+    // Retry with new access token
+    return http.get(
+      uri,
+      headers: {
+        "Authorization": "Bearer ${box.read("access_token")}",
+        "Accept": "application/json",
+      },
+    );
   }
 
-  // Date picker for "To Date"
-  Future<void> pickToDate() async {
-    final base = fromDate.value ?? DateTime(2023);
-    final picked = await showDatePicker(
-      context: Get.context!,
-      initialDate: toDate.value ?? DateTime.now(),
-      firstDate: base,
-      lastDate: DateTime.now(),
+  /// ---------------- REFRESH TOKEN ----------------
+  Future<bool> _refreshAccessToken() async {
+    if (_refreshToken.isEmpty) return false;
+
+    final res = await http.post(
+      Uri.parse(refreshApi),
+      headers: const {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: jsonEncode({"refresh": _refreshToken}),
     );
-    if (picked != null) {
-      toDate.value = picked;
-      fetchHistory();
-    }
+
+    if (res.statusCode != 200) return false;
+
+    final decoded = jsonDecode(res.body);
+    final newAccess = decoded['access']?.toString() ?? "";
+
+    if (newAccess.isEmpty) return false;
+
+    await box.write("access_token", newAccess);
+    return true;
   }
 
-  // Clear date filters
-  void clearDates() {
-    fromDate.value = null;
-    toDate.value = null;
-    fetchHistory();
+  /// ---------------- FORCE LOGOUT ----------------
+  void _forceLogout() {
+    box.erase();
+    Get.offAll(() => const LoginScreen());
+
+    Get.snackbar(
+      "Session Expired",
+      "Please login again",
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
+    );
   }
 }

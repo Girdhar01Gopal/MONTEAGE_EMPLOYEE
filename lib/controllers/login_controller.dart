@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
+
 import '../screens/FaceRegisterScreen.dart';
 
 class LoginController extends GetxController {
@@ -15,7 +16,7 @@ class LoginController extends GetxController {
 
   final box = GetStorage();
 
-  //  Your API
+  // ✅ Your login API
   final String loginApi = "http://115.241.73.226/attendance/api/auth/login/";
 
   void togglePassword() => isPasswordHidden.value = !isPasswordHidden.value;
@@ -27,6 +28,9 @@ class LoginController extends GetxController {
       snackPosition: SnackPosition.TOP,
     );
   }
+
+  /// ✅ Call this in Splash or in LoginScreen init if you want auto-skip login
+  bool get isLoggedIn => box.read("isLoggedIn") == true;
 
   Future<void> loginUser() async {
     final username = usernameController.text.trim();
@@ -46,20 +50,20 @@ class LoginController extends GetxController {
     isLoading.value = true;
 
     try {
-      final payload = {"username": username, "password": password};
-
-      final res = await http
-          .post(
+      final res = await http.post(
         Uri.parse(loginApi),
         headers: const {
           "Content-Type": "application/json",
           "Accept": "application/json",
         },
-        body: jsonEncode(payload),
-      )
-          .timeout(const Duration(seconds: 20));
+        body: jsonEncode({"username": username, "password": password}),
+      ).timeout(const Duration(seconds: 20));
 
-      // ✅ Always decode safely
+      if (kDebugMode) {
+        debugPrint("LOGIN STATUS: ${res.statusCode}");
+        debugPrint("LOGIN BODY: ${res.body}");
+      }
+
       dynamic body;
       try {
         body = jsonDecode(res.body);
@@ -67,18 +71,9 @@ class LoginController extends GetxController {
         body = null;
       }
 
-      // ✅ Debug (shows you real reason)
-      if (kDebugMode) {
-        debugPrint("LOGIN STATUS: ${res.statusCode}");
-        debugPrint("LOGIN BODY: ${res.body}");
-        debugPrint("LOGIN HEADERS: ${res.headers}");
-      }
-
-      // ✅ Show server response in snackbar if not 200 (so you don't stay blind)
       if (res.statusCode != 200) {
-        final msg = _extractErrorMessage(body) ??
-            "Login failed (HTTP ${res.statusCode}).";
-
+        final msg =
+            _extractErrorMessage(body) ?? "Login failed (HTTP ${res.statusCode})";
         Get.snackbar(
           "Login Failed",
           msg,
@@ -90,27 +85,25 @@ class LoginController extends GetxController {
         return;
       }
 
-      // ✅ success response: expects access + refresh
-      if (body is! Map || body["access"] == null || body["refresh"] == null) {
-        // Sometimes backend returns something else => show it
+      if (body is! Map) {
         Get.snackbar(
           "Login Failed",
           "Unexpected response: ${res.body}",
           snackPosition: SnackPosition.TOP,
           backgroundColor: Colors.red,
           colorText: Colors.white,
-          duration: const Duration(seconds: 6),
         );
         return;
       }
 
-      final access = body["access"].toString();
-      final refresh = body["refresh"].toString();
+      // ✅ Your response format: { "refresh": "...", "access": "..." }
+      final access = body["access"]?.toString() ?? "";
+      final refresh = body["refresh"]?.toString() ?? "";
 
       if (access.isEmpty || refresh.isEmpty) {
         Get.snackbar(
           "Login Failed",
-          "Token missing/empty from server.",
+          "Access/Refresh token missing from server.",
           snackPosition: SnackPosition.TOP,
           backgroundColor: Colors.red,
           colorText: Colors.white,
@@ -118,7 +111,7 @@ class LoginController extends GetxController {
         return;
       }
 
-      // ✅ Store tokens
+      // ✅ CONSISTENT KEYS — use these everywhere in app
       await box.write("access_token", access);
       await box.write("refresh_token", refresh);
       await box.write("isLoggedIn", true);
@@ -131,7 +124,7 @@ class LoginController extends GetxController {
         colorText: Colors.white,
       );
 
-      Get.offAll(() => FaceRegisterScreen());
+      Get.offAll(() => const FaceRegisterScreen());
     } catch (e) {
       Get.snackbar(
         "Error",
@@ -146,17 +139,15 @@ class LoginController extends GetxController {
     }
   }
 
-  // ✅ Handles Django SimpleJWT errors + other formats
   String? _extractErrorMessage(dynamic body) {
     if (body == null) return null;
 
     if (body is Map) {
-      // Most common Django message
       if (body["detail"] != null) return body["detail"].toString();
       if (body["message"] != null) return body["message"].toString();
       if (body["error"] != null) return body["error"].toString();
 
-      // Field validation errors: {"username":["..."], "password":["..."]}
+      // field errors: {"username":["..."], "password":["..."]}
       final buf = <String>[];
       body.forEach((k, v) {
         if (v is List && v.isNotEmpty) buf.add("$k: ${v.first}");
@@ -164,7 +155,6 @@ class LoginController extends GetxController {
       });
       if (buf.isNotEmpty) return buf.join("\n");
     }
-
     return body.toString();
   }
 

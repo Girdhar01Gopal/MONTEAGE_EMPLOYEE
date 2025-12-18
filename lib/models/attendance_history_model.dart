@@ -1,33 +1,31 @@
-class AttendanceHistory {
+// lib/models/attendance_history_model.dart
+
+class AttendanceHistoryModel {
   int? count;
   Statistics? statistics;
-  List<Result>? results; // Assuming this should be a list of Result objects.
+  List<Results>? results;
 
-  AttendanceHistory({this.count, this.statistics, this.results});
+  AttendanceHistoryModel({this.count, this.statistics, this.results});
 
-  AttendanceHistory.fromJson(Map<String, dynamic> json) {
-    count = json['count'];
-    statistics = json['statistics'] != null
-        ? Statistics.fromJson(json['statistics'])
-        : null;
-    if (json['results'] != null) {
-      results = <Result>[];
-      json['results'].forEach((v) {
-        results!.add(Result.fromJson(v)); // Assuming Result class exists.
-      });
-    }
+  factory AttendanceHistoryModel.fromJson(Map<String, dynamic> json) {
+    return AttendanceHistoryModel(
+      count: json['count'] as int?,
+      statistics: json['statistics'] != null
+          ? Statistics.fromJson(json['statistics'] as Map<String, dynamic>)
+          : null,
+      results: (json['results'] as List<dynamic>?)
+          ?.map((v) => Results.fromJson(v as Map<String, dynamic>))
+          .toList(),
+    );
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['count'] = this.count;
-    if (this.statistics != null) {
-      data['statistics'] = this.statistics!.toJson();
-    }
-    if (this.results != null) {
-      data['results'] = this.results!.map((v) => v.toJson()).toList(); // Assuming Result class has toJson.
-    }
-    return data;
+    return {
+      'count': count,
+      if (statistics != null) 'statistics': statistics!.toJson(),
+      if (results != null)
+        'results': results!.map((v) => v.toJson()).toList(),
+    };
   }
 }
 
@@ -38,50 +36,111 @@ class Statistics {
   int? rejected;
   String? verificationRate;
 
-  Statistics(
-      {this.total,
-        this.verified,
-        this.pending,
-        this.rejected,
-        this.verificationRate});
+  Statistics({
+    this.total,
+    this.verified,
+    this.pending,
+    this.rejected,
+    this.verificationRate,
+  });
 
-  Statistics.fromJson(Map<String, dynamic> json) {
-    total = json['total'];
-    verified = json['verified'];
-    pending = json['pending'];
-    rejected = json['rejected'];
-    verificationRate = json['verification_rate'];
-  }
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['total'] = this.total;
-    data['verified'] = this.verified;
-    data['pending'] = this.pending;
-    data['rejected'] = this.rejected;
-    data['verification_rate'] = this.verificationRate;
-    return data;
-  }
-}
-
-// Assuming Result class looks something like this (you need to adjust it according to your needs):
-class Result {
-  // Define fields for Result object
-  // For example:
-  String? name;
-  int? id;
-
-  Result({this.name, this.id});
-
-  Result.fromJson(Map<String, dynamic> json) {
-    name = json['name'];
-    id = json['id'];
+  factory Statistics.fromJson(Map<String, dynamic> json) {
+    return Statistics(
+      total: json['total'] as int?,
+      verified: json['verified'] as int?,
+      pending: json['pending'] as int?,
+      rejected: json['rejected'] as int?,
+      verificationRate: json['verification_rate'] as String?,
+    );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'name': this.name,
-      'id': this.id,
+      'total': total,
+      'verified': verified,
+      'pending': pending,
+      'rejected': rejected,
+      'verification_rate': verificationRate,
+    };
+  }
+}
+
+class Results {
+  String? id;
+  String? userName;
+  String? employeeId;
+  String? timestamp;
+  String? date;
+  double? latitude;
+  double? longitude;
+  double? locationAccuracy;
+  String? imageUrl;
+  String? status;
+  double? confidenceScore;
+  bool? faceDetected;
+  bool? isVerified;
+  double? imageQualityScore;
+  bool? isSuspicious;
+  String? suspiciousReason;
+
+  Results({
+    this.id,
+    this.userName,
+    this.employeeId,
+    this.timestamp,
+    this.date,
+    this.latitude,
+    this.longitude,
+    this.locationAccuracy,
+    this.imageUrl,
+    this.status,
+    this.confidenceScore,
+    this.faceDetected,
+    this.isVerified,
+    this.imageQualityScore,
+    this.isSuspicious,
+    this.suspiciousReason,
+  });
+
+  factory Results.fromJson(Map<String, dynamic> json) {
+    return Results(
+      id: json['id'] as String?,
+      userName: json['user_name'] as String?,
+      employeeId: json['employee_id'] as String?,
+      timestamp: json['timestamp'] as String?,
+      date: json['date'] as String?,
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
+      locationAccuracy: (json['location_accuracy'] as num?)?.toDouble(),
+      imageUrl: json['image_url'] as String?,
+      status: json['status'] as String?,
+      confidenceScore: (json['confidence_score'] as num?)?.toDouble(),
+      faceDetected: json['face_detected'] as bool?,
+      isVerified: json['is_verified'] as bool?,
+      imageQualityScore: (json['image_quality_score'] as num?)?.toDouble(),
+      isSuspicious: json['is_suspicious'] as bool?,
+      suspiciousReason: json['suspicious_reason']?.toString(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'user_name': userName,
+      'employee_id': employeeId,
+      'timestamp': timestamp,
+      'date': date,
+      'latitude': latitude,
+      'longitude': longitude,
+      'location_accuracy': locationAccuracy,
+      'image_url': imageUrl,
+      'status': status,
+      'confidence_score': confidenceScore,
+      'face_detected': faceDetected,
+      'is_verified': isVerified,
+      'image_quality_score': imageQualityScore,
+      'is_suspicious': isSuspicious,
+      'suspicious_reason': suspiciousReason,
     };
   }
 }
