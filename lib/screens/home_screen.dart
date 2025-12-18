@@ -133,7 +133,7 @@ class HomeScreen extends StatelessWidget {
                 Colors.grey.shade700,
                 Colors.grey.shade900,
               ],
-              onTap: () => Get.toNamed(AdminRoutes.attendanceDetails),
+              onTap: () => Get.toNamed(AdminRoutes.attendanceToday),
             ),
 
           ],

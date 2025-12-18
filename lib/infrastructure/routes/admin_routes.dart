@@ -3,6 +3,7 @@ import '../../bindings/FaceRegisterBinding.dart';
 import '../../bindings/NotificationBinding.dart';
 import '../../bindings/attendance_binding.dart';
 import '../../bindings/attendance_history_binding.dart';
+import '../../bindings/attendance_today_binding.dart';
 import '../../bindings/home_binding.dart';
 import '../../bindings/login_binding.dart';
 import '../../bindings/mark_face_attendance_binding.dart';
@@ -12,6 +13,7 @@ import '../../screens/NotificationScreen.dart';
 import '../../screens/admin_splash_screen.dart';
 import '../../screens/attendance_details_page.dart';
 import '../../screens/attendance_history_screen.dart';
+import '../../screens/attendance_today_screen.dart';
 import '../../screens/home_screen.dart';
 import '../../screens/login_screen.dart';
 import '../../screens/mark_face_attendance_screen.dart';
@@ -30,6 +32,8 @@ class AdminRoutes {
   static const attendanceHistory = "/attendance-history";
   static const  registerScreen = '/register';
   static const  faceRegister = '/face-register';
+  static const attendanceToday = "/attendance-today";
+
 
 
 
@@ -101,6 +105,12 @@ class AdminRoutes {
       name: faceRegister,
       page: () =>  FaceRegisterScreen(),
       binding: FaceRegisterBinding(),
+    ),
+
+    GetPage(
+      name: attendanceToday,
+      page: () =>  AttendanceTodayScreen(),
+      binding: AttendanceTodayBinding(),
     ),
 
   ];
