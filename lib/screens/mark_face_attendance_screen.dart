@@ -143,23 +143,23 @@ class MarkFaceAttendanceScreen extends StatelessWidget {
             _gradientButton(text: "Take Photo", onTap: c.takePhoto),
             SizedBox(height: 14.h),
 
-            OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                minimumSize: Size(double.infinity, 52.h),
-                side: const BorderSide(color: Color(0xFFE53935)),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.r)),
-              ),
-              onPressed: c.uploadPhoto,
-              child: Text(
-                "Upload Photo",
-                style: TextStyle(
-                  color: const Color(0xFFE53935),
-                  fontWeight: FontWeight.w800,
-                  fontSize: 15.sp,
-                ),
-              ),
-            ),
+            // OutlinedButton(
+            //   style: OutlinedButton.styleFrom(
+            //     minimumSize: Size(double.infinity, 52.h),
+            //     side: const BorderSide(color: Color(0xFFE53935)),
+            //     shape: RoundedRectangleBorder(
+            //         borderRadius: BorderRadius.circular(12.r)),
+            //   ),
+            //   onPressed: c.uploadPhoto,
+            //   child: Text(
+            //     "Upload Photo",
+            //     style: TextStyle(
+            //       color: const Color(0xFFE53935),
+            //       fontWeight: FontWeight.w800,
+            //       fontSize: 15.sp,
+            //     ),
+            //   ),
+            // ),
 
             SizedBox(height: 18.h),
 
