@@ -140,7 +140,7 @@ class MarkFaceAttendanceScreen extends StatelessWidget {
 
             SizedBox(height: 22.h),
 
-            _gradientButton(text: "Take Photo", onTap: c.takePhoto),
+            _gradientButton(text: " Take Photo ", onTap: c.takePhoto),
             SizedBox(height: 14.h),
 
             // OutlinedButton(
