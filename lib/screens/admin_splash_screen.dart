@@ -1,3 +1,4 @@
+// screens/admin_splash_screen.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -19,7 +20,7 @@ class AdminSplashScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Image.asset(
-                'assets/images/splash_for store.jpeg',
+                'assets/images/monteage_logo.png',
                 height: 200.h,
               ),
               SizedBox(height: 20.h),

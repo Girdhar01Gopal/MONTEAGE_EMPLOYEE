@@ -1,3 +1,4 @@
+// screens/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -44,12 +45,12 @@ class HomeScreen extends StatelessWidget {
           "MONTEAGE",
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: Colors.white),
-            onPressed: () => Get.toNamed(AdminRoutes.NOTIFICATIONS),
-          ),
-        ],
+        // actions: [
+        //   IconButton(
+        //     icon: const Icon(Icons.notifications_none, color: Colors.white),
+        //     onPressed: () => Get.toNamed(AdminRoutes.NOTIFICATIONS),
+        //   ),
+        // ],
       ),
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
@@ -126,7 +127,7 @@ class HomeScreen extends StatelessWidget {
 
             // 🔹 Mark Attendance Card
             _actionCard(
-              title: "Attendance Details",
+              title: "Today's Attendance",
               subtitle: "Verification status & details",
               icon: Icons.fact_check,
               gradient: [

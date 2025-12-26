@@ -1,16 +1,33 @@
+// screens/mark_face_attendance_screen.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../controllers/mark_face_attendance_controller.dart';
 
-class MarkFaceAttendanceScreen extends StatelessWidget {
+class MarkFaceAttendanceScreen extends StatefulWidget {
   const MarkFaceAttendanceScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final c = Get.find<MarkFaceAttendanceController>();
+  State<MarkFaceAttendanceScreen> createState() =>
+      _MarkFaceAttendanceScreenState();
+}
 
+class _MarkFaceAttendanceScreenState extends State<MarkFaceAttendanceScreen> {
+  late final MarkFaceAttendanceController c;
+
+  @override
+  void initState() {
+    super.initState();
+    c = Get.find<MarkFaceAttendanceController>();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      c.ensureLocationFetched(); // ✅ auto fetch when screen opens
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F2F4),
       appBar: AppBar(
@@ -36,6 +53,7 @@ class MarkFaceAttendanceScreen extends StatelessWidget {
         child: Column(
           children: [
             SizedBox(height: 10.h),
+
             Obx(() {
               final File? img = c.selectedImage.value;
 
@@ -51,7 +69,7 @@ class MarkFaceAttendanceScreen extends StatelessWidget {
                       color: Colors.white,
                       image: img != null
                           ? DecorationImage(
-                          image: FileImage(img), fit: BoxFit.cover)
+                              image: FileImage(img), fit: BoxFit.cover)
                           : null,
                       boxShadow: const [
                         BoxShadow(
@@ -63,14 +81,13 @@ class MarkFaceAttendanceScreen extends StatelessWidget {
                     ),
                     child: img == null
                         ? Center(
-                      child: Icon(Icons.person_outline,
-                          size: 80.sp,
-                          color: const Color(0xFFE53935)),
-                    )
+                            child: Icon(Icons.person_outline,
+                                size: 80.sp,
+                                color: const Color(0xFFE53935)),
+                          )
                         : null,
                   ),
 
-                  // lat/lng overlay
                   Positioned(
                     left: 12.w,
                     bottom: 12.h,
@@ -97,17 +114,15 @@ class MarkFaceAttendanceScreen extends StatelessWidget {
                     ),
                   ),
 
-                  // refresh location
                   Positioned(
                     top: 10.h,
                     left: 10.w,
                     child: _circleIcon(
                       icon: Icons.my_location,
-                      onTap: c.fetchLocationAll,
+                      onTap: c.fetchLocationAll, // manual refresh
                     ),
                   ),
 
-                  // clear photo
                   if (img != null)
                     Positioned(
                       top: 10.h,
@@ -141,29 +156,9 @@ class MarkFaceAttendanceScreen extends StatelessWidget {
             SizedBox(height: 22.h),
 
             _gradientButton(text: " Take Photo ", onTap: c.takePhoto),
-            SizedBox(height: 14.h),
-
-            // OutlinedButton(
-            //   style: OutlinedButton.styleFrom(
-            //     minimumSize: Size(double.infinity, 52.h),
-            //     side: const BorderSide(color: Color(0xFFE53935)),
-            //     shape: RoundedRectangleBorder(
-            //         borderRadius: BorderRadius.circular(12.r)),
-            //   ),
-            //   onPressed: c.uploadPhoto,
-            //   child: Text(
-            //     "Upload Photo",
-            //     style: TextStyle(
-            //       color: const Color(0xFFE53935),
-            //       fontWeight: FontWeight.w800,
-            //       fontSize: 15.sp,
-            //     ),
-            //   ),
-            // ),
 
             SizedBox(height: 18.h),
 
-            // Address Card
             Container(
               width: double.infinity,
               padding: EdgeInsets.all(14.w),
@@ -179,13 +174,13 @@ class MarkFaceAttendanceScreen extends StatelessWidget {
                   SizedBox(width: 10.w),
                   Expanded(
                     child: Obx(() => Text(
-                      c.addressText.value,
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        color: const Color(0xFF666666),
-                        height: 1.25,
-                      ),
-                    )),
+                          c.addressText.value,
+                          style: TextStyle(
+                            fontSize: 13.sp,
+                            color: const Color(0xFF666666),
+                            height: 1.25,
+                          ),
+                        )),
                   ),
                 ],
               ),
@@ -193,7 +188,6 @@ class MarkFaceAttendanceScreen extends StatelessWidget {
 
             SizedBox(height: 18.h),
 
-            // SUBMIT ATTENDANCE
             Obx(() {
               final loading = c.isSubmittingAttendance.value;
               return SizedBox(
@@ -209,19 +203,19 @@ class MarkFaceAttendanceScreen extends StatelessWidget {
                   onPressed: loading ? null : c.submitAttendance,
                   child: loading
                       ? SizedBox(
-                    width: 22.w,
-                    height: 22.w,
-                    child: const CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white),
-                  )
+                          width: 22.w,
+                          height: 22.w,
+                          child: const CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
                       : Text(
-                    "Submit Attendance",
-                    style: TextStyle(
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                    ),
-                  ),
+                          "Submit Attendance",
+                          style: TextStyle(
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               );
             }),

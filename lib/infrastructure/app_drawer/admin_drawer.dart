@@ -1,6 +1,8 @@
+// infrastructure/app_drawer/admin_drawer.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:monteage_employee/infrastructure/utils/pref_manager.dart';
 import '../../infrastructure/routes/admin_routes.dart';
 
 class AdminDrawer extends StatefulWidget {
@@ -41,7 +43,7 @@ class _AdminDrawerState extends State<AdminDrawer> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    "ATTENDANCE APP",
+                    "Monteage Employee",
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 20.sp,
@@ -50,7 +52,7 @@ class _AdminDrawerState extends State<AdminDrawer> {
                   ),
                   SizedBox(height: 8.h),
                   Text(
-                    "monteage it solution private limited",
+                    "MONTEAGE ATTENDANCE SYSTEM",
                     style: TextStyle(
                       color: Colors.yellow[300],
                       fontSize: 16.sp,
@@ -67,15 +69,15 @@ class _AdminDrawerState extends State<AdminDrawer> {
               child: Column(
                 children: [
                   _actionCard(
-                    title: "Attendance",
-                    subtitle: "Face verification & location based",
+                    title: "Mark Attendance",
+                    subtitle: "Face & location based",
                     icon: Icons.face_retouching_natural,
                     gradient: const [
                       Color(0xFF16A34A),
                       Color(0xFF22C55E),
                     ],
-                    isActive: currentRoute == AdminRoutes.faceRegister,
-                    onTap: () => Get.toNamed(AdminRoutes.faceRegister),
+                    isActive: currentRoute == AdminRoutes.MARK_FACE_ATTENDANCE,
+                    onTap: () => Get.toNamed(AdminRoutes.MARK_FACE_ATTENDANCE),
                   ),
 
                   SizedBox(height: 12.h),
@@ -95,15 +97,15 @@ class _AdminDrawerState extends State<AdminDrawer> {
                   SizedBox(height: 12.h),
 
                   _actionCard(
-                    title: "Attendance Details",
+                    title: "Today's Attendance",
                     subtitle: "Verification status & details",
                     icon: Icons.fact_check,
                     gradient: [
                       Colors.grey.shade700,
                       Colors.grey.shade900,
                     ],
-                    isActive: currentRoute == AdminRoutes.attendanceDetails,
-                    onTap: () => Get.toNamed(AdminRoutes.attendanceDetails),
+                    isActive: currentRoute == AdminRoutes.attendanceToday,
+                    onTap: () => Get.toNamed(AdminRoutes.attendanceToday),
                   ),
 
                   SizedBox(height: 12.h),
@@ -118,9 +120,15 @@ class _AdminDrawerState extends State<AdminDrawer> {
                       Colors.red.shade900,
                     ],
                     isActive: false,
-                    onTap: () {
+                    onTap: () async{
                       // TODO: clear storage/session if needed
                       Get.offAllNamed(AdminRoutes.LOGIN);
+                      Get.snackbar("LogOut", "You have been logged out successfully.",
+                        snackPosition: SnackPosition.TOP,
+                        backgroundColor: Colors.green,
+                        colorText: Colors.white,
+                      );
+                      await PrefManager().clearPref();
                     },
                   ),
                 ],

@@ -1,4 +1,4 @@
-// lib/controllers/attendance_history_controller.dart
+// controllers/attendance_history_controller.dart
 
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -42,6 +42,8 @@ class AttendanceHistoryController extends GetxController {
       if (res.statusCode == 200) {
         final decoded = jsonDecode(res.body) as Map<String, dynamic>;
         final data = AttendanceHistoryModel.fromJson(decoded);
+        print(data);
+        
 
         statistics.value = data.statistics;
         records.assignAll(data.results ?? []);

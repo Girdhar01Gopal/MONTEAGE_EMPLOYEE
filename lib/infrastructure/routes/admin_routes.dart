@@ -1,4 +1,6 @@
+// infrastructure/routes/admin_routes.dart
 import 'package:get/get.dart';
+import 'package:monteage_employee/screens/permission_boot_screen.dart';
 import '../../bindings/FaceRegisterBinding.dart';
 import '../../bindings/NotificationBinding.dart';
 import '../../bindings/attendance_binding.dart';
@@ -33,6 +35,8 @@ class AdminRoutes {
   static const  registerScreen = '/register';
   static const  faceRegister = '/face-register';
   static const attendanceToday = "/attendance-today";
+  static const BOOT = "/boot";
+
 
 
 
@@ -51,7 +55,12 @@ class AdminRoutes {
       transitionDuration: Duration(milliseconds: 400),
     ),
 
-
+  GetPage(
+      name: BOOT,
+      page: () => PermissionBootScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: Duration(milliseconds: 400),
+    ),
 
     // ---------- LOGIN ----------
     GetPage(

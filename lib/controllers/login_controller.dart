@@ -1,9 +1,13 @@
+// controllers/login_controller.dart
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:monteage_employee/infrastructure/routes/admin_routes.dart';
+import 'package:monteage_employee/infrastructure/utils/pref_const.dart';
+import 'package:monteage_employee/infrastructure/utils/pref_manager.dart';
 
 import '../screens/FaceRegisterScreen.dart';
 
@@ -56,7 +60,7 @@ class LoginController extends GetxController {
           "Content-Type": "application/json",
           "Accept": "application/json",
         },
-        body: jsonEncode({"username": username, "password": password}),
+        body: jsonEncode({"email": username, "password": password}),
       ).timeout(const Duration(seconds: 20));
 
       if (kDebugMode) {
@@ -114,7 +118,7 @@ class LoginController extends GetxController {
       // ✅ CONSISTENT KEYS — use these everywhere in app
       await box.write("access_token", access);
       await box.write("refresh_token", refresh);
-      await box.write("isLoggedIn", true);
+     await PrefManager().writeValue(key: PrefConst.isLoggedIn, value: 0);
 
       Get.snackbar(
         "Success",
@@ -124,7 +128,7 @@ class LoginController extends GetxController {
         colorText: Colors.white,
       );
 
-      Get.offAll(() => const FaceRegisterScreen());
+      Get.offAllNamed(AdminRoutes.HOME);
     } catch (e) {
       Get.snackbar(
         "Error",

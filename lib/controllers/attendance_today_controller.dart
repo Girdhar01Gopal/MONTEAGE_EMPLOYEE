@@ -1,3 +1,4 @@
+// controllers/attendance_today_controller.dart
 import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -31,7 +32,9 @@ class AttendanceTodayController extends GetxController {
 
       if (res.statusCode == 200) {
         final decoded = jsonDecode(res.body) as Map<String, dynamic>;
+        print(decoded);
         today.value = AttendanceToday.fromJson(decoded);
+        print(today.value);
         return;
       }
 
@@ -40,9 +43,9 @@ class AttendanceTodayController extends GetxController {
         return;
       }
 
-      Get.snackbar("Error", "Failed to load today (HTTP ${res.statusCode})");
+    //  Get.snackbar("Error", "Failed to load today (HTTP ${res.statusCode})");
     } catch (e) {
-      Get.snackbar("Error", e.toString());
+     // Get.snackbar("Error", e.toString());
     } finally {
       isLoading.value = false;
     }

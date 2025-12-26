@@ -1,3 +1,4 @@
+// controllers/register_controller.dart
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -42,11 +43,11 @@ class RegisterController extends GetxController {
     isLoading.value = true;
 
     final body = {
-      "username": usernameController.text.trim(),
+      "username": firstNameController.text.trim(),
       "email": emailController.text.trim(),
       "employee_id": "EMP0${EmployeeIdc.text.trim()}",  // Employee ID is hardcoded as per your provided body
       "password": passwordController.text.trim(),
-      "password2": password2Controller.text.trim(),
+      "confirm_password": password2Controller.text.trim(),
       "first_name": firstNameController.text.trim(),
       "last_name": lastNameController.text.trim(),  // Optional last name (empty allowed)
       "department": departmentController.text.trim(),
@@ -76,6 +77,7 @@ print(body);
           await box.write("isLoggedIn", true);
 
           Get.snackbar("Success", "Registration successful! Please register your face.");
+          Get.back(); // Go back to the previous screen
           Get.offAll(() => LoginScreen());  // Navigate to Login screen
         } else {
           Get.snackbar("Error", "Registration failed: ${responseData['message']}");

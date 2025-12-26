@@ -1,3 +1,4 @@
+// screens/FaceRegisterScreen.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -19,11 +20,11 @@ class FaceRegisterScreen extends StatelessWidget {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back,
-              color: const Color(0xFFE53935), size: 22.sp),
-          onPressed: () => Get.back(),
-        ),
+        // leading: IconButton(
+        //   icon: Icon(Icons.arrow_back,
+        //       color: const Color(0xFFE53935), size: 22.sp),
+        //   onPressed: () => Get.back(),
+        // ),
         centerTitle: true,
         title: Text(
           "Face Registration",

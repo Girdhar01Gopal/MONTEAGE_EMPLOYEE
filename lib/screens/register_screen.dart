@@ -1,3 +1,4 @@
+// screens/register_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -69,14 +70,40 @@ class RegisterScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _Label("Username"),
+                          _Label("First Name"),
                           _Input(
-                            controller: c.usernameController,
-                            hint: "Enter Username",
+                            controller: c.firstNameController,
+                            hint: "Enter First Name",
                             keyboardType: TextInputType.text,
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Username is required';
+                                return 'First Name is required';
+                              }
+                              return null;
+                            },
+                          ),
+                          SizedBox(height: 14.h),
+                            _Label("Last Name"),
+                          _Input(
+                            controller: c.lastNameController,
+                            hint: "Enter Last Name",
+                            keyboardType: TextInputType.text,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Last Name is required';
+                              }
+                              return null;
+                            },
+                          ),
+                          SizedBox(height: 14.h),
+                           _Label("Department"),
+                          _Input(
+                            controller: c.departmentController,
+                            hint: "Enter Department",
+                            keyboardType: TextInputType.text,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Department is required';
                               }
                               return null;
                             },

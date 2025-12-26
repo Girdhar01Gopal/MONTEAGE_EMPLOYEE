@@ -1,6 +1,11 @@
+// infrastructure/utils/pref_const.dart
 class PrefConst {
-  static const String schollId = 'schoolId';  // Key for school ID
-  static const String session = 'session';  // Key for session
-  static const String schoollogo = 'schoollogo';  // Key for school logo
-  static const String schoolname = 'schoolname';  // Key for school name
+  static String isLoggedIn = "isLoggedIn";
+  static String EnrollmentNo = "EnrollmentNo";
+  static String StudentId = "StudentId";
+  static String CourseId = "CourseId";
+  static String SchoolId = "SchoolId";
+  static String StudentName = "StudentName";
+  static String Session = "Session";
+  static String ClassName = "ClassName";
 }

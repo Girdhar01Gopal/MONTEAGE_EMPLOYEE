@@ -1,21 +1,24 @@
-import 'package:shared_preferences/shared_preferences.dart';
+// infrastructure/utils/pref_manager.dart
+import 'dart:convert';
+import 'package:get_storage/get_storage.dart';
 
 class PrefManager {
-  // Save a value to shared preferences
-  static Future<void> writeValue({required String key, required String value}) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setString(key, value);
+  late GetStorage _getStorage;
+
+  initlizedStorage() {
+    _getStorage = GetStorage();
   }
 
-  // Read a value from shared preferences
-  static Future<String?> readValue({required String key}) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString(key);
+  Future<void> writeValue({required String key, required dynamic value}) async {
+    await GetStorage().write(key, value);
   }
 
-  // Remove a value from shared preferences
-  static Future<void> removeValue({required String key}) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.remove(key);
+  Future<dynamic>? readValue({required String key}) async {
+    final all = await GetStorage().read(key);
+    return all;
+  }
+
+  Future<void> clearPref() async {
+    await GetStorage().erase();
   }
 }
