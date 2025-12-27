@@ -55,7 +55,7 @@ class RegisterController extends GetxController {
 print(body);
     try {
       final response = await http.post(
-        Uri.parse('http://115.241.73.226/attendance/api/auth/register/'), // Ensure full URL
+        Uri.parse('http://103.251.143.196/attendance/api/auth/register/'), // Ensure full URL
         body: json.encode(body),
         headers: {'Content-Type': 'application/json'},
       ).timeout(Duration(seconds: 30)); // Added a timeout to handle slow server responses

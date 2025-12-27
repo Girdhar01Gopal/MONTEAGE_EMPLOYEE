@@ -1,20 +1,22 @@
-// controllers/attendance_today_controller.dart
 import 'dart:convert';
+import 'dart:io';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
-
 import '../models/attendance_today.dart';
 import '../screens/login_screen.dart';
 
 class AttendanceTodayController extends GetxController {
   final box = GetStorage();
 
-  final todayApi = "http://115.241.73.226/attendance/api/attendance/today/";
-  final refreshApi = "http://115.241.73.226/attendance/api/auth/refresh/";
+  final todayApi = "http://103.251.143.196/attendance/api/attendance/today/";
+  final refreshApi = "http://103.251.143.196/attendance/api/auth/refresh/";
 
   final isLoading = false.obs;
   final Rxn<AttendanceToday> today = Rxn<AttendanceToday>();
+
+  // Image storage for marked attendance
+  final Rx<File?> markedAttendanceImage = Rx<File?>(null);
 
   String get _access => (box.read("access_token") ?? "").toString().trim();
   String get _refresh => (box.read("refresh_token") ?? "").toString().trim();
@@ -32,8 +34,14 @@ class AttendanceTodayController extends GetxController {
 
       if (res.statusCode == 200) {
         final decoded = jsonDecode(res.body) as Map<String, dynamic>;
-        print(decoded);
         today.value = AttendanceToday.fromJson(decoded);
+
+        // Assuming the image path is returned in the API response
+        final imagePath = decoded['markedImage']; // Path to the image
+        if (imagePath != null) {
+          markedAttendanceImage.value = File(imagePath);
+        }
+
         print(today.value);
         return;
       }
@@ -42,10 +50,8 @@ class AttendanceTodayController extends GetxController {
         _logout();
         return;
       }
-
-    //  Get.snackbar("Error", "Failed to load today (HTTP ${res.statusCode})");
     } catch (e) {
-     // Get.snackbar("Error", e.toString());
+      print(e);
     } finally {
       isLoading.value = false;
     }

@@ -69,15 +69,15 @@ class _AdminDrawerState extends State<AdminDrawer> {
               child: Column(
                 children: [
                   _actionCard(
-                    title: "Mark Attendance",
+                    title: "Face Register Attendance",
                     subtitle: "Face & location based",
                     icon: Icons.face_retouching_natural,
                     gradient: const [
                       Color(0xFF16A34A),
                       Color(0xFF22C55E),
                     ],
-                    isActive: currentRoute == AdminRoutes.MARK_FACE_ATTENDANCE,
-                    onTap: () => Get.toNamed(AdminRoutes.MARK_FACE_ATTENDANCE),
+                    isActive: currentRoute == AdminRoutes.faceRegister,
+                    onTap: () => Get.toNamed(AdminRoutes.faceRegister),
                   ),
 
                   SizedBox(height: 12.h),

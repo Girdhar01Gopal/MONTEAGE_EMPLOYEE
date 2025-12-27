@@ -9,7 +9,7 @@ class FaceRegisterController extends GetxController {
   var selectedImage = Rx<File?>(null);
   var isSubmitting = false.obs;
 
-  final String faceRegisterUrl = "http://115.241.73.226/attendance/api/face/register/";
+  final String faceRegisterUrl = "http://103.251.143.196/attendance/api/face/register/";
 
   // To pick the image from the camera
   Future<void> takePhoto() async {

@@ -21,7 +21,7 @@ class AdminApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       getPages: AdminRoutes.routes,
 
-      // ✅ Always start at boot to request permission first
+      //  Always start at boot to request permission first
       initialRoute: AdminRoutes.BOOT,
 
       theme: ThemeData(useMaterial3: true),

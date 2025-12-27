@@ -21,7 +21,7 @@ class AdminSplashScreen extends StatelessWidget {
             children: [
               Image.asset(
                 'assets/images/monteage_logo.png',
-                height: 200.h,
+                height: 500.h,
               ),
               SizedBox(height: 20.h),
             ],

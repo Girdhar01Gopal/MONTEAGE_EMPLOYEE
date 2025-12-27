@@ -15,9 +15,10 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
       key: _scaffoldKey,
       drawer: AdminDrawer(),
-      backgroundColor: const Color(0xFFF6F1F3),
+      backgroundColor: Colors.white,  // Set screen background color to white
       appBar: AppBar(
         elevation: 0,
         centerTitle: true,
@@ -135,6 +136,20 @@ class HomeScreen extends StatelessWidget {
                 Colors.grey.shade900,
               ],
               onTap: () => Get.toNamed(AdminRoutes.attendanceToday),
+            ),
+
+            SizedBox(height: 22.h),
+
+            // 🔹 Mark Attendance Card
+            _actionCard(
+              title: "Check Out Attendance",
+              subtitle: "Face verification & location based",
+              icon: Icons.face_retouching_natural,
+              gradient: const [
+                Color(0xFFFF6F00), // Deep Orange
+                Color(0xFFFFA000), // Amber Orange
+              ],
+              onTap: () => Get.toNamed(AdminRoutes.checkoutattendace),
             ),
 
           ],

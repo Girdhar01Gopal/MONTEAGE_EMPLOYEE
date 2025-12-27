@@ -1,4 +1,3 @@
-// controllers/login_controller.dart
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +20,7 @@ class LoginController extends GetxController {
   final box = GetStorage();
 
   // ✅ Your login API
-  final String loginApi = "http://115.241.73.226/attendance/api/auth/login/";
+  final String loginApi = "http://103.251.143.196/attendance/api/auth/login/";
 
   void togglePassword() => isPasswordHidden.value = !isPasswordHidden.value;
 
@@ -100,9 +99,9 @@ class LoginController extends GetxController {
         return;
       }
 
-      // ✅ Your response format: { "refresh": "...", "access": "..." }
-      final access = body["access"]?.toString() ?? "";
-      final refresh = body["refresh"]?.toString() ?? "";
+      // ✅ Ensure tokens are received
+      final access = body["tokens"]?["access"]?.toString() ?? "";
+      final refresh = body["tokens"]?["refresh"]?.toString() ?? "";
 
       if (access.isEmpty || refresh.isEmpty) {
         Get.snackbar(
@@ -115,10 +114,10 @@ class LoginController extends GetxController {
         return;
       }
 
-      // ✅ CONSISTENT KEYS — use these everywhere in app
+      // ✅ Save tokens locally
       await box.write("access_token", access);
       await box.write("refresh_token", refresh);
-     await PrefManager().writeValue(key: PrefConst.isLoggedIn, value: 0);
+      await PrefManager().writeValue(key: PrefConst.isLoggedIn, value: 0);
 
       Get.snackbar(
         "Success",

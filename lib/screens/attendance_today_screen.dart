@@ -1,8 +1,8 @@
-// screens/attendance_today_screen.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/attendance_today_controller.dart';
 import '../models/attendance_today.dart';
+import 'dart:io';  // Required for FileImage
 
 class AttendanceTodayScreen extends StatelessWidget {
   const AttendanceTodayScreen({super.key});
@@ -12,7 +12,7 @@ class AttendanceTodayScreen extends StatelessWidget {
     final c = Get.find<AttendanceTodayController>();
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Colors.white,  // Set screen background color to white
       appBar: AppBar(
         elevation: 0,
         title: const Text(
@@ -93,7 +93,19 @@ class AttendanceTodayScreen extends StatelessWidget {
           physics: const BouncingScrollPhysics(),
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: _TodayAttendanceCard(data),
+            child: Column(
+              children: [
+                // Display CircleAvatar with the image from marked attendance
+                if (c.markedAttendanceImage.value != null)
+                  CircleAvatar(
+                    radius: 40,
+                    backgroundImage:
+                    FileImage(c.markedAttendanceImage.value!),
+                  ),
+                const SizedBox(height: 16),
+                _TodayAttendanceCard(data),
+              ],
+            ),
           ),
         );
       }),
@@ -307,8 +319,8 @@ class _TodayAttendanceCard extends StatelessWidget {
                                     data.confidenceScore > 0.7
                                         ? const Color(0xFF10B981)
                                         : data.confidenceScore > 0.4
-                                            ? const Color(0xFFF59E0B)
-                                            : const Color(0xFFEF4444),
+                                        ? const Color(0xFFF59E0B)
+                                        : const Color(0xFFEF4444),
                                   ),
                                 ),
                               ),
@@ -322,8 +334,8 @@ class _TodayAttendanceCard extends StatelessWidget {
                                 color: data.confidenceScore > 0.7
                                     ? const Color(0xFF10B981)
                                     : data.confidenceScore > 0.4
-                                        ? const Color(0xFFF59E0B)
-                                        : const Color(0xFFEF4444),
+                                    ? const Color(0xFFF59E0B)
+                                    : const Color(0xFFEF4444),
                               ),
                             ),
                           ],
@@ -352,7 +364,7 @@ class _TodayAttendanceCard extends StatelessWidget {
                           ),
                           child: Icon(
                             Icons.location_on_rounded,
-                            color: Colors.blue[700],
+                            color: Colors.red,
                             size: 20,
                           ),
                         ),
@@ -413,13 +425,15 @@ class _TodayAttendanceCard extends StatelessWidget {
   String _timeHHmm(String iso) {
     try {
       final d = DateTime.parse(iso).toLocal();
-      return "${d.hour.toString().padLeft(2, '0')}:" 
-             "${d.minute.toString().padLeft(2, '0')}";
+      return "${d.hour.toString().padLeft(2, '0')}:"
+          "${d.minute.toString().padLeft(2, '0')}";
     } catch (_) {
       return "--";
     }
   }
 }
+
+
 
 // Helper widget for info rows
 class _InfoRow extends StatelessWidget {

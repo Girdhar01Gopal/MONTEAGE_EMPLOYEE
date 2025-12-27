@@ -2,23 +2,24 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import '../controllers/check_out_attendance_controller.dart';
 import '../controllers/mark_face_attendance_controller.dart';
 
-class MarkFaceAttendanceScreen extends StatefulWidget {
-  const MarkFaceAttendanceScreen({super.key});
+class chechoutAttendanceScreen extends StatefulWidget {
+  const chechoutAttendanceScreen({super.key});
 
   @override
-  State<MarkFaceAttendanceScreen> createState() =>
-      _MarkFaceAttendanceScreenState();
+  State<chechoutAttendanceScreen> createState() =>
+      _chechoutAttendanceScreenState();
 }
 
-class _MarkFaceAttendanceScreenState extends State<MarkFaceAttendanceScreen> {
-  late final MarkFaceAttendanceController c;
+class _chechoutAttendanceScreenState extends State<chechoutAttendanceScreen> {
+  late final checkoutAttendanceController c;
 
   @override
   void initState() {
     super.initState();
-    c = Get.find<MarkFaceAttendanceController>();
+    c = Get.find<checkoutAttendanceController>();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       c.ensureLocationFetched(); // ✅ auto fetch when screen opens
@@ -39,7 +40,7 @@ class _MarkFaceAttendanceScreenState extends State<MarkFaceAttendanceScreen> {
         ),
         centerTitle: true,
         title: Text(
-          "Mark Face Attendance",
+          "Check Out Attendance",
           style: TextStyle(
             color: const Color(0xFF555555),
             fontWeight: FontWeight.w800,
