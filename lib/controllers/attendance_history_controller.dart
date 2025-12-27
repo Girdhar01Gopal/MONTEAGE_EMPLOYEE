@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';  // for date formatting
-
+import 'package:intl/intl.dart'; // for date formatting
 import '../models/attendance_history_model.dart';
 import '../screens/login_screen.dart';
 
@@ -153,49 +152,3 @@ class AttendanceHistoryController extends GetxController {
     }
   }
 }
-/* Future<void> fetchHistory() async {
-    isLoading.value = true;
-    try {
-      final res = await _authorizedGet(Uri.parse(historyApi));
-
-      if (res.statusCode == 200) {
-        final decoded = jsonDecode(res.body) as Map<String, dynamic>;
-        final data = AttendanceResponse.fromJson(decoded);
-
-        // Ensure the image URL is complete (prepend base URL if needed)
-        for (var record in data.results) {
-          // Check if the image URL is incomplete and prepend the base URL if necessary
-          if (record.imageUrl.isNotEmpty && !record.imageUrl.startsWith("http")) {
-           // record.imageUrl = "http://103.251.143.196/attendance_media/" + record.imageUrl;
-          }
-        }
-
-        statistics.value = data.statistics;
-        records.assignAll(data.results);
-        return;
-      }
-
-      if (res.statusCode == 401) {
-        _forceLogout();
-        return;
-      }
-
-      Get.snackbar(
-        "Error",
-        "Failed to load attendance history (HTTP ${res.statusCode})",
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.red,
-        colorText: Cohite,
-      );
-    } catch (e) {
-      Get.snackbar(
-        "Error",
-        e.toString(),
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-    } finally {
-      isLoading.value = false;
-    }
-  }*/

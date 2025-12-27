@@ -51,10 +51,10 @@ class Statistics {
 }
 
 class FiltersApplied {
-  final dynamic startDate;
-  final dynamic endDate;
-  final dynamic status;
-  final dynamic limit;
+  final String? startDate;
+  final String? endDate;
+  final String? status;
+  final int? limit;
 
   FiltersApplied({
     this.startDate,
@@ -78,13 +78,12 @@ class Result {
   final String employeeId;
   final String username;
   final String employeeName;
-  final String department;
   final String date;
   final String time;
   final String timestamp;
-  final double latitude;
-  final double longitude;
-  final dynamic locationAccuracy;
+  final double? latitude;
+  final double? longitude;
+  final double? locationAccuracy;
   final String status;
   final double confidenceScore;
   final bool faceDetected;
@@ -92,21 +91,32 @@ class Result {
   final String imageUrl;
   final double imageQualityScore;
   final int faceLandmarksDetected;
+  final String? checkoutDate;
+  final String? checkoutTime;
+  final String? checkoutTimestamp;
+  final double? checkoutLatitude;
+  final double? checkoutLongitude;
+  final double? checkoutLocationAccuracy;
+  final String? checkoutImageUrl;
+  final double? checkoutConfidenceScore;
+  final String? checkoutStatus;
+  final Duration? duration;
   final bool isSuspicious;
-  final dynamic suspiciousReason;
+  final String? suspiciousReason;
   final Map<String, dynamic> deviceInfo;
+  final String createdAt;
+  final String updatedAt;
 
   Result({
     required this.id,
     required this.employeeId,
     required this.username,
     required this.employeeName,
-    required this.department,
     required this.date,
     required this.time,
     required this.timestamp,
-    required this.latitude,
-    required this.longitude,
+    this.latitude,
+    this.longitude,
     this.locationAccuracy,
     required this.status,
     required this.confidenceScore,
@@ -115,9 +125,21 @@ class Result {
     required this.imageUrl,
     required this.imageQualityScore,
     required this.faceLandmarksDetected,
+    this.checkoutDate,
+    this.checkoutTime,
+    this.checkoutTimestamp,
+    this.checkoutLatitude,
+    this.checkoutLongitude,
+    this.checkoutLocationAccuracy,
+    this.checkoutImageUrl,
+    this.checkoutConfidenceScore,
+    this.checkoutStatus,
+    this.duration,
     required this.isSuspicious,
     this.suspiciousReason,
     required this.deviceInfo,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
   factory Result.fromJson(Map<String, dynamic> json) {
@@ -126,23 +148,34 @@ class Result {
       employeeId: json['employee_id'],
       username: json['username'],
       employeeName: json['employee_name'],
-      department: json['department'] ?? "Not Available",
       date: json['date'],
       time: json['time'],
       timestamp: json['timestamp'],
-      latitude: json['latitude'].toDouble(),
-      longitude: json['longitude'].toDouble(),
-      locationAccuracy: json['location_accuracy'],
+      latitude: json['latitude'] != null ? json['latitude'].toDouble() : null,
+      longitude: json['longitude'] != null ? json['longitude'].toDouble() : null,
+      locationAccuracy: json['location_accuracy'] != null ? json['location_accuracy'].toDouble() : null,
       status: json['status'],
-      confidenceScore: json['confidence_score'].toDouble(),
+      confidenceScore: json['confidence_score'] != null ? json['confidence_score'].toDouble() : 0.0,
       faceDetected: json['face_detected'],
       isVerified: json['is_verified'],
-      imageUrl: json['image_url'],
-      imageQualityScore: json['image_quality_score'].toDouble(),
+      imageUrl: json['image_url'] ?? '',
+      imageQualityScore: json['image_quality_score'] != null ? json['image_quality_score'].toDouble() : 0.0,
       faceLandmarksDetected: json['face_landmarks_detected'],
+      checkoutDate: json['checkout_date'],
+      checkoutTime: json['checkout_time'],
+      checkoutTimestamp: json['checkout_timestamp'],
+      checkoutLatitude: json['checkout_latitude'] != null ? json['checkout_latitude'].toDouble() : null,
+      checkoutLongitude: json['checkout_longitude'] != null ? json['checkout_longitude'].toDouble() : null,
+      checkoutLocationAccuracy: json['checkout_location_accuracy'] != null ? json['checkout_location_accuracy'].toDouble() : null,
+      checkoutImageUrl: json['checkout_image_url'],
+      checkoutConfidenceScore: json['checkout_confidence_score'] != null ? json['checkout_confidence_score'].toDouble() : null,
+      checkoutStatus: json['checkout_status'],
+      duration: json['duration'] != null ? Duration(seconds: json['duration']['seconds']) : null,
       isSuspicious: json['is_suspicious'],
       suspiciousReason: json['suspicious_reason'],
-      deviceInfo: Map<String, dynamic>.from(json['device_info'] ?? {}),
+      deviceInfo: json['device_info'],
+      createdAt: json['created_at'],
+      updatedAt: json['updated_at'],
     );
   }
 }

@@ -216,10 +216,8 @@ String _time(String? iso) {
       return "--";
     }
   }*/
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import '../controllers/attendance_history_controller.dart';
 import '../models/attendance_history_model.dart';
 
@@ -459,7 +457,6 @@ class _HistoryCard extends StatelessWidget {
                 ],
               ),
             ),
-
             const SizedBox(height: 12),
 
             // ---------------- Verified Status ----------------
@@ -478,7 +475,6 @@ class _HistoryCard extends StatelessWidget {
                 ),
               ),
             ),
-
             const SizedBox(height: 12),
 
             // ---------------- Employee Information ----------------
@@ -488,12 +484,11 @@ class _HistoryCard extends StatelessWidget {
                 Text("Name: ${r.employeeName ?? "--"}"),
                 Text("Username: ${r.username ?? "--"}"),
                 Text("Employee ID: ${r.employeeId ?? "--"}"),
-                Text("Department: ${r.department ?? "--"}"),
+               // Text("Department: ${r.department ?? "--"}"),
                 Text("Confidence: ${(r.confidenceScore ?? 0).toStringAsFixed(3)}"),
                 Text("Face Detected: ${r.faceDetected == true ? "Yes" : "No"}"),
               ],
             ),
-
             const SizedBox(height: 12),
 
             // ---------------- Location ----------------
@@ -576,8 +571,6 @@ class _HistoryCard extends StatelessWidget {
     );
   }
 }
-
-
 
 String _time(String? iso) {
   if (iso == null || iso.isEmpty) return "--";
