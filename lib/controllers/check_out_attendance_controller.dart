@@ -1,4 +1,5 @@
-// controllers/mark_face_attendance_controller.dart
+// controllers/check_out_attendance_controller.dart
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -9,7 +10,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
-class checkoutAttendanceController extends GetxController {
+class CheckOutAttendanceController extends GetxController {
   final ImagePicker _picker = ImagePicker();
   final box = GetStorage();
 
@@ -25,9 +26,9 @@ class checkoutAttendanceController extends GetxController {
   final RxBool isLocLoading = false.obs;
   final RxBool isSubmittingAttendance = false.obs;
 
-  // API URLs
-  final String attendanceUrl =
-      "http://103.251.143.196/attendance/api/attendance/mark/";
+  // API URL for checkout attendance
+  final String checkoutAttendanceUrl =
+      "http://103.251.143.196/attendance/api/attendance/checkout/";
 
   String _tokenOrThrow() {
     final token = (box.read("access_token") ?? "").toString().trim();
@@ -156,6 +157,56 @@ class checkoutAttendanceController extends GetxController {
   void clearPhoto() => selectedImage.value = null;
 
   // -----------------------------
+  // Checkout Attendance Submission
+  // -----------------------------
+  Future<void> submitCheckoutAttendance() async {
+    final img = selectedImage.value;
+
+    if (img == null) {
+      Get.snackbar("Missing Photo", "Please take/upload a photo first.",
+          snackPosition: SnackPosition.TOP);
+      return;
+    }
+
+    final lat = latText.value.trim();
+    final lng = lngText.value.trim();
+
+    if (!_isValidLatLng(lat) || !_isValidLatLng(lng)) {
+      Get.snackbar("Location Required", "Please enable location and refresh.",
+          snackPosition: SnackPosition.TOP);
+      return;
+    }
+
+    try {
+      isSubmittingAttendance.value = true;
+
+      final result = await _postMultipart(
+        url: checkoutAttendanceUrl,
+        fields: {
+          "latitude": lat,
+          "longitude": lng,
+        },
+        imageFile: img,
+      );
+
+      if (result.statusCode == 200 || result.statusCode == 201) {
+        // Show success Snackbar
+        Get.snackbar("Success", "Checked out successfully!",
+            snackPosition: SnackPosition.TOP);
+      } else {
+        final msg = result.json?["message"] ?? result.rawBody;
+        Get.snackbar("Failed", "(${result.statusCode}) $msg",
+            snackPosition: SnackPosition.TOP);
+      }
+    } catch (e) {
+      Get.snackbar("Error", "Submit failed: $e",
+          snackPosition: SnackPosition.TOP);
+    } finally {
+      isSubmittingAttendance.value = false;
+    }
+  }
+
+  // -----------------------------
   // COMMON MULTIPART SENDER
   // -----------------------------
   Future<_ApiResult> _postMultipart({
@@ -187,58 +238,6 @@ class checkoutAttendanceController extends GetxController {
       rawBody: body,
       json: jsonBody,
     );
-  }
-
-  // -----------------------------
-  // TODAY'S ATTENDANCE SUBMIT
-  // -----------------------------
-  Future<void> submitAttendance() async {
-    final img = selectedImage.value;
-
-    if (img == null) {
-      Get.snackbar("Missing Photo", "Please take/upload a photo first.",
-          snackPosition: SnackPosition.TOP);
-      return;
-    }
-
-    final lat = latText.value.trim();
-    final lng = lngText.value.trim();
-
-    if (!_isValidLatLng(lat) || !_isValidLatLng(lng)) {
-      Get.snackbar("Location Required", "Please enable location and refresh.",
-          snackPosition: SnackPosition.TOP);
-      return;
-    }
-
-    try {
-      isSubmittingAttendance.value = true;
-
-      final result = await _postMultipart(
-        url: attendanceUrl,
-        fields: {
-          "latitude": lat,
-          "longitude": lng,
-        },
-        imageFile: img,
-      );
-      print(result.rawBody);
-      print(attendanceUrl);
-      print(img.path);
-      if (result.statusCode == 200 || result.statusCode == 201) {
-        Get.snackbar("Success", "Today's attendance saved successfully!",
-            snackPosition: SnackPosition.TOP);
-      } else {
-        final msg = result.json?["message"] ?? result.rawBody;
-        Get.snackbar("Failed", "(${result.statusCode}) $msg",
-            snackPosition: SnackPosition.TOP);
-        print("Attendance submit failed: ${result.rawBody}");
-      }
-    } catch (e) {
-      Get.snackbar("Error", "Submit failed: $e",
-          snackPosition: SnackPosition.TOP);
-    } finally {
-      isSubmittingAttendance.value = false;
-    }
   }
 }
 

@@ -5,8 +5,8 @@ import '../controllers/mark_face_attendance_controller.dart';
 class checkoutAttendanceBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<checkoutAttendanceController>(
-          () => checkoutAttendanceController(),
+    Get.lazyPut<CheckOutAttendanceController>(
+          () => CheckOutAttendanceController(),
     );
   }
 }

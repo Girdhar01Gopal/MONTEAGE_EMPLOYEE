@@ -80,7 +80,7 @@ class AdminRoutes {
 
     GetPage(
       name: checkoutattendace,
-      page: () => chechoutAttendanceScreen(),
+      page: () => CheckOutAttendanceScreen(),
       binding: checkoutAttendanceBinding(),
     ),
 
