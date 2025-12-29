@@ -1,221 +1,3 @@
-/*import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-
-import '../controllers/attendance_history_controller.dart';
-import '../models/attendance_history_model.dart';
-
-class AttendanceHistoryScreen extends StatelessWidget {
-  const AttendanceHistoryScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final c = Get.put(AttendanceHistoryController());
-
-    return Scaffold(
-      backgroundColor: Colors.white,  // Set screen background color to white
-      appBar: AppBar(
-        backgroundColor: Colors.blue,
-        title: const Text(
-          "Attendance History",
-          style: TextStyle(
-            color: Colors.white, // Set text color to white
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back,
-            color: Colors.white, // Set back arrow color to white
-          ),
-          onPressed: () {
-            // Add your back button functionality here
-            Navigator.pop(context);
-          },
-        ),
-        actions: [
-          IconButton(
-            onPressed: c.fetchHistory,
-            icon: const Icon(Icons.refresh, color: Colors.white),
-          ),
-        ],
-      ),
-
-      body: Column(
-        children: [
-          /// ---------------- STATISTICS BAR ----------------
-          Obx(() {
-            final s = c.statistics.value;
-            if (s == null) return const SizedBox();
-
-            return Container(
-              margin: const EdgeInsets.all(12),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: const [
-                  BoxShadow(color: Colors.black12, blurRadius: 6),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _stat("Total", s.total),
-                  _stat("Verified", s.verified),
-                  _stat("Pending", s.pending),
-                  _stat("Rejected", s.rejected),
-                ],
-              ),
-            );
-          }),
-
-          /// ---------------- LIST ----------------
-          Expanded(
-            child: Obx(() {
-              if (c.isLoading.value) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              if (c.records.isEmpty) {
-                return const Center(child: Text("No attendance history"));
-              }
-
-              return ListView.builder(
-                itemCount: c.records.length,
-                itemBuilder: (_, i) {
-                  final Result r = c.records[i];
-                  return _HistoryCard(r, c);
-                },
-              );
-            }),
-          ),
-        ],
-      ),
-    );
-  }
-
-  static Widget _stat(String title, int? value) {
-    return Column(
-      children: [
-        Text(
-          value?.toString() ?? "0",
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          title,
-          style: const TextStyle(color: Colors.grey),
-        ),
-      ],
-    );
-  }
-}
-
-class _HistoryCard extends StatelessWidget {
-  final Result r;
-  final AttendanceHistoryController c;
-  const _HistoryCard(this.r, this.c);
-
-  Color _statusColor(String? s) {
-    switch (s?.toUpperCase()) {
-      case "VERIFIED":
-        return Colors.green;
-      case "REJECTED":
-        return Colors.red;
-      default:
-        return Colors.orange;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final statusColor = _statusColor(r.status);
-
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// DATE + STATUS
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    "${c.formatDate(r.date)} • ${c.formatTime(r.timestamp)}",
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    color: statusColor.withOpacity(0.15),
-                    border: Border.all(color: statusColor),
-                  ),
-                  child: Text(
-                    r.status ?? "--",
-                    style: TextStyle(
-                      color: statusColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 8),
-
-            Text("Name: ${r.employeeName ?? "--"}"),
-            Text("Employee ID: ${r.employeeId ?? "--"}"),
-            Text("Username: ${r.username ?? "--"}"),
-            Text("Department: ${r.department ?? "--"}"),
-            Text("Confidence: ${(r.confidenceScore ?? 0).toStringAsFixed(3)}"),
-            Text("Face Detected: ${r.faceDetected == true ? "Yes" : "No"}"),
-            Text("Verified: ${r.isVerified == true ? "Yes" : "No"}"),
-
-            const SizedBox(height: 6),
-
-            Text(
-              "Lat: ${r.latitude ?? 0}, Lng: ${r.longitude ?? 0} | Accuracy: ${r.locationAccuracy ?? 0}m",
-            ),
-
-            if (r.isSuspicious == true) ...[
-              const SizedBox(height: 6),
-              Text(
-                "Suspicious: ${r.suspiciousReason ?? "Yes"}",
-                style: const TextStyle(
-                  color: Colors.red,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-
-String _time(String? iso) {
-    if (iso == null || iso.isEmpty) return "--";
-    try {
-      final d = DateTime.parse(iso).toLocal();
-      final hh = d.hour.toString().padLeft(2, '0');
-      final mm = d.minute.toString().padLeft(2, '0');
-      return "$hh:$mm";
-    } catch (_) {
-      return "--";
-    }
-  }*/
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/attendance_history_controller.dart';
@@ -229,35 +11,58 @@ class AttendanceHistoryScreen extends StatelessWidget {
     final c = Get.put(AttendanceHistoryController());
 
     return Scaffold(
-      backgroundColor: Colors.white, // Set screen background color to white
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: const Color(0xFF6C63FF),
         title: const Text(
           "Attendance History",
-          style: TextStyle(
-            color: Colors.white, // Set text color to white
-          ),
+          style: TextStyle(color: Colors.white),
         ),
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back,
-            color: Colors.white, // Set back arrow color to white
-          ),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
         ),
         actions: [
+          // ✅ Search icon (dd-MM-yyyy)
           IconButton(
-            onPressed: c.fetchHistory,
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            icon: const Icon(Icons.search, color: Colors.white),
+            onPressed: () {
+              Get.dialog(
+                AlertDialog(
+                  title: const Text("Search by Date"),
+                  content: TextField(
+                    controller: c.searchDateController,
+                    keyboardType: TextInputType.datetime,
+                    decoration: const InputDecoration(
+                      hintText: "dd-MM-yyyy",
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        c.clearFilter();
+                        Get.back();
+                      },
+                      child: const Text("Clear"),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        c.applyDateFilter(c.searchDateController.text.trim());
+                        Get.back();
+                      },
+                      child: const Text("Search"),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         ],
       ),
 
       body: Column(
         children: [
-          // ---------------- STATISTICS BAR ----------------
+          // -------- Statistics --------
           Obx(() {
             final s = c.statistics.value;
             if (s == null) return const SizedBox();
@@ -269,7 +74,7 @@ class AttendanceHistoryScreen extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: const [
-                  BoxShadow(color: Colors.black12, blurRadius: 6),
+                  BoxShadow(color: Colors.black12, blurRadius: 6)
                 ],
               ),
               child: Row(
@@ -278,29 +83,32 @@ class AttendanceHistoryScreen extends StatelessWidget {
                   _stat("Total", s.total),
                   _stat("Verified", s.verified),
                   _stat("Rejected", s.rejected),
-                  _pendingStatus(s.pending),
+                  _pendingStat(s.pending),
                 ],
               ),
             );
           }),
 
-          // ---------------- LIST ----------------
+          // -------- List --------
           Expanded(
             child: Obx(() {
               if (c.isLoading.value) {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              if (c.records.isEmpty) {
+              // ✅ use filteredRecords (search result)
+              if (c.filteredRecords.isEmpty) {
                 return const Center(child: Text("No attendance history"));
               }
 
-              return ListView.builder(
-                itemCount: c.records.length,
-                itemBuilder: (_, i) {
-                  final Result r = c.records[i];
-                  return _HistoryCard(r); // Card UI for each record
-                },
+              return RefreshIndicator(
+                onRefresh: c.fetchHistory,
+                child: ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  itemCount: c.filteredRecords.length,
+                  itemBuilder: (_, i) =>
+                      _HistoryCard(record: c.filteredRecords[i], c: c),
+                ),
               );
             }),
           ),
@@ -309,32 +117,24 @@ class AttendanceHistoryScreen extends StatelessWidget {
     );
   }
 
-  // Helper widget to display the stats in card format
   static Widget _stat(String title, int? value) {
     return Column(
       children: [
         Text(
-          value?.toString() ?? "0",
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          (value ?? 0).toString(),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 4),
-        Text(
-          title,
-          style: const TextStyle(color: Colors.grey),
-        ),
+        Text(title, style: const TextStyle(color: Colors.grey)),
       ],
     );
   }
 
-  // Helper widget for Pending Status
-  static Widget _pendingStatus(int? pending) {
+  static Widget _pendingStat(int? value) {
     return Column(
       children: [
         Text(
-          pending?.toString() ?? "0",
+          (value ?? 0).toString(),
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -342,235 +142,235 @@ class AttendanceHistoryScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        const Text(
-          "Pending",
-          style: TextStyle(color: Colors.grey),
-        ),
+        const Text("Pending", style: TextStyle(color: Colors.grey)),
       ],
     );
   }
 }
 
 class _HistoryCard extends StatelessWidget {
-  final Result r;
-  const _HistoryCard(this.r);
+  final Result record;
+  final AttendanceHistoryController c;
+
+  const _HistoryCard({required this.record, required this.c});
 
   Color _statusColor(String? s) {
-    switch (s?.toUpperCase()) {
+    switch ((s ?? "").toUpperCase()) {
       case "VERIFIED":
         return Colors.green;
       case "REJECTED":
         return Colors.red;
+      case "PENDING":
       default:
         return Colors.orange;
     }
   }
 
-  String _formattedDate(String iso) {
-    try {
-      final d = DateTime.parse(iso).toLocal();
-      return "${d.day.toString().padLeft(2, '0')}-"
-          "${d.month.toString().padLeft(2, '0')}-"
-          "${d.year}";
-    } catch (_) {
-      return "--";
-    }
+  Widget _kv(String k, String v, {Color? vColor, FontWeight? vWeight}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 135,
+            child: Text(k, style: const TextStyle(color: Colors.black54)),
+          ),
+          Expanded(
+            child: Text(
+              v,
+              style: TextStyle(
+                color: vColor ?? Colors.black87,
+                fontWeight: vWeight ?? FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  String _formattedTime(String iso) {
-    try {
-      final d = DateTime.parse(iso).toLocal();
-      final hour = d.hour > 12 ? d.hour - 12 : d.hour;
-      final period = d.hour >= 12 ? 'PM' : 'AM';
-      return "${hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')} $period";
-    } catch (_) {
-      return "--";
-    }
+  Widget _imageBlock(String title, String? url) {
+    final full = c.fullImageUrl(url);
+    if (full.isEmpty) return const SizedBox();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 10),
+        Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: AspectRatio(
+            aspectRatio: 16 / 9,
+            child: Image.network(
+              full,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                color: Colors.black12,
+                alignment: Alignment.center,
+                child: const Text("Image not available"),
+              ),
+              loadingBuilder: (context, child, progress) {
+                if (progress == null) return child;
+                return Container(
+                  color: Colors.black12,
+                  alignment: Alignment.center,
+                  child: const CircularProgressIndicator(),
+                );
+              },
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = _statusColor(r.status);
+    final checkInColor = _statusColor(record.status);
+    final checkOutColor = _statusColor(record.checkoutStatus);
+
+    final checkInTime = c.formatIsoTime(record.timestamp);
+    final checkOutTime = c.formatIsoTime(record.checkoutTimestamp);
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ---------------- Header ----------------
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFF6C63FF),
-                    const Color(0xFF5A52E0),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.calendar_today_rounded,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _formattedDate(r.date), // Formatted date
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _formattedTime(r.timestamp), // Formatted time with AM/PM
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.white.withOpacity(0.9),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // ---------------- Verified Status ----------------
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.8),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                r.status ?? "--",
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // ---------------- Employee Information ----------------
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            // Header Row
+            Row(
               children: [
-                Text("Name: ${r.employeeName ?? "--"}"),
-                Text("Username: ${r.username ?? "--"}"),
-                Text("Employee ID: ${r.employeeId ?? "--"}"),
-               // Text("Department: ${r.department ?? "--"}"),
-                Text("Confidence: ${(r.confidenceScore ?? 0).toStringAsFixed(3)}"),
-                Text("Face Detected: ${r.faceDetected == true ? "Yes" : "No"}"),
+                Expanded(
+                  child: Text(
+                    "${c.titleCase(record.employeeName)} (${record.employeeId})",
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                Container(
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: checkInColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: checkInColor),
+                  ),
+                  child: Text(
+                    record.status,
+                    style: TextStyle(
+                      color: checkInColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                )
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
-            // ---------------- Location ----------------
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.blue[50],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.blue[100]!),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[100],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      Icons.location_on_rounded,
-                      color: Colors.red,
-                      size: 20,
+            // ✅ Username first letter capital + date dd-MM-yyyy
+            _kv("Username", c.titleCase(record.username)),
+            _kv("Check-in Date", c.formatToDdMmYyyy(record.date)),
+            _kv("Check-in Time", checkInTime),
+            _kv("Confidence", record.confidenceScore.toStringAsFixed(3)),
+            _kv("Face Detected", record.faceDetected ? "Yes" : "No"),
+            _kv("Verified", record.isVerified ? "Yes" : "No"),
+
+            const Divider(height: 20),
+
+            // Location (Check-in)
+            const Text("Check-in Location",
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            _kv("Latitude", (record.latitude ?? 0).toString()),
+            _kv("Longitude", (record.longitude ?? 0).toString()),
+            _kv("Accuracy (m)", (record.locationAccuracy ?? 0).toString()),
+            _imageBlock("Check-in Image", record.imageUrl),
+
+            const Divider(height: 22),
+
+            // Checkout Section
+            Row(
+              children: [
+                const Expanded(
+                  child: Text("Check-out Details",
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+                Container(
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: checkOutColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: checkOutColor),
+                  ),
+                  child: Text(
+                    (record.checkoutStatus ?? "--"),
+                    style: TextStyle(
+                      color: checkOutColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Location',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.blue[900],
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Lat: ${r.latitude ?? 0}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.blue[800],
-                          ),
-                        ),
-                        Text(
-                          'Lng: ${r.longitude ?? 0}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.blue[800],
-                          ),
-                        ),
-                        Text(
-                          'Accuracy: ${r.locationAccuracy ?? 0}m',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.blue[800],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                )
+              ],
+            ),
+            const SizedBox(height: 8),
+
+            _kv("Checkout Date", c.formatToDdMmYyyy(record.checkoutDate)),
+            _kv("Checkout Time", checkOutTime),
+            _kv(
+              "Checkout Confidence",
+              record.checkoutConfidenceScore == null
+                  ? "--"
+                  : record.checkoutConfidenceScore!.toStringAsFixed(3),
             ),
 
-            if (r.isSuspicious == true) ...[
-              const SizedBox(height: 6),
+            const SizedBox(height: 10),
+            const Text("Check-out Location",
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            _kv("Latitude", (record.checkoutLatitude ?? 0).toString()),
+            _kv("Longitude", (record.checkoutLongitude ?? 0).toString()),
+            _kv("Accuracy (m)", (record.checkoutLocationAccuracy ?? 0).toString()),
+            _imageBlock("Check-out Image", record.checkoutImageUrl),
+
+            const Divider(height: 22),
+
+            // Duration
+            _kv("Duration", record.duration?.formatted ?? "--",
+                vWeight: FontWeight.bold),
+            _kv("Total Seconds", record.duration?.seconds.toString() ?? "--"),
+
+            // Suspicious
+            if (record.isSuspicious) ...[
+              const SizedBox(height: 8),
               Text(
-                "Suspicious: ${r.suspiciousReason ?? "Yes"}",
+                "Suspicious: ${record.suspiciousReason ?? "Yes"}",
                 style: const TextStyle(
-                  color: Colors.red,
-                  fontWeight: FontWeight.bold,
-                ),
+                    color: Colors.red, fontWeight: FontWeight.bold),
               ),
             ],
+
+            const Divider(height: 22),
+
+            // ✅ Created/Updated in dd-MM-yyyy hh:mm a (India local)
+            _kv("Created At", c.formatIsoDateTime(record.createdAt)),
+            _kv("Updated At", c.formatIsoDateTime(record.updatedAt)),
           ],
         ),
       ),
     );
   }
 }
+
 
 String _time(String? iso) {
   if (iso == null || iso.isEmpty) return "--";

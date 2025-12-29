@@ -3,13 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart'; // for date formatting
+import 'package:intl/intl.dart';
+
 import '../models/attendance_history_model.dart';
 import '../screens/login_screen.dart';
 
 class AttendanceHistoryController extends GetxController {
   final box = GetStorage();
 
+  final String baseUrl = "http://103.251.143.196";
   final String historyApi =
       "http://103.251.143.196/attendance/api/attendance/history/";
   final String refreshApi =
@@ -17,7 +19,13 @@ class AttendanceHistoryController extends GetxController {
 
   final isLoading = false.obs;
   final Rxn<Statistics> statistics = Rxn<Statistics>();
+
+  // ✅ main data
   final RxList<Result> records = <Result>[].obs;
+
+  // ✅ filtered data (search)
+  final RxList<Result> filteredRecords = <Result>[].obs;
+  final TextEditingController searchDateController = TextEditingController();
 
   @override
   void onInit() {
@@ -25,9 +33,13 @@ class AttendanceHistoryController extends GetxController {
     fetchHistory();
   }
 
-  String get _accessToken =>
-      (box.read("access_token") ?? "").toString().trim();
+  @override
+  void onClose() {
+    searchDateController.dispose();
+    super.onClose();
+  }
 
+  String get _accessToken => (box.read("access_token") ?? "").toString().trim();
   String get _refreshToken =>
       (box.read("refresh_token") ?? "").toString().trim();
 
@@ -42,7 +54,10 @@ class AttendanceHistoryController extends GetxController {
         final data = AttendanceResponse.fromJson(decoded);
 
         statistics.value = data.statistics;
+
         records.assignAll(data.results);
+        filteredRecords.assignAll(data.results); // ✅ always reset list after refresh
+
         return;
       }
 
@@ -69,6 +84,24 @@ class AttendanceHistoryController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  /// ---------------- FILTER BY DATE (dd-MM-yyyy) ----------------
+  void applyDateFilter(String ddMMyyyy) {
+    final q = ddMMyyyy.trim();
+    if (q.isEmpty) {
+      filteredRecords.assignAll(records);
+      return;
+    }
+
+    filteredRecords.assignAll(
+      records.where((r) => formatToDdMmYyyy(r.date) == q).toList(),
+    );
+  }
+
+  void clearFilter() {
+    searchDateController.clear();
+    filteredRecords.assignAll(records);
   }
 
   /// ---------------- AUTH GET WITH AUTO REFRESH ----------------
@@ -133,22 +166,59 @@ class AttendanceHistoryController extends GetxController {
     );
   }
 
-  /// ---------------- DATE FORMATTERS ----------------
-  String formatDate(String date) {
+  /// ---------------- HELPERS ----------------
+  String fullImageUrl(String? path) {
+    if (path == null || path.trim().isEmpty) return "";
+    if (path.startsWith("http://") || path.startsWith("https://")) return path;
+    return "$baseUrl$path";
+  }
+
+  // ✅ Title Case (Name + Username)
+  String titleCase(String? input) {
+    final s = (input ?? "").trim();
+    if (s.isEmpty) return "--";
+    return s
+        .split(RegExp(r"\s+"))
+        .where((w) => w.isNotEmpty)
+        .map((w) => w[0].toUpperCase() + (w.length > 1 ? w.substring(1).toLowerCase() : ""))
+        .join(" ");
+  }
+
+  // ✅ Date to dd-MM-yyyy (works for YYYY-MM-DD & ISO)
+  String formatToDdMmYyyy(String? isoOrDate) {
+    if (isoOrDate == null || isoOrDate.trim().isEmpty) return "--";
     try {
-      final parsedDate = DateTime.parse(date).toLocal();
-      return DateFormat('dd-MM-yyyy').format(parsedDate); // Format as dd-MM-yyyy
-    } catch (e) {
-      return date; // In case of an error, return original date
+      DateTime d;
+      if (isoOrDate.length == 10 && isoOrDate.contains("-")) {
+        d = DateTime.parse(isoOrDate);
+      } else {
+        d = DateTime.parse(isoOrDate).toLocal();
+      }
+      return DateFormat("dd-MM-yyyy").format(d.toLocal());
+    } catch (_) {
+      return "--";
     }
   }
 
-  String formatTime(String time) {
+  // ✅ Time hh:mm a (Indian local)
+  String formatIsoTime(String? iso) {
+    if (iso == null || iso.trim().isEmpty) return "--";
     try {
-      final parsedDate = DateTime.parse(time).toLocal();
-      return DateFormat('hh:mm a').format(parsedDate); // Format as hh:mm AM/PM
-    } catch (e) {
-      return time; // In case of an error, return original time
+      final d = DateTime.parse(iso).toLocal();
+      return DateFormat("hh:mm a").format(d);
+    } catch (_) {
+      return "--";
+    }
+  }
+
+  // ✅ dd-MM-yyyy hh:mm a (Indian local)
+  String formatIsoDateTime(String? iso) {
+    if (iso == null || iso.trim().isEmpty) return "--";
+    try {
+      final d = DateTime.parse(iso).toLocal();
+      return DateFormat("dd-MM-yyyy hh:mm a").format(d);
+    } catch (_) {
+      return "--";
     }
   }
 }
