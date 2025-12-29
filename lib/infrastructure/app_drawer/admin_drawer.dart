@@ -52,7 +52,7 @@ class _AdminDrawerState extends State<AdminDrawer> {
                   ),
                   SizedBox(height: 8.h),
                   Text(
-                    "MONTEAGE ATTENDANCE SYSTEM",
+                    "MONTEAGE ATTENDANCE MANAGEMENT",
                     style: TextStyle(
                       color: Colors.yellow[300],
                       fontSize: 16.sp,
@@ -68,6 +68,22 @@ class _AdminDrawerState extends State<AdminDrawer> {
               padding: EdgeInsets.all(16.w),
               child: Column(
                 children: [
+
+                  _actionCard(
+                    title: "PROFILE EMPLOYEE",
+                    subtitle: "Basic Information ",
+                    icon: Icons.face_retouching_natural,
+                    gradient: const [
+                      Color(0xFF2563EB),
+                      Color(0xFF3B82F6),
+                    ],
+                    isActive: currentRoute == AdminRoutes.profile,
+                    onTap: () => Get.toNamed(AdminRoutes.profile),
+                  ),
+
+                  SizedBox(height: 12.h),
+
+
                   _actionCard(
                     title: "Face Register Attendance",
                     subtitle: "Face & location based",

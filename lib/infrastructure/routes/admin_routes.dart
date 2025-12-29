@@ -10,6 +10,7 @@ import '../../bindings/check_out_attendance_binding.dart';
 import '../../bindings/home_binding.dart';
 import '../../bindings/login_binding.dart';
 import '../../bindings/mark_face_attendance_binding.dart';
+import '../../bindings/profile_binding.dart';
 import '../../bindings/register_binding.dart';
 import '../../screens/FaceRegisterScreen.dart';
 import '../../screens/NotificationScreen.dart';
@@ -18,6 +19,7 @@ import '../../screens/attendance_details_page.dart';
 import '../../screens/attendance_history_screen.dart';
 import '../../screens/attendance_today_screen.dart';
 import '../../screens/check_out_attendance_screen.dart';
+import '../../screens/employee_profile_screen.dart';
 import '../../screens/home_screen.dart';
 import '../../screens/login_screen.dart';
 import '../../screens/mark_face_attendance_screen.dart';
@@ -39,6 +41,7 @@ class AdminRoutes {
   static const attendanceToday = "/attendance-today";
   static const BOOT = "/boot";
   static const checkoutattendace = "/checkoutattendace";
+  static const profile = "/profile";
 
 
 
@@ -76,6 +79,12 @@ class AdminRoutes {
       name: MARK_FACE_ATTENDANCE,
       page: () => MarkFaceAttendanceScreen(),
       binding: MarkFaceAttendanceBinding(),
+    ),
+
+    GetPage(
+      name: profile,
+      page: () => EmployeeProfileScreen(),
+      binding: EmployeeProfileBinding(),
     ),
 
     GetPage(
