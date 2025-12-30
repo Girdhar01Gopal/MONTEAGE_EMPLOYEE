@@ -33,7 +33,6 @@ class _PermissionBootScreenState extends State<PermissionBootScreen>
     super.dispose();
   }
 
-  // ✅ user settings se wapas aate hi re-check
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
@@ -52,11 +51,17 @@ class _PermissionBootScreenState extends State<PermissionBootScreen>
     );
   }
 
+  bool _hasValidTokens() {
+    final access = (box.read("access_token") ?? "").toString().trim();
+    final refresh = (box.read("refresh_token") ?? "").toString().trim();
+    return access.isNotEmpty && refresh.isNotEmpty;
+  }
+
   void _goNext() {
     if (_navigated) return;
     _navigated = true;
 
-    final isLoggedIn = (box.read('isLoggedIn') ?? false) == true;
+    final isLoggedIn = _hasValidTokens();
     Get.offAllNamed(isLoggedIn ? AdminRoutes.HOME : AdminRoutes.LOGIN);
   }
 
@@ -66,14 +71,13 @@ class _PermissionBootScreenState extends State<PermissionBootScreen>
     // 1) GPS ON?
     final gpsOn = await Geolocator.isLocationServiceEnabled();
     if (!gpsOn) {
-      // ✅ Open GPS screen ONCE (no loop spam)
       if (!_openingSettings) {
         _openingSettings = true;
         _snackRed("GPS Off", "Please enable Location/GPS to continue.");
-        await Geolocator.openLocationSettings(); // user will come back -> resumed
+        await Geolocator.openLocationSettings();
         _openingSettings = false;
       }
-      return; // ✅ wait until user enables GPS
+      return;
     }
 
     // 2) Permission check
@@ -83,34 +87,31 @@ class _PermissionBootScreenState extends State<PermissionBootScreen>
       if (_requestingPermission) return;
       _requestingPermission = true;
 
-      perm = await Geolocator.requestPermission(); // ✅ system popup
+      perm = await Geolocator.requestPermission();
       _requestingPermission = false;
     }
 
     if (perm == LocationPermission.deniedForever) {
-      // user must enable from app settings
       if (!_openingSettings) {
         _openingSettings = true;
         _snackRed("Permission Blocked", "Enable location permission from Settings.");
         await Geolocator.openAppSettings();
         _openingSettings = false;
       }
-      return; // ✅ wait until user enables permission
+      return;
     }
 
     if (perm == LocationPermission.denied) {
-      // user denied again => stop here (no login)
       _snackRed("Permission Denied", "Location permission is required.");
       return;
     }
 
-    // ✅ 3) GPS ON + Permission granted => go login/home instantly
+    // ✅ 3) GPS ON + Permission granted => go next
     _goNext();
   }
 
   @override
   Widget build(BuildContext context) {
-    // ✅ No circular indicator
     return const Scaffold(
       backgroundColor: Colors.white,
       body: SizedBox.shrink(),

@@ -21,8 +21,8 @@ class AdminApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       getPages: AdminRoutes.routes,
 
-      //  Always start at boot to request permission first
-      initialRoute: AdminRoutes.BOOT,
+      // ✅ Start from SPLASH (Splash -> BOOT -> HOME/LOGIN)
+      initialRoute: AdminRoutes.ADMIN_SPLASH,
 
       theme: ThemeData(useMaterial3: true),
 

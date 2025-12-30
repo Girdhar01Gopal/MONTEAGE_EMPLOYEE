@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:monteage_employee/infrastructure/routes/admin_routes.dart';
 import '../controllers/login_controller.dart';
 import 'register_screen.dart';
 
@@ -12,138 +11,149 @@ class LoginScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = Get.put(LoginController());
 
-    // ✅ If already logged in, don't show login screen at all
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (c.isLoggedIn) {
-        Get.offAllNamed(AdminRoutes.HOME);
-      }
-    });
-
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: const Color(0xFFF2F2F2),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 16.h),
-          child: Column(
-            children: [
-              SizedBox(height: 18.h),
-              Image.asset(
-                "assets/images/monteage_logo.png",
-                height: 60.h,
-                fit: BoxFit.contain,
-              ),
-              SizedBox(height: 18.h),
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 18.h),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(22.r),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x22000000),
-                      blurRadius: 18,
-                      offset: Offset(0, 8),
-                    ),
-                  ],
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 16.h),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: Column(
+                    children: [
+                      SizedBox(height: 18.h),
+
+                      Image.asset(
+                        "assets/images/monteage_logo.png",
+                        height: 60.h,
+                        fit: BoxFit.contain,
+                      ),
+
+                      SizedBox(height: 18.h),
+
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 18.h),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(22.r),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x22000000),
+                              blurRadius: 18,
+                              offset: Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Login",
+                              style: TextStyle(
+                                fontSize: 28.sp,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF333333),
+                              ),
+                            ),
+                            SizedBox(height: 6.h),
+                            Text(
+                              "Please login to continue",
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                color: const Color(0xFF8A8A8A),
+                              ),
+                            ),
+
+                            SizedBox(height: 18.h),
+
+                            _Label("Email"),
+                            _Input(
+                              controller: c.usernameController,
+                              hint: "Enter Username",
+                              keyboardType: TextInputType.text,
+                            ),
+
+                            SizedBox(height: 14.h),
+
+                            _Label("Password"),
+                            Obx(() {
+                              return _Input(
+                                controller: c.passwordController,
+                                hint: "Enter Password",
+                                obscure: c.isPasswordHidden.value,
+                                suffix: IconButton(
+                                  onPressed: c.togglePassword,
+                                  icon: Icon(
+                                    c.isPasswordHidden.value
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
+                                    color: const Color(0xFF777777),
+                                  ),
+                                ),
+                              );
+                            }),
+
+                            SizedBox(height: 10.h),
+
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: InkWell(
+                                onTap: c.onForgotPassword, // ✅ Forgot Password Screen
+                                child: Text(
+                                  "Forgot Password ?",
+                                  style: TextStyle(
+                                    fontSize: 13.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFFD66A6A),
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            SizedBox(height: 18.h),
+
+                            Obx(() {
+                              return _GradientElevatedButton(
+                                text: "Login",
+                                loading: c.isLoading.value,
+                                onTap: c.isLoading.value ? null : c.loginUser,
+                              );
+                            }),
+
+                            SizedBox(height: 10.h),
+
+                            Center(
+                              child: GestureDetector(
+                                onTap: () => Get.to(() => const RegisterScreen()),
+                                child: Text(
+                                  "Don't have an account? Sign Up",
+                                  style: TextStyle(
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF3D3D3D),
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            SizedBox(height: 16.h),
+                          ],
+                        ),
+                      ),
+
+                      const Spacer(),
+                      SizedBox(height: 20.h),
+                    ],
+                  ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Login",
-                      style: TextStyle(
-                        fontSize: 28.sp,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF333333),
-                      ),
-                    ),
-                    SizedBox(height: 6.h),
-                    Text(
-                      "Please login to continue",
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: const Color(0xFF8A8A8A),
-                      ),
-                    ),
-                    SizedBox(height: 18.h),
-
-                    _Label("Email"),
-                    _Input(
-                      controller: c.usernameController,
-                      hint: "Enter Username",
-                      keyboardType: TextInputType.text,
-                    ),
-                    SizedBox(height: 14.h),
-
-                    _Label("Password"),
-                    Obx(() {
-                      return _Input(
-                        controller: c.passwordController,
-                        hint: "Enter Password",
-                        obscure: c.isPasswordHidden.value,
-                        suffix: IconButton(
-                          onPressed: c.togglePassword,
-                          icon: Icon(
-                            c.isPasswordHidden.value
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                            color: const Color(0xFF777777),
-                          ),
-                        ),
-                      );
-                    }),
-
-                    SizedBox(height: 10.h),
-
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: InkWell(
-                        onTap: c.onForgotPassword,
-                        child: Text(
-                          "Forgot Password ?",
-                          style: TextStyle(
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFFD66A6A),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    SizedBox(height: 18.h),
-
-                    Obx(() {
-                      return _GradientElevatedButton(
-                        text: "Login",
-                        loading: c.isLoading.value,
-                        onTap: c.isLoading.value ? null : c.loginUser,
-                      );
-                    }),
-
-                    SizedBox(height: 10.h),
-
-                    Center(
-                      child: GestureDetector(
-                        onTap: () => Get.to(() => const RegisterScreen()),
-                        child: Text(
-                          "Don't have an account? Sign Up",
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF3D3D3D),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    SizedBox(height: 16.h),
-                  ],
-                ),
               ),
-              SizedBox(height: 20.h),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

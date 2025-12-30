@@ -1,3 +1,4 @@
+// controllers/login_controller.dart
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -5,8 +6,6 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:monteage_employee/infrastructure/routes/admin_routes.dart';
-import 'package:monteage_employee/infrastructure/utils/pref_const.dart';
-import 'package:monteage_employee/infrastructure/utils/pref_manager.dart';
 
 class LoginController extends GetxController {
   final usernameController = TextEditingController();
@@ -17,7 +16,6 @@ class LoginController extends GetxController {
 
   final box = GetStorage();
 
-  // ✅ Your login API
   final String loginApi = "http://103.251.143.196/attendance/api/auth/login/";
 
   void togglePassword() => isPasswordHidden.value = !isPasswordHidden.value;
@@ -30,8 +28,12 @@ class LoginController extends GetxController {
     );
   }
 
-  /// ✅ Auto-skip login if already logged in
-  bool get isLoggedIn => (box.read("isLoggedIn") ?? false) == true;
+  /// ✅ Auto-skip login if tokens already exist
+  bool get isLoggedIn {
+    final access = (box.read("access_token") ?? "").toString().trim();
+    final refresh = (box.read("refresh_token") ?? "").toString().trim();
+    return access.isNotEmpty && refresh.isNotEmpty;
+  }
 
   Future<void> loginUser() async {
     final username = usernameController.text.trim();
@@ -75,8 +77,7 @@ class LoginController extends GetxController {
       }
 
       if (res.statusCode != 200) {
-        final msg =
-            _extractErrorMessage(body) ?? "Login failed (HTTP ${res.statusCode})";
+        final msg = _extractErrorMessage(body) ?? "Login failed (HTTP ${res.statusCode})";
         Get.snackbar(
           "Login Failed",
           msg,
@@ -99,7 +100,6 @@ class LoginController extends GetxController {
         return;
       }
 
-      // ✅ Ensure tokens are received
       final access = body["tokens"]?["access"]?.toString() ?? "";
       final refresh = body["tokens"]?["refresh"]?.toString() ?? "";
 
@@ -114,15 +114,9 @@ class LoginController extends GetxController {
         return;
       }
 
-      // ✅ Save tokens locally
+      // ✅ Save tokens only (single source of truth)
       await box.write("access_token", access);
       await box.write("refresh_token", refresh);
-
-      // ✅ IMPORTANT: set logged-in flag (this is what was missing)
-      await box.write("isLoggedIn", true);
-
-      // ✅ Keep PrefManager consistent (optional but fine)
-      await PrefManager().writeValue(key: PrefConst.isLoggedIn, value: 1);
 
       Get.snackbar(
         "Success",
@@ -132,7 +126,6 @@ class LoginController extends GetxController {
         colorText: Colors.white,
       );
 
-      // ✅ Go home
       Get.offAllNamed(AdminRoutes.HOME);
     } catch (e) {
       Get.snackbar(
@@ -156,7 +149,6 @@ class LoginController extends GetxController {
       if (body["message"] != null) return body["message"].toString();
       if (body["error"] != null) return body["error"].toString();
 
-      // field errors: {"username":["..."], "password":["..."]}
       final buf = <String>[];
       body.forEach((k, v) {
         if (v is List && v.isNotEmpty) buf.add("$k: ${v.first}");
