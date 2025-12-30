@@ -59,7 +59,6 @@ class AttendanceHistoryScreen extends StatelessWidget {
           ),
         ],
       ),
-
       body: Column(
         children: [
           // -------- Statistics --------
@@ -96,7 +95,6 @@ class AttendanceHistoryScreen extends StatelessWidget {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              // ✅ use filteredRecords (search result)
               if (c.filteredRecords.isEmpty) {
                 return const Center(child: Text("No attendance history"));
               }
@@ -235,142 +233,170 @@ class _HistoryCard extends StatelessWidget {
     final checkInTime = c.formatIsoTime(record.timestamp);
     final checkOutTime = c.formatIsoTime(record.checkoutTimestamp);
 
+    // ✅ NEW: Check-in Date for header
+    final headerDate = c.formatToDdMmYyyy(record.date);
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header Row
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    "${c.titleCase(record.employeeName)} (${record.employeeId})",
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                Container(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: checkInColor.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: checkInColor),
-                  ),
-                  child: Text(
-                    record.status,
-                    style: TextStyle(
-                      color: checkInColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: Theme(
+          data: Theme.of(context).copyWith(
+            dividerColor: Colors.transparent,
+          ),
+          child: ExpansionTile(
+            tilePadding: EdgeInsets.zero,
+            childrenPadding: const EdgeInsets.all(12),
+            collapsedIconColor: Colors.white,
+            iconColor: Colors.white,
+
+            // ✅ Header blue + name/id + date under it
+            title: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              color: const Color(0xFF6C63FF),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "${c.titleCase(record.employeeName)} (${record.employeeId})",
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "Check-in Date: $headerDate",
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                )
-              ],
-            ),
-            const SizedBox(height: 10),
-
-            // ✅ Username first letter capital + date dd-MM-yyyy
-            _kv("Username", c.titleCase(record.username)),
-            _kv("Check-in Date", c.formatToDdMmYyyy(record.date)),
-            _kv("Check-in Time", checkInTime),
-            _kv("Confidence", record.confidenceScore.toStringAsFixed(3)),
-            _kv("Face Detected", record.faceDetected ? "Yes" : "No"),
-            _kv("Verified", record.isVerified ? "Yes" : "No"),
-
-            const Divider(height: 20),
-
-            // Location (Check-in)
-            const Text("Check-in Location",
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            _kv("Latitude", (record.latitude ?? 0).toString()),
-            _kv("Longitude", (record.longitude ?? 0).toString()),
-            _kv("Accuracy (m)", (record.locationAccuracy ?? 0).toString()),
-            _imageBlock("Check-in Image", record.imageUrl),
-
-            const Divider(height: 22),
-
-            // Checkout Section
-            Row(
-              children: [
-                const Expanded(
-                  child: Text("Check-out Details",
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
-                Container(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: checkOutColor.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: checkOutColor),
-                  ),
-                  child: Text(
-                    (record.checkoutStatus ?? "--"),
-                    style: TextStyle(
-                      color: checkOutColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
+                  Container(
+                    padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.18),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white),
+                    ),
+                    child: Text(
+                      record.status,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
-                )
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            _kv("Checkout Date", c.formatToDdMmYyyy(record.checkoutDate)),
-            _kv("Checkout Time", checkOutTime),
-            _kv(
-              "Checkout Confidence",
-              record.checkoutConfidenceScore == null
-                  ? "--"
-                  : record.checkoutConfidenceScore!.toStringAsFixed(3),
-            ),
-
-            const SizedBox(height: 10),
-            const Text("Check-out Location",
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            _kv("Latitude", (record.checkoutLatitude ?? 0).toString()),
-            _kv("Longitude", (record.checkoutLongitude ?? 0).toString()),
-            _kv("Accuracy (m)", (record.checkoutLocationAccuracy ?? 0).toString()),
-            _imageBlock("Check-out Image", record.checkoutImageUrl),
-
-            const Divider(height: 22),
-
-            // Duration
-            _kv("Duration", record.duration?.formatted ?? "--",
-                vWeight: FontWeight.bold),
-            _kv("Total Seconds", record.duration?.seconds.toString() ?? "--"),
-
-            // Suspicious
-            if (record.isSuspicious) ...[
-              const SizedBox(height: 8),
-              Text(
-                "Suspicious: ${record.suspiciousReason ?? "Yes"}",
-                style: const TextStyle(
-                    color: Colors.red, fontWeight: FontWeight.bold),
+                ],
               ),
+            ),
+
+            // ✅ Body same as your old code
+            children: [
+              _kv("Username", c.titleCase(record.username)),
+              _kv("Check-in Date", c.formatToDdMmYyyy(record.date)),
+              _kv("Check-in Time", checkInTime),
+              _kv("Confidence", record.confidenceScore.toStringAsFixed(3)),
+              _kv("Face Detected", record.faceDetected ? "Yes" : "No"),
+              _kv("Verified", record.isVerified ? "Yes" : "No"),
+
+              const Divider(height: 20),
+
+              const Text("Check-in Location",
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              _kv("Latitude", (record.latitude ?? 0).toString()),
+              _kv("Longitude", (record.longitude ?? 0).toString()),
+              _kv("Accuracy (m)", (record.locationAccuracy ?? 0).toString()),
+              _imageBlock("Check-in Image", record.imageUrl),
+
+              const Divider(height: 22),
+
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text("Check-out Details",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: checkOutColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: checkOutColor),
+                    ),
+                    child: Text(
+                      (record.checkoutStatus ?? "--"),
+                      style: TextStyle(
+                        color: checkOutColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  )
+                ],
+              ),
+              const SizedBox(height: 8),
+
+              _kv("Checkout Date", c.formatToDdMmYyyy(record.checkoutDate)),
+              _kv("Checkout Time", checkOutTime),
+              _kv(
+                "Checkout Confidence",
+                record.checkoutConfidenceScore == null
+                    ? "--"
+                    : record.checkoutConfidenceScore!.toStringAsFixed(3),
+              ),
+
+              const SizedBox(height: 10),
+              const Text("Check-out Location",
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              _kv("Latitude", (record.checkoutLatitude ?? 0).toString()),
+              _kv("Longitude", (record.checkoutLongitude ?? 0).toString()),
+              _kv("Accuracy (m)",
+                  (record.checkoutLocationAccuracy ?? 0).toString()),
+              _imageBlock("Check-out Image", record.checkoutImageUrl),
+
+              const Divider(height: 22),
+
+              _kv("Duration", record.duration?.formatted ?? "--",
+                  vWeight: FontWeight.bold),
+              _kv("Total Seconds", record.duration?.seconds.toString() ?? "--"),
+
+              if (record.isSuspicious) ...[
+                const SizedBox(height: 8),
+                Text(
+                  "Suspicious: ${record.suspiciousReason ?? "Yes"}",
+                  style: const TextStyle(
+                      color: Colors.red, fontWeight: FontWeight.bold),
+                ),
+              ],
+
+              const Divider(height: 22),
+
+              _kv("Created At", c.formatIsoDateTime(record.createdAt)),
+              _kv("Updated At", c.formatIsoDateTime(record.updatedAt)),
             ],
-
-            const Divider(height: 22),
-
-            // ✅ Created/Updated in dd-MM-yyyy hh:mm a (India local)
-            _kv("Created At", c.formatIsoDateTime(record.createdAt)),
-            _kv("Updated At", c.formatIsoDateTime(record.updatedAt)),
-          ],
+          ),
         ),
       ),
     );
   }
 }
-
 
 String _time(String? iso) {
   if (iso == null || iso.isEmpty) return "--";
