@@ -15,7 +15,7 @@ class AttendanceTodayScreen extends StatelessWidget {
       appBar: AppBar(
         elevation: 0,
         title: const Text(
-          "Today's Attendance",
+          "Today Attendance",
           style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
         ),
         backgroundColor: const Color(0xFF6C63FF),
