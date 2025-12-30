@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/attendance_today_controller.dart';
 import '../models/attendance_today.dart';
-import 'dart:io';  // Required for FileImage
 
 class AttendanceTodayScreen extends StatelessWidget {
   const AttendanceTodayScreen({super.key});
@@ -12,15 +11,12 @@ class AttendanceTodayScreen extends StatelessWidget {
     final c = Get.find<AttendanceTodayController>();
 
     return Scaffold(
-      backgroundColor: Colors.white,  // Set screen background color to white
+      backgroundColor: Colors.white,
       appBar: AppBar(
         elevation: 0,
         title: const Text(
           "Today's Attendance",
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
         ),
         backgroundColor: const Color(0xFF6C63FF),
         foregroundColor: Colors.white,
@@ -38,18 +34,13 @@ class AttendanceTodayScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    const Color(0xFF6C63FF),
-                  ),
+                const CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6C63FF)),
                 ),
                 const SizedBox(height: 16),
                 Text(
                   'Loading attendance...',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
                 ),
               ],
             ),
@@ -62,11 +53,7 @@ class AttendanceTodayScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.event_busy_rounded,
-                  size: 80,
-                  color: Colors.grey[400],
-                ),
+                Icon(Icons.event_busy_rounded, size: 80, color: Colors.grey[400]),
                 const SizedBox(height: 16),
                 Text(
                   "No attendance marked today",
@@ -79,10 +66,7 @@ class AttendanceTodayScreen extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   "Mark your attendance to see details",
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[500],
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                 ),
               ],
             ),
@@ -95,15 +79,8 @@ class AttendanceTodayScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                // Display CircleAvatar with the image from marked attendance
-                if (c.markedAttendanceImage.value != null)
-                  CircleAvatar(
-                    radius: 40,
-                    backgroundImage:
-                    FileImage(c.markedAttendanceImage.value!),
-                  ),
-                const SizedBox(height: 16),
-                _TodayAttendanceCard(data),
+                // ✅ Image/CircleAvatar removed as requested
+                _TodayAttendanceCard(data, c),
               ],
             ),
           ),
@@ -115,7 +92,8 @@ class AttendanceTodayScreen extends StatelessWidget {
 
 class _TodayAttendanceCard extends StatelessWidget {
   final AttendanceToday data;
-  const _TodayAttendanceCard(this.data);
+  final AttendanceTodayController c;
+  const _TodayAttendanceCard(this.data, this.c);
 
   Color _statusColor(String status) {
     switch (status.toUpperCase()) {
@@ -144,6 +122,12 @@ class _TodayAttendanceCard extends StatelessWidget {
     final statusColor = _statusColor(data.status);
     final statusIcon = _statusIcon(data.status);
 
+    final lat = data.location.latitude;
+    final lng = data.location.longitude;
+    final acc = data.location.accuracy;
+
+    final address = c.cleanAddress(data.location.address);
+
     return Card(
       elevation: 0,
       margin: const EdgeInsets.only(bottom: 16),
@@ -152,131 +136,90 @@ class _TodayAttendanceCard extends StatelessWidget {
         side: BorderSide(color: Colors.grey[200]!, width: 1),
       ),
       child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-        ),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
         child: Column(
           children: [
             // Header with gradient
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFF6C63FF),
-                    const Color(0xFF5A52E0),
-                  ],
+                  colors: [Color(0xFF6C63FF), Color(0xFF5A52E0)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.calendar_today_rounded, color: Colors.white, size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _ddMMyyyy(data.timestamp),
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
                         ),
-                        child: const Icon(
-                          Icons.calendar_today_rounded,
-                          color: Colors.white,
-                          size: 24,
+                        const SizedBox(height: 4),
+                        Text(
+                          _timeAmPm(data.timestamp),
+                          style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.9)),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _ddMMyyyy(data.timestamp),
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _timeHHmm(data.timestamp),
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.white.withOpacity(0.9),
-                              ),
-                            ),
-                          ],
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(color: statusColor, borderRadius: BorderRadius.circular(20)),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(statusIcon, color: Colors.white, size: 16),
+                        const SizedBox(width: 6),
+                        Text(
+                          data.status,
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
                         ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: statusColor,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              statusIcon,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              data.status,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
 
-            // Content section
+            // Content
             Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  // Marked and Verified Status
                   _InfoRow(
                     icon: Icons.check_circle_outline_rounded,
                     label: 'Marked',
                     value: data.marked ? 'Yes' : 'No',
-                    valueColor: data.marked
-                        ? const Color(0xFF10B981)
-                        : Colors.grey[600]!,
+                    valueColor: data.marked ? const Color(0xFF10B981) : Colors.grey[600]!,
                   ),
                   const SizedBox(height: 12),
                   _InfoRow(
                     icon: Icons.verified_outlined,
                     label: 'Verified',
                     value: data.isVerified ? 'Yes' : 'No',
-                    valueColor: data.isVerified
-                        ? const Color(0xFF10B981)
-                        : const Color(0xFFEF4444),
+                    valueColor: data.isVerified ? const Color(0xFF10B981) : const Color(0xFFEF4444),
                   ),
                   const SizedBox(height: 12),
 
-                  // Confidence Score
+                  // Confidence
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -289,19 +232,11 @@ class _TodayAttendanceCard extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            Icon(
-                              Icons.psychology_rounded,
-                              size: 20,
-                              color: Colors.grey[700],
-                            ),
+                            Icon(Icons.psychology_rounded, size: 20, color: Colors.grey[700]),
                             const SizedBox(width: 8),
                             Text(
                               'Confidence Score',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey[700],
-                              ),
+                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey[700]),
                             ),
                           ],
                         ),
@@ -346,7 +281,7 @@ class _TodayAttendanceCard extends StatelessWidget {
 
                   const SizedBox(height: 12),
 
-                  // Location
+                  // Location + Address
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -362,11 +297,7 @@ class _TodayAttendanceCard extends StatelessWidget {
                             color: Colors.blue[100],
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Icon(
-                            Icons.location_on_rounded,
-                            color: Colors.red,
-                            size: 20,
-                          ),
+                          child: const Icon(Icons.location_on_rounded, color: Colors.red, size: 20),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -375,30 +306,50 @@ class _TodayAttendanceCard extends StatelessWidget {
                             children: [
                               Text(
                                 'Location',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.blue[900],
-                                ),
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.blue[900]),
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Lat: ${data.location.latitude.toStringAsFixed(6)}',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.blue[800],
-                                ),
-                              ),
-                              Text(
-                                'Lng: ${data.location.longitude.toStringAsFixed(6)}',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.blue[800],
-                                ),
-                              ),
+                              const SizedBox(height: 6),
+                              Text(address, style: TextStyle(fontSize: 13, color: Colors.blue[800])),
+                              const SizedBox(height: 6),
+                              Text('Lat: ${lat == null ? "--" : lat.toStringAsFixed(6)}',
+                                  style: TextStyle(fontSize: 13, color: Colors.blue[800])),
+                              Text('Lng: ${lng == null ? "--" : lng.toStringAsFixed(6)}',
+                                  style: TextStyle(fontSize: 13, color: Colors.blue[800])),
+                              Text('Accuracy: ${acc == null ? "--" : acc.toStringAsFixed(0)} m',
+                                  style: TextStyle(fontSize: 13, color: Colors.blue[800])),
                             ],
                           ),
                         ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Face Analysis
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[200]!),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.face_retouching_natural, size: 20, color: Colors.grey[700]),
+                            const SizedBox(width: 8),
+                            Text(
+                              "Face Analysis",
+                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey[700]),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Text("Quality Score: ${data.faceAnalysis.qualityScore.toStringAsFixed(2)}"),
+                        Text("Landmarks Detected: ${data.faceAnalysis.landmarksDetected}"),
                       ],
                     ),
                   ),
@@ -414,28 +365,25 @@ class _TodayAttendanceCard extends StatelessWidget {
   String _ddMMyyyy(String iso) {
     try {
       final d = DateTime.parse(iso).toLocal();
-      return "${d.day.toString().padLeft(2, '0')}-"
-          "${d.month.toString().padLeft(2, '0')}-"
-          "${d.year}";
+      return "${d.day.toString().padLeft(2, '0')}-${d.month.toString().padLeft(2, '0')}-${d.year}";
     } catch (_) {
       return "--";
     }
   }
 
-  String _timeHHmm(String iso) {
+  String _timeAmPm(String iso) {
     try {
       final d = DateTime.parse(iso).toLocal();
-      return "${d.hour.toString().padLeft(2, '0')}:"
-          "${d.minute.toString().padLeft(2, '0')}";
+      final hour = d.hour % 12 == 0 ? 12 : d.hour % 12;
+      final ampm = d.hour >= 12 ? "PM" : "AM";
+      return "${hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')} $ampm";
     } catch (_) {
       return "--";
     }
   }
 }
 
-
-
-// Helper widget for info rows
+// Info Row
 class _InfoRow extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -453,35 +401,13 @@ class _InfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(
-          icon,
-          size: 20,
-          color: Colors.grey[600],
-        ),
+        Icon(icon, size: 20, color: Colors.grey[600]),
         const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[700],
-            ),
-          ),
-        ),
+        Expanded(child: Text(label, style: TextStyle(fontSize: 14, color: Colors.grey[700]))),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: valueColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            value,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: valueColor,
-            ),
-          ),
+          decoration: BoxDecoration(color: valueColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+          child: Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: valueColor)),
         ),
       ],
     );

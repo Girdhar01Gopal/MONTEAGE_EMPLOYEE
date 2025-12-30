@@ -12,17 +12,14 @@ class EmployeeProfileController extends GetxController {
   final box = GetStorage();
 
   final String baseUrl = "http://103.251.143.196";
-  final String profileApi =
-      "http://103.251.143.196/attendance/api/auth/profile/";
-  final String refreshApi =
-      "http://103.251.143.196/attendance/api/auth/refresh/";
+  final String profileApi = "http://103.251.143.196/attendance/api/auth/profile/";
+  final String refreshApi = "http://103.251.143.196/attendance/api/auth/refresh/";
 
   final isLoading = false.obs;
   final Rxn<ProfileModel> profile = Rxn<ProfileModel>();
 
   String get _accessToken => (box.read("access_token") ?? "").toString().trim();
-  String get _refreshToken =>
-      (box.read("refresh_token") ?? "").toString().trim();
+  String get _refreshToken => (box.read("refresh_token") ?? "").toString().trim();
 
   @override
   void onInit() {
@@ -30,14 +27,50 @@ class EmployeeProfileController extends GetxController {
     fetchProfile();
   }
 
-  Future<void> fetchProfile() async {
+  // ✅ Call this after face-register success
+  Future<void> onFaceRegistered() async {
+    await fetchProfile(showSuccess: true);
+  }
+
+  // ✅ Success = green/white | Error = red/white
+  void _snackSuccess(String title, String msg) {
+    Get.snackbar(
+      title,
+      msg,
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: Colors.green,
+      colorText: Colors.white,
+    );
+  }
+
+  void _snackError(String title, String msg) {
+    Get.snackbar(
+      title,
+      msg,
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
+    );
+  }
+
+  Future<void> fetchProfile({bool showSuccess = false}) async {
     isLoading.value = true;
     try {
       final res = await _authorizedGet(Uri.parse(profileApi));
 
       if (res.statusCode == 200) {
         final decoded = jsonDecode(res.body) as Map<String, dynamic>;
-        profile.value = ProfileModel.fromJson(decoded);
+        final p = ProfileModel.fromJson(decoded);
+        profile.value = p;
+
+        // ✅ If face not registered -> show snackbar
+        if (p.user.isFaceRegistered == false) {
+          _snackError("Face Not Registered", "Register face first, then profile will be shown.");
+        } else {
+          if (showSuccess) {
+            _snackSuccess("Success", "Profile loaded successfully.");
+          }
+        }
         return;
       }
 
@@ -46,21 +79,9 @@ class EmployeeProfileController extends GetxController {
         return;
       }
 
-      Get.snackbar(
-        "Error",
-        "Profile load failed (HTTP ${res.statusCode})",
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      _snackError("Error", "Profile load failed (HTTP ${res.statusCode})");
     } catch (e) {
-      Get.snackbar(
-        "Error",
-        e.toString(),
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      _snackError("Error", e.toString());
     } finally {
       isLoading.value = false;
     }
@@ -83,7 +104,7 @@ class EmployeeProfileController extends GetxController {
     return http.get(
       uri,
       headers: {
-        "Authorization": "Bearer ${box.read("access_token")}",
+        "Authorization": "Bearer ${(box.read("access_token") ?? "").toString()}",
         "Accept": "application/json",
       },
     );
@@ -115,13 +136,7 @@ class EmployeeProfileController extends GetxController {
   void _forceLogout() {
     box.erase();
     Get.offAll(() => const LoginScreen());
-    Get.snackbar(
-      "Session Expired",
-      "Please login again",
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: Colors.red,
-      colorText: Colors.white,
-    );
+    _snackError("Session Expired", "Please login again");
   }
 
   // ---------- UI helpers ----------
@@ -142,14 +157,14 @@ class EmployeeProfileController extends GetxController {
         .join(" ");
   }
 
-  // ✅ NEW: dd-MM-yyyy hh:mm a (Indian local)
+  // ✅ dd-MM-yyyy hh:mm a (Indian local)
   String formatDateTimeIndian(DateTime? dt) {
     if (dt == null) return "--";
     final local = dt.toLocal();
     return DateFormat("dd-MM-yyyy hh:mm a").format(local);
   }
 
-  // ✅ NEW: dd-MM-yyyy only
+  // ✅ dd-MM-yyyy only
   String formatDateOnlyIndian(DateTime? dt) {
     if (dt == null) return "--";
     final local = dt.toLocal();

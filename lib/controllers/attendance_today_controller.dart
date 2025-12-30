@@ -1,22 +1,21 @@
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
+
 import '../models/attendance_today.dart';
 import '../screens/login_screen.dart';
 
 class AttendanceTodayController extends GetxController {
   final box = GetStorage();
 
-  final todayApi = "http://103.251.143.196/attendance/api/attendance/today/";
-  final refreshApi = "http://103.251.143.196/attendance/api/auth/refresh/";
+  final String baseUrl = "http://103.251.143.196";
+  final String todayApi = "http://103.251.143.196/attendance/api/attendance/today/";
+  final String refreshApi = "http://103.251.143.196/attendance/api/auth/refresh/";
 
   final isLoading = false.obs;
   final Rxn<AttendanceToday> today = Rxn<AttendanceToday>();
-
-  // Image storage for marked attendance
-  final Rx<File?> markedAttendanceImage = Rx<File?>(null);
 
   String get _access => (box.read("access_token") ?? "").toString().trim();
   String get _refresh => (box.read("refresh_token") ?? "").toString().trim();
@@ -35,14 +34,6 @@ class AttendanceTodayController extends GetxController {
       if (res.statusCode == 200) {
         final decoded = jsonDecode(res.body) as Map<String, dynamic>;
         today.value = AttendanceToday.fromJson(decoded);
-
-        // Assuming the image path is returned in the API response
-        final imagePath = decoded['markedImage']; // Path to the image
-        if (imagePath != null) {
-          markedAttendanceImage.value = File(imagePath);
-        }
-
-        print(today.value);
         return;
       }
 
@@ -50,8 +41,22 @@ class AttendanceTodayController extends GetxController {
         _logout();
         return;
       }
+
+      Get.snackbar(
+        "Error",
+        "Failed (HTTP ${res.statusCode})",
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     } catch (e) {
-      print(e);
+      Get.snackbar(
+        "Error",
+        e.toString(),
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     } finally {
       isLoading.value = false;
     }
@@ -100,5 +105,20 @@ class AttendanceTodayController extends GetxController {
     box.erase();
     Get.offAll(() => const LoginScreen());
     Get.snackbar("Session Expired", "Please login again");
+  }
+
+  // ✅ clean address (removes extra quotes)
+  String cleanAddress(String? a) {
+    final s = (a ?? "").trim();
+    if (s.isEmpty) return "--";
+    return s.replaceAll('\\"', '"').replaceAll('"', '').trim();
+  }
+
+  // (optional) if you ever need full image url later
+  String fullImageUrl(String? path) {
+    final p = (path ?? "").trim();
+    if (p.isEmpty) return "";
+    if (p.startsWith("http://") || p.startsWith("https://")) return p;
+    return "$baseUrl$p";
   }
 }

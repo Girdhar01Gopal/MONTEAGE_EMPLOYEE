@@ -33,9 +33,15 @@ class EmployeeProfileScreen extends GetView<EmployeeProfileController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(color: Colors.black54, fontSize: 12)),
+                Text(
+                  title,
+                  style: const TextStyle(color: Colors.black54, fontSize: 12),
+                ),
                 const SizedBox(height: 4),
-                Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                Text(
+                  value,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                ),
               ],
             ),
           )
@@ -52,7 +58,10 @@ class EmployeeProfileScreen extends GetView<EmployeeProfileController> {
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: color),
       ),
-      child: Text(text, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12)),
+      child: Text(
+        text,
+        style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12),
+      ),
     );
   }
 
@@ -66,7 +75,8 @@ class EmployeeProfileScreen extends GetView<EmployeeProfileController> {
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
-            onPressed: controller.fetchProfile,
+            // ✅ show success snackbar on manual refresh
+            onPressed: () => controller.fetchProfile(showSuccess: true),
             icon: const Icon(Icons.refresh, color: Colors.white),
           )
         ],
@@ -129,9 +139,7 @@ class EmployeeProfileScreen extends GetView<EmployeeProfileController> {
                         children: [
                           Text(
                             controller.titleCase(
-                              u.fullName.isNotEmpty
-                                  ? u.fullName
-                                  : "${u.firstName} ${u.lastName}",
+                              u.fullName.isNotEmpty ? u.fullName : "${u.firstName} ${u.lastName}",
                             ),
                             style: const TextStyle(
                               color: Colors.white,
@@ -165,7 +173,6 @@ class EmployeeProfileScreen extends GetView<EmployeeProfileController> {
                   ],
                 ),
               ),
-
               const SizedBox(height: 14),
 
               _infoTile(icon: Icons.badge, title: "Employee ID", value: u.employeeId),
@@ -185,7 +192,6 @@ class EmployeeProfileScreen extends GetView<EmployeeProfileController> {
               _infoTile(icon: Icons.text_fields, title: "Full Name", value: controller.titleCase(u.fullName)),
               const SizedBox(height: 10),
 
-              // ✅ UPDATED: dd-MM-yyyy hh:mm a
               _infoTile(
                 icon: Icons.face_retouching_natural,
                 title: "Face Registered At",
@@ -193,7 +199,6 @@ class EmployeeProfileScreen extends GetView<EmployeeProfileController> {
               ),
               const SizedBox(height: 10),
 
-              // ✅ UPDATED: dd-MM-yyyy hh:mm a
               _infoTile(
                 icon: Icons.calendar_today,
                 title: "Date Joined",
