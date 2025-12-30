@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:monteage_employee/infrastructure/routes/admin_routes.dart';
 import '../controllers/login_controller.dart';
 import 'register_screen.dart';
 
@@ -11,6 +12,13 @@ class LoginScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = Get.put(LoginController());
 
+    // ✅ If already logged in, don't show login screen at all
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (c.isLoggedIn) {
+        Get.offAllNamed(AdminRoutes.HOME);
+      }
+    });
+
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F2),
       body: SafeArea(
@@ -19,15 +27,12 @@ class LoginScreen extends StatelessWidget {
           child: Column(
             children: [
               SizedBox(height: 18.h),
-
               Image.asset(
                 "assets/images/monteage_logo.png",
                 height: 60.h,
                 fit: BoxFit.contain,
               ),
-
               SizedBox(height: 18.h),
-
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 18.h),
@@ -61,7 +66,6 @@ class LoginScreen extends StatelessWidget {
                         color: const Color(0xFF8A8A8A),
                       ),
                     ),
-
                     SizedBox(height: 18.h),
 
                     _Label("Email"),
@@ -70,7 +74,6 @@ class LoginScreen extends StatelessWidget {
                       hint: "Enter Username",
                       keyboardType: TextInputType.text,
                     ),
-
                     SizedBox(height: 14.h),
 
                     _Label("Password"),
@@ -138,7 +141,6 @@ class LoginScreen extends StatelessWidget {
                   ],
                 ),
               ),
-
               SizedBox(height: 20.h),
             ],
           ),

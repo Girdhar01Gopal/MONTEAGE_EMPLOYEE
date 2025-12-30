@@ -8,8 +8,6 @@ import 'package:monteage_employee/infrastructure/routes/admin_routes.dart';
 import 'package:monteage_employee/infrastructure/utils/pref_const.dart';
 import 'package:monteage_employee/infrastructure/utils/pref_manager.dart';
 
-import '../screens/FaceRegisterScreen.dart';
-
 class LoginController extends GetxController {
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
@@ -32,8 +30,8 @@ class LoginController extends GetxController {
     );
   }
 
-  /// ✅ Call this in Splash or in LoginScreen init if you want auto-skip login
-  bool get isLoggedIn => box.read("isLoggedIn") == true;
+  /// ✅ Auto-skip login if already logged in
+  bool get isLoggedIn => (box.read("isLoggedIn") ?? false) == true;
 
   Future<void> loginUser() async {
     final username = usernameController.text.trim();
@@ -53,14 +51,16 @@ class LoginController extends GetxController {
     isLoading.value = true;
 
     try {
-      final res = await http.post(
+      final res = await http
+          .post(
         Uri.parse(loginApi),
         headers: const {
           "Content-Type": "application/json",
           "Accept": "application/json",
         },
         body: jsonEncode({"email": username, "password": password}),
-      ).timeout(const Duration(seconds: 20));
+      )
+          .timeout(const Duration(seconds: 20));
 
       if (kDebugMode) {
         debugPrint("LOGIN STATUS: ${res.statusCode}");
@@ -117,7 +117,12 @@ class LoginController extends GetxController {
       // ✅ Save tokens locally
       await box.write("access_token", access);
       await box.write("refresh_token", refresh);
-      await PrefManager().writeValue(key: PrefConst.isLoggedIn, value: 0);
+
+      // ✅ IMPORTANT: set logged-in flag (this is what was missing)
+      await box.write("isLoggedIn", true);
+
+      // ✅ Keep PrefManager consistent (optional but fine)
+      await PrefManager().writeValue(key: PrefConst.isLoggedIn, value: 1);
 
       Get.snackbar(
         "Success",
@@ -127,6 +132,7 @@ class LoginController extends GetxController {
         colorText: Colors.white,
       );
 
+      // ✅ Go home
       Get.offAllNamed(AdminRoutes.HOME);
     } catch (e) {
       Get.snackbar(
