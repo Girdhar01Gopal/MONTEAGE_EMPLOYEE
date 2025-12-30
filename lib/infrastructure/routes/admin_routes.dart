@@ -65,7 +65,7 @@ class AdminRoutes {
       name: BOOT,
       page: () => PermissionBootScreen(),
       transition: Transition.fadeIn,
-      transitionDuration: Duration(milliseconds: 400),
+      transitionDuration: Duration(milliseconds: 200),
     ),
 
     // ---------- LOGIN ----------

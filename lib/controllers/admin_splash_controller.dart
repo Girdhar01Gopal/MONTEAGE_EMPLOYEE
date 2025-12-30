@@ -12,7 +12,7 @@ class AdminSplashController extends GetxController {
   void onInit() {
     super.onInit();
 
-    Future.delayed(const Duration(seconds: 4), () async{
+    Future.delayed(const Duration(seconds: 2), () async{
       var isLoggedIn = await PrefManager().readValue(key: PrefConst.isLoggedIn) == 0;
 
       if (isLoggedIn) {
