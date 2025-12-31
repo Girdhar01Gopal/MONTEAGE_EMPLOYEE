@@ -90,8 +90,8 @@ class FaceRegisterController extends GetxController {
   final Rx<File?> selectedImage = Rx<File?>(null);
   final RxBool isSubmitting = false.obs;
 
-  final String faceRegisterUrl =
-      "http://103.251.143.196/attendance/api/face/register/";
+  final String faceRegisterUrl = "http://103.251.143.196/attendance/api/face/register/";
+  final String refreshApi = "http://103.251.143.196/attendance/api/auth/refresh/";
 
   // ---------- Snackbars ----------
   void _snackSuccess(String msg) {
@@ -115,11 +115,8 @@ class FaceRegisterController extends GetxController {
   }
 
   // ---------- Token ----------
-  String _tokenOrThrow() {
-    final token = (box.read("access_token") ?? "").toString().trim();
-    if (token.isEmpty) throw Exception("Access token missing");
-    return token;
-  }
+  String get _accessToken => (box.read("access_token") ?? "").toString().trim();
+  String get _refreshToken => (box.read("refresh_token") ?? "").toString().trim();
 
   // ---------- Pick/Clear ----------
   Future<void> takePhoto() async {
@@ -138,53 +135,110 @@ class FaceRegisterController extends GetxController {
 
   void clearPhoto() => selectedImage.value = null;
 
+  // ---------- Refresh Access Token ----------
+  Future<bool> _refreshAccessToken() async {
+    if (_refreshToken.isEmpty) return false;
+
+    final res = await http.post(
+      Uri.parse(refreshApi),
+      headers: const {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: jsonEncode({"refresh": _refreshToken}),
+    );
+
+    if (res.statusCode != 200) return false;
+
+    final decoded = jsonDecode(res.body);
+    final newAccess = decoded["access"]?.toString() ?? "";
+    if (newAccess.isEmpty) return false;
+
+    await box.write("access_token", newAccess);
+    return true;
+  }
+
   // ---------- Submit ----------
   Future<void> submitRegistration() async {
     final img = selectedImage.value;
-
     if (img == null) {
       _snackError("Please upload your face image first.");
+      return;
+    }
+
+    if (_accessToken.isEmpty) {
+      _snackError("Access token missing. Please login again.");
       return;
     }
 
     isSubmitting.value = true;
 
     try {
-      final token = _tokenOrThrow();
+      // 1st attempt
+      final first = await _uploadFace(img, token: _accessToken);
 
-      final req = http.MultipartRequest("POST", Uri.parse(faceRegisterUrl));
-      req.headers["Authorization"] = "Bearer $token";
-      req.headers["Accept"] = "application/json";
-
-      req.files.add(await http.MultipartFile.fromPath("image", img.path));
-
-      final res = await req.send();
-      final body = await res.stream.bytesToString();
-
-      // Parse message safely
-      String msgFromServer = body;
-      try {
-        final decoded = body.isNotEmpty ? jsonDecode(body) : null;
-        if (decoded is Map<String, dynamic>) {
-          msgFromServer = (decoded["message"] ??
-              decoded["detail"] ??
-              decoded["error"] ??
-              body)
-              .toString();
-        }
-      } catch (_) {}
-
-      if (res.statusCode == 200 || res.statusCode == 201) {
+      if (first.statusCode == 200 || first.statusCode == 201) {
         _snackSuccess("Face registered successfully!");
-        // Navigate home
-        Get.offAllNamed("/home");
-      } else {
-        _snackError("Failed to register face: (${"${res.statusCode}"}) $msgFromServer");
+        Get.back(result: true); // ✅ return to profile screen
+        return;
       }
+
+      // If unauthorized -> refresh token -> retry once
+      if (first.statusCode == 401) {
+        final refreshed = await _refreshAccessToken();
+        if (!refreshed) {
+          _snackError("Session expired. Please login again.");
+          Get.back(result: false);
+          return;
+        }
+
+        final retryToken = (box.read("access_token") ?? "").toString().trim();
+        final second = await _uploadFace(img, token: retryToken);
+
+        if (second.statusCode == 200 || second.statusCode == 201) {
+          _snackSuccess("Face registered successfully!");
+          Get.back(result: true);
+          return;
+        }
+
+        _snackError("Failed to register face: (${second.statusCode}) ${second.message}");
+        return;
+      }
+
+      _snackError("Failed to register face: (${first.statusCode}) ${first.message}");
     } catch (e) {
       _snackError("Face registration failed: $e");
     } finally {
       isSubmitting.value = false;
     }
   }
+
+  // ---------- Actual Multipart Upload ----------
+  Future<_UploadResult> _uploadFace(File img, {required String token}) async {
+    final req = http.MultipartRequest("POST", Uri.parse(faceRegisterUrl));
+    req.headers["Authorization"] = "Bearer $token";
+    req.headers["Accept"] = "application/json";
+
+    // backend expects "image" (you already used it)
+    req.files.add(await http.MultipartFile.fromPath("image", img.path));
+
+    final res = await req.send();
+    final body = await res.stream.bytesToString();
+
+    String msgFromServer = body;
+    try {
+      final decoded = body.isNotEmpty ? jsonDecode(body) : null;
+      if (decoded is Map<String, dynamic>) {
+        msgFromServer = (decoded["message"] ?? decoded["detail"] ?? decoded["error"] ?? body).toString();
+      }
+    } catch (_) {}
+
+    return _UploadResult(statusCode: res.statusCode, message: msgFromServer);
+  }
+}
+
+class _UploadResult {
+  final int statusCode;
+  final String message;
+  _UploadResult({required this.statusCode, required this.message});
 }

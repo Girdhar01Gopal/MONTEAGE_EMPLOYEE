@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../models/profile_model.dart';
 import '../screens/login_screen.dart';
+import '../screens/FaceRegisterScreen.dart'; // ✅ adjust if file name differs
 
 class EmployeeProfileController extends GetxController {
   final box = GetStorage();
@@ -27,12 +28,16 @@ class EmployeeProfileController extends GetxController {
     fetchProfile();
   }
 
-  // ✅ Call this after face-register success
-  Future<void> onFaceRegistered() async {
-    await fetchProfile(showSuccess: true);
+  // ✅ Profile image edit -> open face register screen
+  Future<void> goToFaceRegister() async {
+    final result = await Get.to(() => const FaceRegisterScreen());
+
+    // ✅ if face register successful screen returns true
+    if (result == true) {
+      await fetchProfile(showSuccess: true);
+    }
   }
 
-  // ✅ Success = green/white | Error = red/white
   void _snackSuccess(String title, String msg) {
     Get.snackbar(
       title,
@@ -63,7 +68,6 @@ class EmployeeProfileController extends GetxController {
         final p = ProfileModel.fromJson(decoded);
         profile.value = p;
 
-        // ✅ If face not registered -> show snackbar
         if (p.user.isFaceRegistered == false) {
           _snackError("Face Not Registered", "Register face first, then profile will be shown.");
         } else {
@@ -157,14 +161,12 @@ class EmployeeProfileController extends GetxController {
         .join(" ");
   }
 
-  // ✅ dd-MM-yyyy hh:mm a (Indian local)
   String formatDateTimeIndian(DateTime? dt) {
     if (dt == null) return "--";
     final local = dt.toLocal();
     return DateFormat("dd-MM-yyyy hh:mm a").format(local);
   }
 
-  // ✅ dd-MM-yyyy only
   String formatDateOnlyIndian(DateTime? dt) {
     if (dt == null) return "--";
     final local = dt.toLocal();

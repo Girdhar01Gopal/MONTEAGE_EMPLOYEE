@@ -33,15 +33,9 @@ class EmployeeProfileScreen extends GetView<EmployeeProfileController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(color: Colors.black54, fontSize: 12),
-                ),
+                Text(title, style: const TextStyle(color: Colors.black54, fontSize: 12)),
                 const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                ),
+                Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
               ],
             ),
           )
@@ -75,7 +69,6 @@ class EmployeeProfileScreen extends GetView<EmployeeProfileController> {
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
-            // ✅ show success snackbar on manual refresh
             onPressed: () => controller.fetchProfile(showSuccess: true),
             icon: const Icon(Icons.refresh, color: Colors.white),
           )
@@ -116,22 +109,46 @@ class EmployeeProfileScreen extends GetView<EmployeeProfileController> {
                 ),
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 36,
-                      backgroundColor: Colors.white.withOpacity(0.3),
-                      child: ClipOval(
-                        child: imgUrl.isEmpty
-                            ? const Icon(Icons.person, color: Colors.white, size: 40)
-                            : Image.network(
-                          imgUrl,
-                          width: 72,
-                          height: 72,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) =>
-                          const Icon(Icons.person, color: Colors.white, size: 40),
+                    // ✅ Avatar + Edit Icon
+                    Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 36,
+                          backgroundColor: Colors.white.withOpacity(0.3),
+                          child: ClipOval(
+                            child: imgUrl.isEmpty
+                                ? const Icon(Icons.person, color: Colors.white, size: 40)
+                                : Image.network(
+                              imgUrl,
+                              width: 72,
+                              height: 72,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) =>
+                              const Icon(Icons.person, color: Colors.white, size: 40),
+                            ),
+                          ),
                         ),
-                      ),
+
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: InkWell(
+                            onTap: controller.goToFaceRegister, // ✅ opens face register
+                            borderRadius: BorderRadius.circular(30),
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(30),
+                                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
+                              ),
+                              child: const Icon(Icons.edit, size: 18, color: Color(0xFF6C63FF)),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
+
                     const SizedBox(width: 14),
                     Expanded(
                       child: Column(
@@ -183,14 +200,6 @@ class EmployeeProfileScreen extends GetView<EmployeeProfileController> {
               const SizedBox(height: 10),
               _infoTile(icon: Icons.account_circle_outlined, title: "User ID", value: u.id.toString()),
               const SizedBox(height: 10),
-              _infoTile(icon: Icons.apartment, title: "Department", value: controller.titleCase(u.department)),
-              const SizedBox(height: 10),
-              _infoTile(icon: Icons.person, title: "First Name", value: controller.titleCase(u.firstName)),
-              const SizedBox(height: 10),
-              _infoTile(icon: Icons.person, title: "Last Name", value: controller.titleCase(u.lastName)),
-              const SizedBox(height: 10),
-              _infoTile(icon: Icons.text_fields, title: "Full Name", value: controller.titleCase(u.fullName)),
-              const SizedBox(height: 10),
 
               _infoTile(
                 icon: Icons.face_retouching_natural,
@@ -204,7 +213,6 @@ class EmployeeProfileScreen extends GetView<EmployeeProfileController> {
                 title: "Date Joined",
                 value: controller.formatDateTimeIndian(u.dateJoined),
               ),
-
               const SizedBox(height: 14),
             ],
           ),

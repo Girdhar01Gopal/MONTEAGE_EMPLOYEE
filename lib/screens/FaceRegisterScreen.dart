@@ -1,18 +1,18 @@
-// screens/FaceRegisterScreen.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import '../controllers/FaceRegisterController.dart'; // Import your controller
+import '../controllers/FaceRegisterController.dart';
 
 class FaceRegisterScreen extends StatelessWidget {
   const FaceRegisterScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Register the FaceRegisterController if not already registered
-    Get.put(FaceRegisterController());
-
+    // ✅ ensure single instance
+    if (!Get.isRegistered<FaceRegisterController>()) {
+      Get.put(FaceRegisterController());
+    }
     final controller = Get.find<FaceRegisterController>();
 
     return Scaffold(
@@ -20,11 +20,6 @@ class FaceRegisterScreen extends StatelessWidget {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
-        // leading: IconButton(
-        //   icon: Icon(Icons.arrow_back,
-        //       color: const Color(0xFFE53935), size: 22.sp),
-        //   onPressed: () => Get.back(),
-        // ),
         centerTitle: true,
         title: Text(
           "Face Registration",
@@ -41,24 +36,20 @@ class FaceRegisterScreen extends StatelessWidget {
           children: [
             SizedBox(height: 10.h),
 
-            // Camera Style (Face Mask Frame)
             Obx(() {
               final File? img = controller.selectedImage.value;
 
               return Stack(
                 children: [
-                  // Photo Frame Container (simulating camera viewfinder)
                   Container(
                     width: double.infinity,
                     height: 220.h,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16.r),
-                      border: Border.all(
-                          color: const Color(0xFFE53935), width: 2),
+                      border: Border.all(color: const Color(0xFFE53935), width: 2),
                       color: Colors.white,
                       image: img != null
-                          ? DecorationImage(
-                          image: FileImage(img), fit: BoxFit.cover)
+                          ? DecorationImage(image: FileImage(img), fit: BoxFit.cover)
                           : null,
                       boxShadow: const [
                         BoxShadow(
@@ -79,7 +70,6 @@ class FaceRegisterScreen extends StatelessWidget {
                         : null,
                   ),
 
-                  // Clear Photo Button (if an image is selected)
                   if (img != null)
                     Positioned(
                       top: 10.h,
@@ -95,7 +85,6 @@ class FaceRegisterScreen extends StatelessWidget {
 
             SizedBox(height: 16.h),
 
-            // "Take a Photo" Instruction
             Text(
               "Take a Photo of you",
               style: TextStyle(
@@ -113,11 +102,9 @@ class FaceRegisterScreen extends StatelessWidget {
 
             SizedBox(height: 22.h),
 
-            // "Take Photo" Gradient Button
             _gradientButton(text: "Take Photo", onTap: controller.takePhoto),
             SizedBox(height: 14.h),
 
-            // "Submit Registration" Gradient Button
             Obx(() {
               final loading = controller.isSubmitting.value;
               return SizedBox(
@@ -135,8 +122,7 @@ class FaceRegisterScreen extends StatelessWidget {
                       ? SizedBox(
                     width: 22.w,
                     height: 22.w,
-                    child: const CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white),
+                    child: const CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
                       : Text(
                     "Submit Registration",
@@ -157,7 +143,6 @@ class FaceRegisterScreen extends StatelessWidget {
     );
   }
 
-  // Circle Icon Widget (for clearing photo)
   Widget _circleIcon({required IconData icon, required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
@@ -168,8 +153,7 @@ class FaceRegisterScreen extends StatelessWidget {
           color: Colors.white,
           shape: BoxShape.circle,
           boxShadow: [
-            BoxShadow(
-                color: Color(0x22000000), blurRadius: 8, offset: Offset(0, 3))
+            BoxShadow(color: Color(0x22000000), blurRadius: 8, offset: Offset(0, 3))
           ],
         ),
         child: Icon(icon, size: 18.sp, color: const Color(0xFFE53935)),
@@ -177,7 +161,6 @@ class FaceRegisterScreen extends StatelessWidget {
     );
   }
 
-  // Gradient Button Widget
   Widget _gradientButton({required String text, required VoidCallback onTap}) {
     return SizedBox(
       width: double.infinity,
