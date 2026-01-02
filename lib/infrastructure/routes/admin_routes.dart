@@ -7,6 +7,7 @@ import '../../bindings/attendance_binding.dart';
 import '../../bindings/attendance_history_binding.dart';
 import '../../bindings/attendance_today_binding.dart';
 import '../../bindings/check_out_attendance_binding.dart';
+import '../../bindings/forgot_passwordbinding.dart';
 import '../../bindings/home_binding.dart';
 import '../../bindings/login_binding.dart';
 import '../../bindings/mark_face_attendance_binding.dart';
@@ -20,6 +21,7 @@ import '../../screens/attendance_history_screen.dart';
 import '../../screens/attendance_today_screen.dart';
 import '../../screens/check_out_attendance_screen.dart';
 import '../../screens/employee_profile_screen.dart';
+import '../../screens/forgot_passwordscreen.dart';
 import '../../screens/home_screen.dart';
 import '../../screens/login_screen.dart';
 import '../../screens/mark_face_attendance_screen.dart';
@@ -42,6 +44,8 @@ class AdminRoutes {
   static const BOOT = "/boot";
   static const checkoutattendace = "/checkoutattendace";
   static const profile = "/profile";
+  static const forgotpassword = "/forgotpassword";
+
 
 
 
@@ -127,6 +131,15 @@ class AdminRoutes {
       page: () => RegisterScreen(),
       binding: RegisterBinding(),
     ),
+
+
+    GetPage(
+      name: forgotpassword,
+      page: () => const ForgotPasswordScreen(),
+      binding: ForgotPasswordBinding(),
+    ),
+
+
 
     GetPage(
       name: faceRegister,

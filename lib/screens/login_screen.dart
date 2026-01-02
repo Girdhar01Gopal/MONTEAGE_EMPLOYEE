@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../controllers/login_controller.dart';
+import '../infrastructure/routes/admin_routes.dart';
+import 'forgot_passwordscreen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -103,7 +105,7 @@ class LoginScreen extends StatelessWidget {
                             Align(
                               alignment: Alignment.centerRight,
                               child: InkWell(
-                                onTap: c.onForgotPassword, // ✅ Forgot Password Screen
+                                onTap: () => Get.toNamed(AdminRoutes.forgotpassword),
                                 child: Text(
                                   "Forgot Password ?",
                                   style: TextStyle(
