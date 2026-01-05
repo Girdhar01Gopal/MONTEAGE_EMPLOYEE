@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../models/profile_model.dart';
 import '../screens/login_screen.dart';
-import '../screens/FaceRegisterScreen.dart'; // ✅ adjust if file name differs
+import '../screens/FaceRegisterScreen.dart';
 
 class EmployeeProfileController extends GetxController {
   final box = GetStorage();
@@ -25,14 +25,32 @@ class EmployeeProfileController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    fetchProfile();
+    fetchProfile(); // ✅ auto load on first create
+  }
+
+  // ✅ MUST: clear old user profile state
+  void resetProfileState() {
+    profile.value = null;
+    isLoading.value = false;
+  }
+
+  // ✅ Call this on Logout button
+  void logout({String message = "Please login again"}) {
+    resetProfileState();
+    box.erase();
+
+    // ✅ destroy controller so next login creates fresh instance
+    if (Get.isRegistered<EmployeeProfileController>()) {
+      Get.delete<EmployeeProfileController>(force: true);
+    }
+
+    Get.offAll(() => const LoginScreen());
+    _snackError("Logged Out", message);
   }
 
   // ✅ Profile image edit -> open face register screen
   Future<void> goToFaceRegister() async {
     final result = await Get.to(() => const FaceRegisterScreen());
-
-    // ✅ if face register successful screen returns true
     if (result == true) {
       await fetchProfile(showSuccess: true);
     }
@@ -59,6 +77,9 @@ class EmployeeProfileController extends GetxController {
   }
 
   Future<void> fetchProfile({bool showSuccess = false}) async {
+    // ✅ IMPORTANT: clear old profile before fetching new one
+    profile.value = null;
+
     isLoading.value = true;
     try {
       final res = await _authorizedGet(Uri.parse(profileApi));
@@ -71,15 +92,14 @@ class EmployeeProfileController extends GetxController {
         if (p.user.isFaceRegistered == false) {
           _snackError("Face Not Registered", "Register face first, then profile will be shown.");
         } else {
-          if (showSuccess) {
-            _snackSuccess("Success", "Profile loaded successfully.");
-          }
+          if (showSuccess) _snackSuccess("Success", "Profile loaded successfully.");
         }
         return;
       }
 
       if (res.statusCode == 401) {
-        _forceLogout();
+        // ✅ session expired -> full logout
+        logout(message: "Session expired. Please login again.");
         return;
       }
 
@@ -135,12 +155,6 @@ class EmployeeProfileController extends GetxController {
 
     await box.write("access_token", newAccess);
     return true;
-  }
-
-  void _forceLogout() {
-    box.erase();
-    Get.offAll(() => const LoginScreen());
-    _snackError("Session Expired", "Please login again");
   }
 
   // ---------- UI helpers ----------

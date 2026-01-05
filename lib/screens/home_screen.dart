@@ -1,4 +1,3 @@
-// screens/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -12,8 +11,11 @@ class HomeScreen extends StatelessWidget {
   HomeScreen({super.key});
 
   final HomeController controller = Get.put(HomeController());
-  final EmployeeProfileController profileC =
-  Get.put(EmployeeProfileController(), permanent: true);
+
+  // ✅ don't keep permanent controller
+  final EmployeeProfileController profileC = Get.isRegistered<EmployeeProfileController>()
+      ? Get.find<EmployeeProfileController>()
+      : Get.put(EmployeeProfileController());
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -55,7 +57,6 @@ class HomeScreen extends StatelessWidget {
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
         child: Column(
           children: [
-            // ✅ Employee Profile Card (same as before)
             Obx(() {
               if (profileC.isLoading.value) {
                 return Container(
@@ -179,8 +180,7 @@ class HomeScreen extends StatelessWidget {
                           backgroundColor: const Color(0xFF6C63FF).withOpacity(0.12),
                           child: ClipOval(
                             child: imgUrl.isEmpty
-                                ? const Icon(Icons.person,
-                                color: Color(0xFF6C63FF), size: 28)
+                                ? const Icon(Icons.person, color: Color(0xFF6C63FF), size: 28)
                                 : Image.network(
                               imgUrl,
                               width: 52.r,
@@ -201,9 +201,7 @@ class HomeScreen extends StatelessWidget {
                             children: [
                               Text(
                                 profileC.titleCase(
-                                  u.fullName.isNotEmpty
-                                      ? u.fullName
-                                      : "${u.firstName} ${u.lastName}",
+                                  u.fullName.isNotEmpty ? u.fullName : "${u.firstName} ${u.lastName}",
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -278,7 +276,7 @@ class HomeScreen extends StatelessWidget {
 
             SizedBox(height: 18.h),
 
-            // ✅ 2x2 Grid (rectangular cube style)
+            // ... rest of your grid code same ...
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
@@ -306,9 +304,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-
                     SizedBox(height: 12.h),
-
                     Row(
                       children: [
                         Expanded(
@@ -342,7 +338,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // ✅ Rectangular cube-style grid card
   Widget _gridCard({
     required String title,
     required String subtitle,
@@ -354,7 +349,7 @@ class HomeScreen extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(16.r),
       child: Container(
-        height: 120.h, // ✅ fixed height for cube look
+        height: 120.h,
         padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 14.w),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16.r),
