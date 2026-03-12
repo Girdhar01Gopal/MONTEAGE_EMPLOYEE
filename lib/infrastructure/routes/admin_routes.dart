@@ -1,4 +1,3 @@
-// infrastructure/routes/admin_routes.dart
 import 'package:get/get.dart';
 import 'package:monteage_employee/screens/permission_boot_screen.dart';
 import '../../bindings/FaceRegisterBinding.dart';
