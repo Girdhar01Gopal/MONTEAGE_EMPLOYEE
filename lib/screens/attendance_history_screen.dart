@@ -249,8 +249,8 @@ class _HistoryCard extends StatelessWidget {
           child: ExpansionTile(
             tilePadding: EdgeInsets.zero,
             childrenPadding: const EdgeInsets.all(12),
-            collapsedIconColor: Colors.white,
-            iconColor: Colors.white,
+            collapsedIconColor: Colors.black,
+            iconColor: Colors.black,
 
             // ✅ Header blue + name/id + date under it
             title: Container(
