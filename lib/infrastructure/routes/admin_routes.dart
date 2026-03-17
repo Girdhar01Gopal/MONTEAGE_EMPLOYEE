@@ -31,7 +31,7 @@ class AdminRoutes {
   // Route Names
   // ==================
   static const ADMIN_SPLASH = '/admin/splash';
-  static const LOGIN = '/login';
+  static const login = '/login';
   static const HOME = '/home';
   static const NOTIFICATIONS = '/notifications';
   static const MARK_FACE_ATTENDANCE = "/mark-face-attendance";
@@ -60,39 +60,43 @@ class AdminRoutes {
     GetPage(
       name: ADMIN_SPLASH,
       page: () => AdminSplashScreen(),
-      transition: Transition.fadeIn,
+      transition: Transition.rightToLeft,
       transitionDuration: Duration(milliseconds: 400),
     ),
 
   GetPage(
       name: BOOT,
       page: () => PermissionBootScreen(),
-      transition: Transition.fadeIn,
+    transition: Transition.rightToLeft,
       transitionDuration: Duration(milliseconds: 200),
     ),
 
     // ---------- LOGIN ----------
     GetPage(
-      name: LOGIN,
+      name: login,
       page: () => LoginScreen(),
+      transition: Transition.rightToLeft,
       binding: LoginBinding(),
     ),
 
     GetPage(
       name: MARK_FACE_ATTENDANCE,
       page: () => MarkFaceAttendanceScreen(),
+      transition: Transition.rightToLeft,
       binding: MarkFaceAttendanceBinding(),
     ),
 
     GetPage(
       name: profile,
       page: () => EmployeeProfileScreen(),
+      transition: Transition.rightToLeft,
       binding: EmployeeProfileBinding(),
     ),
 
     GetPage(
       name: checkoutattendace,
       page: () => CheckOutAttendanceScreen(),
+      transition: Transition.rightToLeft,
       binding: checkoutAttendanceBinding(),
     ),
 
@@ -102,6 +106,7 @@ class AdminRoutes {
     GetPage(
       name: HOME,
       page: () => HomeScreen(),
+      transition: Transition.rightToLeft,
       binding: HomeBinding(),
     ),
 
@@ -110,31 +115,36 @@ class AdminRoutes {
     GetPage(
       name: NOTIFICATIONS,
       page: () => NotificationScreen(),
+      transition: Transition.rightToLeft,
       binding: NotificationBinding(),
     ),
 
     GetPage(
       name: attendanceDetails,
       page: () =>  AttendanceDetailsPage(),
+      transition: Transition.rightToLeft,
       binding: AttendanceBinding(),
     ),
 
     GetPage(
       name: attendanceHistory,
       page: () =>  AttendanceHistoryScreen(),
+      transition: Transition.rightToLeft,
       binding: AttendanceHistoryBinding(),
     ),
 
     GetPage(
       name: registerScreen,
       page: () => RegisterScreen(),
+      transition: Transition.rightToLeft,
       binding: RegisterBinding(),
     ),
 
 
     GetPage(
       name: forgotpassword,
-      page: () => const ForgotPasswordScreen(),
+      page: () =>  ForgotPasswordScreen(),
+      transition: Transition.rightToLeft,
       binding: ForgotPasswordBinding(),
     ),
 
@@ -143,12 +153,14 @@ class AdminRoutes {
     GetPage(
       name: faceRegister,
       page: () =>  FaceRegisterScreen(),
+      transition: Transition.rightToLeft,
       binding: FaceRegisterBinding(),
     ),
 
     GetPage(
       name: attendanceToday,
       page: () =>  AttendanceTodayScreen(),
+      transition: Transition.rightToLeft,
       binding: AttendanceTodayBinding(),
     ),
 

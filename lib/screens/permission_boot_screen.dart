@@ -62,7 +62,7 @@ class _PermissionBootScreenState extends State<PermissionBootScreen>
     _navigated = true;
 
     final isLoggedIn = _hasValidTokens();
-    Get.offAllNamed(isLoggedIn ? AdminRoutes.HOME : AdminRoutes.LOGIN);
+    Get.offAllNamed(isLoggedIn ? AdminRoutes.HOME : AdminRoutes.login);
   }
 
   Future<void> _checkAndProceed() async {

@@ -138,7 +138,7 @@ class _AdminDrawerState extends State<AdminDrawer> {
                     isActive: false,
                     onTap: () async{
                       // TODO: clear storage/session if needed
-                      Get.offAllNamed(AdminRoutes.LOGIN);
+                      Get.offAllNamed(AdminRoutes.login);
                       Get.snackbar("LogOut", "You have been logged out successfully.",
                         snackPosition: SnackPosition.TOP,
                         backgroundColor: Colors.green,

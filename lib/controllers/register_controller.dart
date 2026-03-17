@@ -77,8 +77,7 @@ print(body);
           await box.write("isLoggedIn", true);
 
           Get.snackbar("Success", "Registration successful! Please register your face.");
-          Get.back(); // Go back to the previous screen
-          Get.offAll(() => LoginScreen());  // Navigate to Login screen
+          Get.offAllNamed('/login');
         } else {
           Get.snackbar("Error", "Registration failed: ${responseData['message']}");
         }
