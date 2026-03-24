@@ -351,7 +351,7 @@ class LoginScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "Welcome Back",
+                              "Welcome to Corporate World",
                               style: GoogleFonts.manrope(
                                 fontSize: 28.sp,
                                 fontWeight: FontWeight.w800,
