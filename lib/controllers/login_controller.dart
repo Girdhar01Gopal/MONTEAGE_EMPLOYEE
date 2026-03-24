@@ -1,4 +1,4 @@
-// controllers/login_controller.dart
+/*// controllers/login_controller.dart
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -177,5 +177,46 @@ class LoginController extends GetxController {
     usernameController.dispose();
     passwordController.dispose();
     super.onClose();
+  }
+}*/
+
+import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:monteage_employee/infrastructure/routes/admin_routes.dart';
+import 'package:monteage_employee/infrastructure/utils/pref_const.dart';
+import 'package:monteage_employee/infrastructure/utils/pref_manager.dart';
+
+class LoginController extends GetxController {
+  final RxBool isLoading = false.obs;
+  final RxBool isregistered = false.obs;
+  final GetStorage box = GetStorage();
+
+  @override
+  void onInit() {
+    super.onInit();
+    loadData();
+  }
+
+  Future<void> loadData() async {
+    final value = await PrefManager().readValue(key: PrefConst.isregistered);
+    isregistered.value = value == "false";
+  }
+
+  bool get isLoggedIn {
+    final access = (box.read("access_token") ?? "").toString().trim();
+    final refresh = (box.read("refresh_token") ?? "").toString().trim();
+    return access.isNotEmpty && refresh.isNotEmpty;
+  }
+
+  Future<void> goToFaceIdLogin() async {
+    if (isLoading.value) return;
+
+    isLoading.value = true;
+    try {
+      await Future.delayed(const Duration(milliseconds: 200));
+      Get.toNamed(AdminRoutes.faceidlogin);
+    } finally {
+      isLoading.value = false;
+    }
   }
 }

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+/*import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -284,6 +284,140 @@ class _ModernButton extends StatelessWidget {
                   color: Colors.white,
                 ),
               ),
+      ),
+    );
+  }
+}
+*/
+
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../controllers/login_controller.dart';
+
+class LoginScreen extends StatelessWidget {
+  const LoginScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final LoginController controller = Get.isRegistered<LoginController>()
+        ? Get.find<LoginController>()
+        : Get.put(LoginController());
+
+    return Scaffold(
+      resizeToAvoidBottomInset: true,
+      backgroundColor: const Color(0xFFF6F1ED),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 16.h),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: Column(
+                    children: [
+                      SizedBox(height: 18.h),
+                      Image.asset(
+                        "assets/images/monteage_logo.png",
+                        height: 60.h,
+                        fit: BoxFit.contain,
+                      ),
+                      SizedBox(height: 18.h),
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 18.w,
+                          vertical: 18.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24.r),
+                          border: Border.all(
+                            color: const Color(0xFFEDE2DC),
+                            width: 1,
+                          ),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x12000000),
+                              blurRadius: 14,
+                              offset: Offset(0, 7),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Welcome Back",
+                              style: GoogleFonts.manrope(
+                                fontSize: 28.sp,
+                                fontWeight: FontWeight.w800,
+                                color: const Color(0xFF241917),
+                              ),
+                            ),
+                            SizedBox(height: 6.h),
+                            Text(
+                              "Login in to your account",
+                              style: GoogleFonts.inter(
+                                fontSize: 13.sp,
+                                color: const Color(0xFF8B7D77),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            SizedBox(height: 24.h),
+                            Obx(() {
+                              return SizedBox(
+                                width: double.infinity,
+                                height: 52.h,
+                                child: FilledButton(
+                                  onPressed: controller.isLoading.value
+                                      ? null
+                                      : controller.goToFaceIdLogin,
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: const Color(0xFF6A3027),
+                                    disabledBackgroundColor:
+                                    const Color(0xFFC9C9C9),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12.r),
+                                    ),
+                                  ),
+                                  child: controller.isLoading.value
+                                      ? SizedBox(
+                                    height: 22.h,
+                                    width: 22.w,
+                                    child:
+                                    const CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                      : Text(
+                                    "Login with Face ID",
+                                    style: GoogleFonts.manrope(
+                                      fontSize: 15.sp,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
+                            SizedBox(height: 16.h),
+                          ],
+                        ),
+                      ),
+                      const Spacer(),
+                      SizedBox(height: 20.h),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }

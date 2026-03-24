@@ -284,9 +284,9 @@ class MarkFaceAttendanceController extends GetxController {
 
   // API URLs
   final String attendanceUrl =
-      "http://103.251.143.196/attendance/api/attendance/mark/";
+      "http://att.monteage.co.in/attendance/api/attendance/mark/";
   final String profileApi =
-      "http://103.251.143.196/attendance/api/auth/profile/";
+      "http://att.monteage.co.in/attendance/api/auth/profile/";
 
   // ---------- Snackbars ----------
   void _snackSuccess(String msg) {

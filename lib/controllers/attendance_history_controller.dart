@@ -11,11 +11,11 @@ import '../screens/login_screen.dart';
 class AttendanceHistoryController extends GetxController {
   final box = GetStorage();
 
-  final String baseUrl = "http://103.251.143.196";
+  final String baseUrl = "http://att.monteage.co.in/";
   final String historyApi =
-      "http://103.251.143.196/attendance/api/attendance/history/";
+      "http://att.monteage.co.in/attendance/api/attendance/history/";
   final String refreshApi =
-      "http://103.251.143.196/attendance/api/auth/refresh/";
+      "http://att.monteage.co.in/attendance/api/auth/refresh/";
 
   final isLoading = false.obs;
   final Rxn<Statistics> statistics = Rxn<Statistics>();

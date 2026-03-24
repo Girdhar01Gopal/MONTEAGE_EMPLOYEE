@@ -6,6 +6,7 @@ import '../../bindings/attendance_binding.dart';
 import '../../bindings/attendance_history_binding.dart';
 import '../../bindings/attendance_today_binding.dart';
 import '../../bindings/check_out_attendance_binding.dart';
+import '../../bindings/face_id_login_binding.dart';
 import '../../bindings/forgot_passwordbinding.dart';
 import '../../bindings/home_binding.dart';
 import '../../bindings/login_binding.dart';
@@ -20,6 +21,7 @@ import '../../screens/attendance_history_screen.dart';
 import '../../screens/attendance_today_screen.dart';
 import '../../screens/check_out_attendance_screen.dart';
 import '../../screens/employee_profile_screen.dart';
+import '../../screens/face_id_login_screen.dart';
 import '../../screens/forgot_passwordscreen.dart';
 import '../../screens/home_screen.dart';
 import '../../screens/login_screen.dart';
@@ -44,6 +46,8 @@ class AdminRoutes {
   static const checkoutattendace = "/checkoutattendace";
   static const profile = "/profile";
   static const forgotpassword = "/forgotpassword";
+  static const faceidlogin = "/faceidlogin";
+
 
 
 
@@ -78,6 +82,14 @@ class AdminRoutes {
       transition: Transition.rightToLeft,
       binding: LoginBinding(),
     ),
+
+    GetPage(
+      name: faceidlogin,
+      page: () => FaceIdLoginScreen(),
+      transition: Transition.rightToLeft,
+      binding: FaceIdLoginBinding(),
+    ),
+
 
     GetPage(
       name: MARK_FACE_ATTENDANCE,

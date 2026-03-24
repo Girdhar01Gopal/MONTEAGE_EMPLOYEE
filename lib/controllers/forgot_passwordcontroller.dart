@@ -8,7 +8,7 @@ class ForgotPasswordController extends GetxController {
 
   // ✅ CHANGE THIS to your real forgot-password endpoint
   // Your screenshot shows you're wrongly hitting /auth/login/
-  final String forgotUrl = "http://103.251.143.196/attendance/api/auth/forgot-password/";
+  final String forgotUrl = "http://att.monteage.co.in/attendance/api/auth/forgot-password/";
 
   Future<void> sendResetLink() async {
     final email = emailC.text.trim();

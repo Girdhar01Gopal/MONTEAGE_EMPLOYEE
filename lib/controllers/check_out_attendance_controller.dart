@@ -283,9 +283,9 @@ class CheckOutAttendanceController extends GetxController {
 
   // API URL for checkout attendance
   final String checkoutAttendanceUrl =
-      "http://103.251.143.196/attendance/api/attendance/checkout/";
+      "http://att.monteage.co.in/attendance/api/attendance/checkout/";
   final String profileApi =
-      "http://103.251.143.196/attendance/api/auth/profile/";
+      "http://att.monteage.co.in/attendance/api/auth/profile/";
 
   // ---------- Snackbars ----------
   void _snackSuccess(String msg) {

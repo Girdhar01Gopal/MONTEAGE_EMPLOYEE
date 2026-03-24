@@ -93,8 +93,8 @@ class FaceRegisterController extends GetxController {
   final Rx<File?> selectedImage = Rx<File?>(null);
   final RxBool isSubmitting = false.obs;
 
-  final String faceRegisterUrl = "http://103.251.143.196/attendance/api/face/register/";
-  final String refreshApi = "http://103.251.143.196/attendance/api/auth/refresh/";
+  final String faceRegisterUrl = "http://att.monteage.co.in/attendance/api/face/register/";
+  final String refreshApi = "http://att.monteage.co.in/attendance/api/auth/refresh/";
 
   // ---------- Snackbars ----------
   void _snackSuccess(String msg) {

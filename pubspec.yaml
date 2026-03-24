@@ -88,6 +88,7 @@ dependencies:
   vibration:
   timeago:
   geocoding:
+  google_mlkit_face_detection:
 
 
 dev_dependencies:

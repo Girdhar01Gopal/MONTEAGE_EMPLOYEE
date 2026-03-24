@@ -12,9 +12,9 @@ import '../screens/FaceRegisterScreen.dart';
 class EmployeeProfileController extends GetxController {
   final box = GetStorage();
 
-  final String baseUrl = "http://103.251.143.196";
-  final String profileApi = "http://103.251.143.196/attendance/api/auth/profile/";
-  final String refreshApi = "http://103.251.143.196/attendance/api/auth/refresh/";
+  final String baseUrl = "http://att.monteage.co.in/";
+  final String profileApi = "http://att.monteage.co.in/attendance/api/auth/profile/";
+  final String refreshApi = "http://att.monteage.co.in/attendance/api/auth/refresh/";
 
   final isLoading = false.obs;
   final Rxn<ProfileModel> profile = Rxn<ProfileModel>();

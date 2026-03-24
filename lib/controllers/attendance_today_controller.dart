@@ -10,9 +10,9 @@ import '../screens/login_screen.dart';
 class AttendanceTodayController extends GetxController {
   final box = GetStorage();
 
-  final String baseUrl = "http://103.251.143.196";
-  final String todayApi = "http://103.251.143.196/attendance/api/attendance/today/";
-  final String refreshApi = "http://103.251.143.196/attendance/api/auth/refresh/";
+  final String baseUrl = "http://att.monteage.co.in/";
+  final String todayApi = "http://att.monteage.co.in/attendance/api/attendance/today/";
+  final String refreshApi = "http://att.monteage.co.in/attendance/api/auth/refresh/";
 
   final isLoading = false.obs;
   final Rxn<AttendanceToday> today = Rxn<AttendanceToday>();
