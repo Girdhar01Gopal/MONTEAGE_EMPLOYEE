@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../controllers/home_controller.dart';
 import '../controllers/profile_controller.dart';
@@ -11,12 +12,10 @@ class HomeScreen extends StatelessWidget {
   HomeScreen({super.key});
 
   final HomeController controller = Get.put(HomeController());
-
-  // ✅ don't keep permanent controller
-  final EmployeeProfileController profileC = Get.isRegistered<EmployeeProfileController>()
+  final EmployeeProfileController profileC =
+      Get.isRegistered<EmployeeProfileController>()
       ? Get.find<EmployeeProfileController>()
       : Get.put(EmployeeProfileController());
-
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
@@ -24,395 +23,725 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       key: _scaffoldKey,
       drawer: AdminDrawer(),
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF6F1ED),
       appBar: AppBar(
         elevation: 0,
-        centerTitle: true,
-        foregroundColor: Colors.white,
-        backgroundColor: Colors.transparent,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFFFF8A80),
-                Color(0xFFE57373),
-                Color(0xFFE53935),
-                Color(0xFFB71C1C),
+        toolbarHeight: 72.h,
+        backgroundColor: const Color(0xFFF6F1ED),
+        surfaceTintColor: Colors.transparent,
+        leadingWidth: 72.w,
+        leading: Padding(
+          padding: EdgeInsets.only(left: 16.w),
+          child: Container(
+            margin: EdgeInsets.symmetric(vertical: 12.h),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16.r),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x14000000),
+                  blurRadius: 12,
+                  offset: Offset(0, 6),
+                ),
               ],
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.menu_rounded, color: Color(0xFF241917)),
+              onPressed: () => _scaffoldKey.currentState!.openDrawer(),
             ),
           ),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.menu, color: Colors.white),
-          onPressed: () => _scaffoldKey.currentState!.openDrawer(),
-        ),
-        title: const Text(
-          "MONTEAGE",
-          style: TextStyle(fontWeight: FontWeight.w800),
-        ),
-      ),
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-        child: Column(
-          children: [
-            Obx(() {
-              if (profileC.isLoading.value) {
-                return Container(
-                  padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14.r),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x22000000),
-                        blurRadius: 14,
-                        offset: Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        height: 44.h,
-                        width: 44.h,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade200,
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                        child: const Center(
-                          child: SizedBox(
-                            height: 18,
-                            width: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 12.w),
-                      Expanded(
-                        child: Text(
-                          "Loading profile...",
-                          style: TextStyle(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF444444),
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => profileC.fetchProfile(showSuccess: false),
-                        icon: const Icon(Icons.refresh),
-                      )
-                    ],
-                  ),
-                );
-              }
-
-              final p = profileC.profile.value;
-              if (p == null) {
-                return Container(
-                  padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14.r),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x22000000),
-                        blurRadius: 14,
-                        offset: Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        height: 44.h,
-                        width: 44.h,
-                        decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                        child: const Icon(Icons.error_outline, color: Colors.red),
-                      ),
-                      SizedBox(width: 12.w),
-                      Expanded(
-                        child: Text(
-                          "Profile not loaded",
-                          style: TextStyle(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF444444),
-                          ),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => profileC.fetchProfile(showSuccess: false),
-                        child: const Text("Retry"),
-                      )
-                    ],
-                  ),
-                );
-              }
-
-              final u = p.user;
-              final imgUrl = profileC.fullImageUrl(u.profileImage);
-
-              return Container(
-                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14.r),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x22000000),
-                      blurRadius: 14,
-                      offset: Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 26.r,
-                          backgroundColor: const Color(0xFF6C63FF).withOpacity(0.12),
-                          child: ClipOval(
-                            child: imgUrl.isEmpty
-                                ? const Icon(Icons.person, color: Color(0xFF6C63FF), size: 28)
-                                : Image.network(
-                              imgUrl,
-                              width: 52.r,
-                              height: 52.r,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => const Icon(
-                                Icons.person,
-                                color: Color(0xFF6C63FF),
-                                size: 28,
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 12.w),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                profileC.titleCase(
-                                  u.fullName.isNotEmpty ? u.fullName : "${u.firstName} ${u.lastName}",
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 16.sp,
-                                  fontWeight: FontWeight.w800,
-                                  color: const Color(0xFF333333),
-                                ),
-                              ),
-                              SizedBox(height: 4.h),
-                              Text(
-                                "Employee ID: ${u.employeeId}",
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF444444),
-                                ),
-                              ),
-                              SizedBox(height: 2.h),
-                              Text(
-                                u.email,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 12.sp,
-                                  color: const Color(0xFF777777),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              SizedBox(height: 2.h),
-                              Text(
-                                "Department: ${profileC.titleCase(u.department)}",
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 12.sp,
-                                  color: const Color(0xFF555555),
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () => profileC.fetchProfile(showSuccess: false),
-                          icon: const Icon(Icons.refresh),
-                        )
-                      ],
-                    ),
-                    SizedBox(height: 8.h),
-                    Row(
-                      children: [
-                        const Spacer(),
-                        Obx(
-                              () => Text(
-                            controller.selectedDate.value,
-                            style: TextStyle(
-                              color: Colors.red,
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            }),
-
-            SizedBox(height: 18.h),
-
-            // ... rest of your grid code same ...
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _gridCard(
-                            title: "Mark Attendance",
-                            subtitle: "Face & location",
-                            icon: Icons.face_retouching_natural,
-                            gradient: const [Color(0xFF16A34A), Color(0xFF22C55E)],
-                            onTap: () => Get.toNamed(AdminRoutes.MARK_FACE_ATTENDANCE),
-                          ),
-                        ),
-                        SizedBox(width: 12.w),
-                        Expanded(
-                          child: _gridCard(
-                            title: "Attendance History",
-                            subtitle: "Daily records",
-                            icon: Icons.history,
-                            gradient: const [Color(0xFF2563EB), Color(0xFF3B82F6)],
-                            onTap: () => Get.toNamed(AdminRoutes.attendanceHistory),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 12.h),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _gridCard(
-                            title: "Today's Attendance",
-                            subtitle: "Status & details",
-                            icon: Icons.fact_check,
-                            gradient: [Colors.grey.shade700, Colors.grey.shade900],
-                            onTap: () => Get.toNamed(AdminRoutes.attendanceToday),
-                          ),
-                        ),
-                        SizedBox(width: 12.w),
-                        Expanded(
-                          child: _gridCard(
-                            title: "Check Out Attendance",
-                            subtitle: "Face & location",
-                            icon: Icons.logout_rounded,
-                            gradient: const [Color(0xFFFF6F00), Color(0xFFFFA000)],
-                            onTap: () => Get.toNamed(AdminRoutes.checkoutattendace),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+        titleSpacing: 0,
+        title: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'MONTEAGE',
+                style: GoogleFonts.manrope(
+                  fontSize: 20.sp,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.1,
+                  color: const Color(0xFF241917),
                 ),
               ),
-            ),
-          ],
+              Text(
+                'Employee dashboard',
+                style: GoogleFonts.inter(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF756A66),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      body: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 24.h),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeroCard(),
+              SizedBox(height: 20.h),
+              _buildSectionHeader(
+                title: 'Quick actions',
+                subtitle:
+                    'Everything you need to manage today\'s attendance flow.',
+              ),
+              SizedBox(height: 14.h),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final cardWidth = (constraints.maxWidth - 12.w) / 2;
+
+                  return Wrap(
+                    spacing: 12.w,
+                    runSpacing: 12.h,
+                    children: [
+                      SizedBox(
+                        width: cardWidth,
+                        child: _ActionCard(
+                          eyebrow: 'Start shift',
+                          title: 'Mark Attendance',
+                          subtitle:
+                              'Verify face and location to check in securely.',
+                          icon: Icons.face_retouching_natural_rounded,
+                          accent: const Color(0xFF1E8E5A),
+                          background: const [
+                            Color(0xFFE4F7EC),
+                            Color(0xFFD6F0E2),
+                          ],
+                          onTap: () =>
+                              Get.toNamed(AdminRoutes.MARK_FACE_ATTENDANCE),
+                        ),
+                      ),
+                      SizedBox(
+                        width: cardWidth,
+                        child: _ActionCard(
+                          eyebrow: 'Records',
+                          title: 'Attendance History',
+                          subtitle:
+                              'Review past logs and track daily attendance records.',
+                          icon: Icons.history_rounded,
+                          accent: const Color(0xFF2563EB),
+                          background: const [
+                            Color(0xFFE6EEFF),
+                            Color(0xFFDCE7FF),
+                          ],
+                          onTap: () =>
+                              Get.toNamed(AdminRoutes.attendanceHistory),
+                        ),
+                      ),
+                      SizedBox(
+                        width: cardWidth,
+                        child: _ActionCard(
+                          eyebrow: 'Today',
+                          title: 'Today\'s Attendance',
+                          subtitle:
+                              'See your current status and shift details in one place.',
+                          icon: Icons.fact_check_rounded,
+                          accent: const Color(0xFF6B5CF6),
+                          background: const [
+                            Color(0xFFEFECFF),
+                            Color(0xFFE6E1FF),
+                          ],
+                          onTap: () => Get.toNamed(AdminRoutes.attendanceToday),
+                        ),
+                      ),
+                      SizedBox(
+                        width: cardWidth,
+                        child: _ActionCard(
+                          eyebrow: 'End shift',
+                          title: 'Check Out',
+                          subtitle:
+                              'Close the day with a verified check-out submission.',
+                          icon: Icons.logout_rounded,
+                          accent: const Color(0xFFC75B2A),
+                          background: const [
+                            Color(0xFFFFEBDD),
+                            Color(0xFFFFE1CC),
+                          ],
+                          onTap: () =>
+                              Get.toNamed(AdminRoutes.checkoutattendace),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _gridCard({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required List<Color> gradient,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16.r),
-      child: Container(
-        height: 120.h,
-        padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 14.w),
+  Widget _buildHeroCard() {
+    return Obx(() {
+      if (profileC.isLoading.value) {
+        return _StatusCard(
+          icon: Icons.hourglass_top_rounded,
+          title: 'Loading profile',
+          description:
+              'Fetching your employee details and latest account status.',
+          actionLabel: 'Refresh',
+          onAction: () => profileC.fetchProfile(showSuccess: false),
+          accent: const Color(0xFF8C5E4A),
+        );
+      }
+
+      final profile = profileC.profile.value;
+      if (profile == null) {
+        return _StatusCard(
+          icon: Icons.cloud_off_rounded,
+          title: 'Profile unavailable',
+          description:
+              'We could not load your dashboard identity details right now.',
+          actionLabel: 'Retry',
+          onAction: () => profileC.fetchProfile(showSuccess: false),
+          accent: const Color(0xFFB54545),
+        );
+      }
+
+      final user = profile.user;
+      final imageUrl = profileC.fullImageUrl(user.profileImage);
+      final displayName = profileC.titleCase(
+        user.fullName.isNotEmpty
+            ? user.fullName
+            : '${user.firstName} ${user.lastName}',
+      );
+
+      return Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(18.w),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16.r),
-          gradient: LinearGradient(
+          borderRadius: BorderRadius.circular(28.r),
+          gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: gradient,
+            colors: [Color(0xFF241917), Color(0xFF6A3027), Color(0xFFC75B43)],
           ),
           boxShadow: const [
             BoxShadow(
-              color: Color(0x33000000),
-              blurRadius: 12,
-              offset: Offset(0, 6),
+              color: Color(0x2A6A3027),
+              blurRadius: 22,
+              offset: Offset(0, 12),
             ),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
               children: [
-                Container(
-                  height: 42.h,
-                  width: 42.h,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.18),
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  child: Icon(icon, color: Colors.white, size: 24),
+                const _TopBadge(
+                  icon: Icons.auto_awesome_rounded,
+                  label: 'Workspace',
                 ),
                 const Spacer(),
-                const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+                Material(
+                  color: Colors.white.withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(16.r),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16.r),
+                    onTap: () => profileC.fetchProfile(showSuccess: false),
+                    child: Padding(
+                      padding: EdgeInsets.all(10.w),
+                      child: const Icon(
+                        Icons.refresh_rounded,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
-            Column(
+            SizedBox(height: 18.h),
+            Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w900,
+                Container(
+                  padding: EdgeInsets.all(3.w),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.16),
+                    borderRadius: BorderRadius.circular(24.r),
+                  ),
+                  child: CircleAvatar(
+                    radius: 30.r,
+                    backgroundColor: const Color(0xFFF5E6DF),
+                    child: ClipOval(
+                      child: imageUrl.isEmpty
+                          ? Icon(
+                              Icons.person_rounded,
+                              color: const Color(0xFF6A3027),
+                              size: 32.sp,
+                            )
+                          : Image.network(
+                              imageUrl,
+                              width: 60.r,
+                              height: 60.r,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Icon(
+                                Icons.person_rounded,
+                                color: const Color(0xFF6A3027),
+                                size: 32.sp,
+                              ),
+                            ),
+                    ),
                   ),
                 ),
-                SizedBox(height: 3.h),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w600,
+                SizedBox(width: 14.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        displayName,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.manrope(
+                          fontSize: 22.sp,
+                          height: 1.15,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(height: 6.h),
+                      Text(
+                        user.email,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white.withOpacity(0.82),
+                        ),
+                      ),
+                      SizedBox(height: 10.h),
+                      Wrap(
+                        spacing: 8.w,
+                        runSpacing: 8.h,
+                        children: [
+                          _InfoPill(
+                            label: user.isActive ? 'Active' : 'Inactive',
+                            icon: user.isActive
+                                ? Icons.check_circle
+                                : Icons.cancel,
+                            color: user.isActive
+                                ? const Color(0xFF2AB673)
+                                : const Color(0xFFD85E5E),
+                          ),
+                          _InfoPill(
+                            label: user.isFaceRegistered
+                                ? 'Face Registered'
+                                : 'Face Pending',
+                            icon: user.isFaceRegistered
+                                ? Icons.verified_user
+                                : Icons.face_retouching_off,
+                            color: user.isFaceRegistered
+                                ? const Color(0xFF5F8BFF)
+                                : const Color(0xFFF0A43C),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ],
+            ),
+            SizedBox(height: 18.h),
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(22.r),
+                border: Border.all(color: Colors.white.withOpacity(0.12)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _MetricTile(
+                      label: 'Employee ID',
+                      value: user.employeeId,
+                    ),
+                  ),
+                  _metricDivider(),
+                  Expanded(
+                    child: _MetricTile(
+                      label: 'Department',
+                      value: profileC.titleCase(user.department),
+                    ),
+                  ),
+                  _metricDivider(),
+                  Expanded(
+                    child: Obx(
+                      () => _MetricTile(
+                        label: 'Today',
+                        value: controller.selectedDate.value,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
+      );
+    });
+  }
+
+  Widget _buildSectionHeader({
+    required String title,
+    required String subtitle,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: GoogleFonts.manrope(
+            fontSize: 20.sp,
+            fontWeight: FontWeight.w800,
+            color: const Color(0xFF221816),
+          ),
+        ),
+        SizedBox(height: 4.h),
+        Text(
+          subtitle,
+          style: GoogleFonts.inter(
+            fontSize: 13.sp,
+            height: 1.45,
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF756A66),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _metricDivider() {
+    return Container(
+      height: 34.h,
+      width: 1,
+      margin: EdgeInsets.symmetric(horizontal: 10.w),
+      color: Colors.white.withOpacity(0.16),
+    );
+  }
+}
+
+class _ActionCard extends StatelessWidget {
+  const _ActionCard({
+    required this.eyebrow,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.accent,
+    required this.background,
+    required this.onTap,
+  });
+
+  final String eyebrow;
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color accent;
+  final List<Color> background;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24.r),
+        child: Ink(
+          padding: EdgeInsets.all(16.w),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24.r),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: background,
+            ),
+            border: Border.all(color: Colors.white.withOpacity(0.55)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x12000000),
+                blurRadius: 16,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: 176.h),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      height: 44.h,
+                      width: 44.h,
+                      decoration: BoxDecoration(
+                        color: accent.withOpacity(0.14),
+                        borderRadius: BorderRadius.circular(14.r),
+                      ),
+                      child: Icon(icon, color: accent, size: 24.sp),
+                    ),
+                    const Spacer(),
+                    Container(
+                      height: 34.h,
+                      width: 34.h,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.8),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.arrow_outward_rounded,
+                        color: accent,
+                        size: 18.sp,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20.h),
+                Text(
+                  eyebrow.toUpperCase(),
+                  style: GoogleFonts.inter(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.7,
+                    color: accent,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.manrope(
+                    fontSize: 17.sp,
+                    height: 1.2,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF201715),
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  subtitle,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 12.sp,
+                    height: 1.45,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF5F5450),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoPill extends StatelessWidget {
+  const _InfoPill({
+    required this.label,
+    required this.icon,
+    required this.color,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.18),
+        borderRadius: BorderRadius.circular(999.r),
+        border: Border.all(color: color.withOpacity(0.22)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14.sp, color: Colors.white),
+          SizedBox(width: 6.w),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 11.sp,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetricTile extends StatelessWidget {
+  const _MetricTile({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: GoogleFonts.inter(
+            fontSize: 11.sp,
+            fontWeight: FontWeight.w600,
+            color: Colors.white.withOpacity(0.72),
+          ),
+        ),
+        SizedBox(height: 6.h),
+        Text(
+          value,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: GoogleFonts.manrope(
+            fontSize: 13.sp,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatusCard extends StatelessWidget {
+  const _StatusCard({
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.actionLabel,
+    required this.onAction,
+    required this.accent,
+  });
+
+  final IconData icon;
+  final String title;
+  final String description;
+  final String actionLabel;
+  final VoidCallback onAction;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(18.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28.r),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x12000000),
+            blurRadius: 18,
+            offset: Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 54.h,
+            width: 54.h,
+            decoration: BoxDecoration(
+              color: accent.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(18.r),
+            ),
+            child: Icon(icon, color: accent, size: 28.sp),
+          ),
+          SizedBox(height: 16.h),
+          Text(
+            title,
+            style: GoogleFonts.manrope(
+              fontSize: 20.sp,
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF241917),
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            description,
+            style: GoogleFonts.inter(
+              fontSize: 13.sp,
+              height: 1.5,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF6B605C),
+            ),
+          ),
+          SizedBox(height: 16.h),
+          FilledButton(
+            onPressed: onAction,
+            style: FilledButton.styleFrom(
+              backgroundColor: accent,
+              foregroundColor: Colors.white,
+              padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 12.h),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16.r),
+              ),
+            ),
+            child: Text(
+              actionLabel,
+              style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TopBadge extends StatelessWidget {
+  const _TopBadge({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.14),
+        borderRadius: BorderRadius.circular(999.r),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white, size: 14.sp),
+          SizedBox(width: 6.w),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 11.sp,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+        ],
       ),
     );
   }

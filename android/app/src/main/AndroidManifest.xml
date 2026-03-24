@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.monteage_employee">
+    package="com.myattendance.monteage">
 
     <!-- Internet access (API calls, uploads, downloads) -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -26,7 +26,7 @@
 
     <application
         android:name="${applicationName}"
-        android:label="monteage_employee"
+        android:label="My Attendance"
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="true"
         android:theme="@style/LaunchTheme"

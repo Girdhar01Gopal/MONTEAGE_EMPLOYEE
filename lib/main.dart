@@ -17,7 +17,7 @@ class AdminApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'MONTEAGE EMPLOYEE',
+      title: 'My Attendance',
       debugShowCheckedModeBanner: false,
       getPages: AdminRoutes.routes,
 

@@ -7,7 +7,7 @@ pluginManagement {
             require(flutterSdkPath != null) { "flutter.sdk not set in local.properties" }
             flutterSdkPath
         }
-
+7
     includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
 
     repositories {
@@ -24,8 +24,7 @@ plugins {
     id("com.android.application") version "8.11.1" apply false
     id("org.jetbrains.kotlin.android") version "2.2.20" apply false
 
-    // ✅ ADD THIS (THIS FIXES YOUR ERROR)
-    id("com.google.gms.google-services") version "4.4.2" apply false
+
 }
 
 include(":app")

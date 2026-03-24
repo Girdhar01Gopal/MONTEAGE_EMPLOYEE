@@ -8,4 +8,6 @@ class PrefConst {
   static String StudentName = "StudentName";
   static String Session = "Session";
   static String ClassName = "ClassName";
+  static String isregistered = "isregistered";
+
 }

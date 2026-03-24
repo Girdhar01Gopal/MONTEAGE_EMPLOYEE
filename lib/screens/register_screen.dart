@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../controllers/register_controller.dart';
 import 'login_screen.dart'; // Import LoginScreen for navigation
 
@@ -13,7 +14,7 @@ class RegisterScreen extends StatelessWidget {
     final c = Get.put(RegisterController());
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F2),
+      backgroundColor: const Color(0xFFF6F1ED),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 16.h),
@@ -34,12 +35,13 @@ class RegisterScreen extends StatelessWidget {
                 padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 18.h),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(22.r),
+                  borderRadius: BorderRadius.circular(24.r),
+                  border: Border.all(color: const Color(0xFFEDE2DC), width: 1),
                   boxShadow: const [
                     BoxShadow(
-                      color: Color(0x22000000),
-                      blurRadius: 18,
-                      offset: Offset(0, 8),
+                      color: Color(0x12000000),
+                      blurRadius: 14,
+                      offset: Offset(0, 7),
                     ),
                   ],
                 ),
@@ -47,26 +49,27 @@ class RegisterScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Register",
-                      style: TextStyle(
+                      "Create Account",
+                      style: GoogleFonts.manrope(
                         fontSize: 28.sp,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF333333),
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF241917),
                       ),
                     ),
                     SizedBox(height: 6.h),
                     Text(
-                      "Please sign up to continue",
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: const Color(0xFF8A8A8A),
+                      "Sign up to get started",
+                      style: GoogleFonts.inter(
+                        fontSize: 13.sp,
+                        color: const Color(0xFF8B7D77),
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
 
                     SizedBox(height: 18.h),
 
                     Form(
-                      key: c.formKey,  // Use the form key here
+                      key: c.formKey, // Use the form key here
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -83,7 +86,7 @@ class RegisterScreen extends StatelessWidget {
                             },
                           ),
                           SizedBox(height: 14.h),
-                            _Label("Last Name"),
+                          _Label("Last Name"),
                           _Input(
                             controller: c.lastNameController,
                             hint: "Enter Last Name",
@@ -96,7 +99,7 @@ class RegisterScreen extends StatelessWidget {
                             },
                           ),
                           SizedBox(height: 14.h),
-                           _Label("Department"),
+                          _Label("Department"),
                           _Input(
                             controller: c.departmentController,
                             hint: "Enter Department",
@@ -126,8 +129,8 @@ class RegisterScreen extends StatelessWidget {
                             },
                           ),
                           SizedBox(height: 14.h),
-                      //    SizedBox(height: 14.h),
 
+                          //    SizedBox(height: 14.h),
                           _Label("EmployeeId"),
                           _Input(
                             controller: c.EmployeeIdc,
@@ -157,7 +160,7 @@ class RegisterScreen extends StatelessWidget {
                                   c.isPasswordHidden.value
                                       ? Icons.visibility_off
                                       : Icons.visibility,
-                                  color: const Color(0xFF777777),
+                                  color: const Color(0xFF8B7D77),
                                 ),
                               ),
                               validator: (value) {
@@ -183,7 +186,7 @@ class RegisterScreen extends StatelessWidget {
                                   c.isPassword2Hidden.value
                                       ? Icons.visibility_off
                                       : Icons.visibility,
-                                  color: const Color(0xFF777777),
+                                  color: const Color(0xFF8B7D77),
                                 ),
                               ),
                               validator: (value) {
@@ -203,7 +206,7 @@ class RegisterScreen extends StatelessWidget {
                           SizedBox(height: 18.h),
 
                           Obx(() {
-                            return _GradientElevatedButton(
+                            return _ModernButton(
                               text: "Sign Up",
                               loading: c.isLoading.value,
                               onTap: c.isLoading.value ? null : c.registerUser,
@@ -214,14 +217,16 @@ class RegisterScreen extends StatelessWidget {
                           Center(
                             child: GestureDetector(
                               onTap: () {
-                                Get.to(() => LoginScreen());  // Navigate to LoginScreen
+                                Get.to(
+                                  () => LoginScreen(),
+                                ); // Navigate to LoginScreen
                               },
                               child: Text(
                                 "Already have an account? Login",
-                                style: TextStyle(
-                                  fontSize: 14.sp,
+                                style: GoogleFonts.inter(
+                                  fontSize: 13.sp,
                                   fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF3D3D3D),
+                                  color: const Color(0xFF6A3027),
                                 ),
                               ),
                             ),
@@ -248,10 +253,10 @@ class RegisterScreen extends StatelessWidget {
       padding: EdgeInsets.only(bottom: 8.h),
       child: Text(
         text,
-        style: TextStyle(
-          fontSize: 14.sp,
-          fontWeight: FontWeight.w600,
-          color: const Color(0xFF4A4A4A),
+        style: GoogleFonts.manrope(
+          fontSize: 13.sp,
+          fontWeight: FontWeight.w700,
+          color: const Color(0xFF241917),
         ),
       ),
     );
@@ -270,17 +275,28 @@ class RegisterScreen extends StatelessWidget {
       controller: controller,
       obscureText: obscure,
       keyboardType: keyboardType,
-      style: TextStyle(fontSize: 14.sp),
+      style: GoogleFonts.inter(fontSize: 13.sp),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: const Color(0xFFB0B0B0), fontSize: 13.sp),
+        hintStyle: GoogleFonts.inter(
+          color: const Color(0xFFB0B0B0),
+          fontSize: 13.sp,
+        ),
         filled: true,
-        fillColor: const Color(0xFFF1F1F1),
+        fillColor: const Color(0xFFF6F1ED),
         suffixIcon: suffix,
         contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.r),
-          borderSide: BorderSide.none,
+          borderSide: const BorderSide(color: Color(0xFFEDE2DC), width: 1),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+          borderSide: const BorderSide(color: Color(0xFFEDE2DC), width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+          borderSide: const BorderSide(color: Color(0xFF6A3027), width: 1.5),
         ),
       ),
       validator: validator,
@@ -288,13 +304,13 @@ class RegisterScreen extends StatelessWidget {
   }
 }
 
-// Gradient Elevated Button Widget
-class _GradientElevatedButton extends StatelessWidget {
+// Modern Button Widget
+class _ModernButton extends StatelessWidget {
   final String text;
   final bool loading;
   final VoidCallback? onTap;
 
-  const _GradientElevatedButton({
+  const _ModernButton({
     required this.text,
     required this.loading,
     required this.onTap,
@@ -305,48 +321,32 @@ class _GradientElevatedButton extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       height: 52.h,
-      child: Material(
-        elevation: 10,
-        shadowColor: const Color(0x55E53935),
-        borderRadius: BorderRadius.circular(12.r),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12.r),
-          child: Ink(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12.r),
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFFFF8A80),
-                  Color(0xFFE57373),
-                  Color(0xFFE53935),
-                  Color(0xFFB71C1C),
-                ],
-              ),
-            ),
-            child: Center(
-              child: loading
-                  ? const SizedBox(
-                height: 22,
-                width: 22,
-                child: CircularProgressIndicator(
+      child: FilledButton(
+        onPressed: onTap,
+        style: FilledButton.styleFrom(
+          backgroundColor: const Color(0xFF6A3027),
+          disabledBackgroundColor: const Color(0xFFC9C9C9),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+        ),
+        child: loading
+            ? SizedBox(
+                height: 22.h,
+                width: 22.w,
+                child: const CircularProgressIndicator(
                   strokeWidth: 2.5,
                   color: Colors.white,
                 ),
               )
-                  : Text(
+            : Text(
                 text,
-                style: TextStyle(
-                  fontSize: 16.sp,
+                style: GoogleFonts.manrope(
+                  fontSize: 15.sp,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
                 ),
               ),
-            ),
-          ),
-        ),
       ),
     );
   }

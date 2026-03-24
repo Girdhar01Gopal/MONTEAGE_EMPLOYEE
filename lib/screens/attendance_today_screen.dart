@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../controllers/attendance_today_controller.dart';
 import '../models/attendance_today.dart';
 
@@ -11,20 +13,88 @@ class AttendanceTodayScreen extends StatelessWidget {
     final c = Get.find<AttendanceTodayController>();
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF6F1ED),
       appBar: AppBar(
         elevation: 0,
-        title: const Text(
-          "Today Attendance",
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
+        backgroundColor: const Color(0xFFF6F1ED),
+        leading: Padding(
+          padding: EdgeInsets.only(left: 12.w),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16.r),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x1A000000),
+                  blurRadius: 10,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => Get.back(),
+                borderRadius: BorderRadius.circular(16.r),
+                child: Icon(
+                  Icons.arrow_back,
+                  color: const Color(0xFF6A3027),
+                  size: 22.sp,
+                ),
+              ),
+            ),
+          ),
         ),
-        backgroundColor: const Color(0xFF6C63FF),
-        foregroundColor: Colors.white,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Today's Attendance",
+              style: GoogleFonts.manrope(
+                fontSize: 18.sp,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF241917),
+              ),
+            ),
+            Text(
+              "View your check-in details",
+              style: GoogleFonts.inter(
+                fontSize: 11.sp,
+                color: const Color(0xFF8B7D77),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        centerTitle: false,
         actions: [
-          IconButton(
-            onPressed: c.fetchToday,
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Refresh',
+          Padding(
+            padding: EdgeInsets.only(right: 12.w),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16.r),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x1A000000),
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: c.fetchToday,
+                  borderRadius: BorderRadius.circular(16.r),
+                  child: Icon(
+                    Icons.refresh_rounded,
+                    color: const Color(0xFF6A3027),
+                    size: 22.sp,
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -35,12 +105,16 @@ class AttendanceTodayScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6C63FF)),
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6A3027)),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16.h),
                 Text(
                   'Loading attendance...',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  style: GoogleFonts.manrope(
+                    fontSize: 14.sp,
+                    color: const Color(0xFF8B7D77),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -53,20 +127,27 @@ class AttendanceTodayScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.event_busy_rounded, size: 80, color: Colors.grey[400]),
-                const SizedBox(height: 16),
+                Icon(
+                  Icons.event_busy_rounded,
+                  size: 80.sp,
+                  color: const Color(0xFFD4CCC6).withOpacity(0.6),
+                ),
+                SizedBox(height: 16.h),
                 Text(
                   "No attendance marked today",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.grey[700],
+                  style: GoogleFonts.manrope(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF241917),
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8.h),
                 Text(
                   "Mark your attendance to see details",
-                  style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                  style: GoogleFonts.inter(
+                    fontSize: 13.sp,
+                    color: const Color(0xFF8B7D77),
+                  ),
                 ),
               ],
             ),
@@ -76,11 +157,11 @@ class AttendanceTodayScreen extends StatelessWidget {
         return SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
             child: Column(
               children: [
-                // ✅ Image/CircleAvatar removed as requested
                 _TodayAttendanceCard(data, c),
+                SizedBox(height: 16.h),
               ],
             ),
           ),
@@ -98,11 +179,11 @@ class _TodayAttendanceCard extends StatelessWidget {
   Color _statusColor(String status) {
     switch (status.toUpperCase()) {
       case "VERIFIED":
-        return const Color(0xFF10B981);
+        return const Color(0xFF2AB673);
       case "REJECTED":
-        return const Color(0xFFEF4444);
+        return const Color(0xFFD85E5E);
       default:
-        return const Color(0xFFF59E0B);
+        return const Color(0xFFF0A43C);
     }
   }
 
@@ -128,236 +209,322 @@ class _TodayAttendanceCard extends StatelessWidget {
 
     final address = c.cleanAddress(data.location.address);
 
-    return Card(
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: Colors.grey[200]!, width: 1),
+    return Container(
+      margin: EdgeInsets.only(bottom: 16.h),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24.r),
+        border: Border.all(color: const Color(0xFFEDE2DC), width: 1),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x12000000),
+            blurRadius: 14,
+            offset: Offset(0, 7),
+          ),
+        ],
       ),
-      child: Container(
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
-        child: Column(
-          children: [
-            // Header with gradient
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF6C63FF), Color(0xFF5A52E0)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
+      child: Column(
+        children: [
+          // Header with gradient
+          Container(
+            padding: EdgeInsets.all(20.w),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF6A3027), Color(0xFFC75B43)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.calendar_today_rounded, color: Colors.white, size: 24),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _ddMMyyyy(data.timestamp),
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _timeAmPm(data.timestamp),
-                          style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.9)),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(color: statusColor, borderRadius: BorderRadius.circular(20)),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(statusIcon, color: Colors.white, size: 16),
-                        const SizedBox(width: 6),
-                        Text(
-                          data.status,
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(24),
+                topRight: Radius.circular(24),
               ),
             ),
-
-            // Content
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  _InfoRow(
-                    icon: Icons.check_circle_outline_rounded,
-                    label: 'Marked',
-                    value: data.marked ? 'Yes' : 'No',
-                    valueColor: data.marked ? const Color(0xFF10B981) : Colors.grey[600]!,
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(10.w),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12.r),
                   ),
-                  const SizedBox(height: 12),
-                  _InfoRow(
-                    icon: Icons.verified_outlined,
-                    label: 'Verified',
-                    value: data.isVerified ? 'Yes' : 'No',
-                    valueColor: data.isVerified ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                  child: Icon(
+                    Icons.calendar_today_rounded,
+                    color: Colors.white,
+                    size: 24.sp,
                   ),
-                  const SizedBox(height: 12),
-
-                  // Confidence
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey[200]!),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.psychology_rounded, size: 20, color: Colors.grey[700]),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Confidence Score',
-                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey[700]),
-                            ),
-                          ],
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _ddMMyyyy(data.timestamp),
+                        style: GoogleFonts.manrope(
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
                         ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: LinearProgressIndicator(
-                                  value: data.confidenceScore,
-                                  minHeight: 8,
-                                  backgroundColor: Colors.grey[300],
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    data.confidenceScore > 0.7
-                                        ? const Color(0xFF10B981)
-                                        : data.confidenceScore > 0.4
-                                        ? const Color(0xFFF59E0B)
-                                        : const Color(0xFFEF4444),
-                                  ),
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(
+                        _timeAmPm(data.timestamp),
+                        style: GoogleFonts.inter(
+                          fontSize: 12.sp,
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 12.w,
+                    vertical: 8.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: statusColor,
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(statusIcon, color: Colors.white, size: 16.sp),
+                      SizedBox(width: 6.w),
+                      Text(
+                        data.status,
+                        style: GoogleFonts.manrope(
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Content
+          Padding(
+            padding: EdgeInsets.all(20.w),
+            child: Column(
+              children: [
+                _InfoRow(
+                  icon: Icons.check_circle_outline_rounded,
+                  label: 'Marked',
+                  value: data.marked ? 'Yes' : 'No',
+                  valueColor: data.marked
+                      ? const Color(0xFF2AB673)
+                      : const Color(0xFF8B7D77),
+                ),
+                SizedBox(height: 12.h),
+                _InfoRow(
+                  icon: Icons.verified_outlined,
+                  label: 'Verified',
+                  value: data.isVerified ? 'Yes' : 'No',
+                  valueColor: data.isVerified
+                      ? const Color(0xFF2AB673)
+                      : const Color(0xFFD85E5E),
+                ),
+                SizedBox(height: 12.h),
+
+                // Confidence
+                Container(
+                  padding: EdgeInsets.all(16.w),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF6F1ED),
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(color: const Color(0xFFEDE2DC)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.psychology_rounded,
+                            size: 20.sp,
+                            color: const Color(0xFF6A3027),
+                          ),
+                          SizedBox(width: 8.w),
+                          Text(
+                            'Confidence Score',
+                            style: GoogleFonts.manrope(
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF241917),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 12.h),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8.r),
+                              child: LinearProgressIndicator(
+                                value: data.confidenceScore,
+                                minHeight: 8.h,
+                                backgroundColor: const Color(0xFFD4CCC6),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  data.confidenceScore > 0.7
+                                      ? const Color(0xFF2AB673)
+                                      : data.confidenceScore > 0.4
+                                      ? const Color(0xFFF0A43C)
+                                      : const Color(0xFFD85E5E),
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 12),
-                            Text(
-                              '${(data.confidenceScore * 100).toStringAsFixed(1)}%',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: data.confidenceScore > 0.7
-                                    ? const Color(0xFF10B981)
-                                    : data.confidenceScore > 0.4
-                                    ? const Color(0xFFF59E0B)
-                                    : const Color(0xFFEF4444),
-                              ),
+                          ),
+                          SizedBox(width: 12.w),
+                          Text(
+                            '${(data.confidenceScore * 100).toStringAsFixed(1)}%',
+                            style: GoogleFonts.manrope(
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w800,
+                              color: data.confidenceScore > 0.7
+                                  ? const Color(0xFF2AB673)
+                                  : data.confidenceScore > 0.4
+                                  ? const Color(0xFFF0A43C)
+                                  : const Color(0xFFD85E5E),
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Location + Address
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[50],
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.blue[100]!),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.blue[100],
-                            borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(Icons.location_on_rounded, color: Colors.red, size: 20),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Location',
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.blue[900]),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(address, style: TextStyle(fontSize: 13, color: Colors.blue[800])),
-                              const SizedBox(height: 6),
-                              Text('Lat: ${lat == null ? "--" : lat.toStringAsFixed(6)}',
-                                  style: TextStyle(fontSize: 13, color: Colors.blue[800])),
-                              Text('Lng: ${lng == null ? "--" : lng.toStringAsFixed(6)}',
-                                  style: TextStyle(fontSize: 13, color: Colors.blue[800])),
-                              Text('Accuracy: ${acc == null ? "--" : acc.toStringAsFixed(0)} m',
-                                  style: TextStyle(fontSize: 13, color: Colors.blue[800])),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ],
                   ),
+                ),
 
-                  const SizedBox(height: 12),
+                SizedBox(height: 12.h),
 
-                  // Face Analysis
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey[200]!),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+                // Location + Address
+                Container(
+                  padding: EdgeInsets.all(16.w),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF6F1ED),
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(color: const Color(0xFFEDE2DC)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(8.w),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFC75B43).withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: Icon(
+                          Icons.location_on_rounded,
+                          color: const Color(0xFFC75B43),
+                          size: 20.sp,
+                        ),
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.face_retouching_natural, size: 20, color: Colors.grey[700]),
-                            const SizedBox(width: 8),
                             Text(
-                              "Face Analysis",
-                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey[700]),
+                              'Location',
+                              style: GoogleFonts.manrope(
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF241917),
+                              ),
+                            ),
+                            SizedBox(height: 6.h),
+                            Text(
+                              address,
+                              style: GoogleFonts.inter(
+                                fontSize: 12.sp,
+                                color: const Color(0xFF8B7D77),
+                              ),
+                            ),
+                            SizedBox(height: 6.h),
+                            Text(
+                              'Lat: ${lat == null ? "--" : lat.toStringAsFixed(6)}',
+                              style: GoogleFonts.inter(
+                                fontSize: 11.sp,
+                                color: const Color(0xFF8B7D77),
+                              ),
+                            ),
+                            Text(
+                              'Lng: ${lng == null ? "--" : lng.toStringAsFixed(6)}',
+                              style: GoogleFonts.inter(
+                                fontSize: 11.sp,
+                                color: const Color(0xFF8B7D77),
+                              ),
+                            ),
+                            Text(
+                              'Accuracy: ${acc == null ? "--" : acc.toStringAsFixed(0)} m',
+                              style: GoogleFonts.inter(
+                                fontSize: 11.sp,
+                                color: const Color(0xFF8B7D77),
+                              ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 10),
-                        Text("Quality Score: ${data.faceAnalysis.qualityScore.toStringAsFixed(2)}"),
-                        Text("Landmarks Detected: ${data.faceAnalysis.landmarksDetected}"),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+
+                SizedBox(height: 12.h),
+
+                // Face Analysis
+                Container(
+                  padding: EdgeInsets.all(16.w),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF6F1ED),
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(color: const Color(0xFFEDE2DC)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.face_retouching_natural,
+                            size: 20.sp,
+                            color: const Color(0xFF6A3027),
+                          ),
+                          SizedBox(width: 8.w),
+                          Text(
+                            "Face Analysis",
+                            style: GoogleFonts.manrope(
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF241917),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 10.h),
+                      Text(
+                        "Quality Score: ${data.faceAnalysis.qualityScore.toStringAsFixed(2)}",
+                        style: GoogleFonts.inter(
+                          fontSize: 12.sp,
+                          color: const Color(0xFF8B7D77),
+                        ),
+                      ),
+                      Text(
+                        "Landmarks Detected: ${data.faceAnalysis.landmarksDetected}",
+                        style: GoogleFonts.inter(
+                          fontSize: 12.sp,
+                          color: const Color(0xFF8B7D77),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -401,13 +568,33 @@ class _InfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: Colors.grey[600]),
-        const SizedBox(width: 12),
-        Expanded(child: Text(label, style: TextStyle(fontSize: 14, color: Colors.grey[700]))),
+        Icon(icon, size: 20.sp, color: const Color(0xFF8B7D77)),
+        SizedBox(width: 12.w),
+        Expanded(
+          child: Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 13.sp,
+              color: const Color(0xFF8B7D77),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(color: valueColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-          child: Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: valueColor)),
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+          decoration: BoxDecoration(
+            color: valueColor.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(8.r),
+            border: Border.all(color: valueColor),
+          ),
+          child: Text(
+            value,
+            style: GoogleFonts.manrope(
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w700,
+              color: valueColor,
+            ),
+          ),
         ),
       ],
     );

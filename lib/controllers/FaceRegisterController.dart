@@ -82,6 +82,9 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:monteage_employee/infrastructure/routes/admin_routes.dart';
+import 'package:monteage_employee/infrastructure/utils/pref_const.dart';
+import 'package:monteage_employee/infrastructure/utils/pref_manager.dart';
 
 class FaceRegisterController extends GetxController {
   final box = GetStorage();
@@ -179,8 +182,8 @@ class FaceRegisterController extends GetxController {
 
       if (first.statusCode == 200 || first.statusCode == 201) {
         _snackSuccess("Face registered successfully!");
-        Get.back(result: true); // ✅ return to profile screen
-        return;
+          await  PrefManager().writeValue(key: PrefConst.isregistered, value: "true");
+         Get.offAllNamed(AdminRoutes.HOME);
       }
 
       // If unauthorized -> refresh token -> retry once
@@ -197,8 +200,9 @@ class FaceRegisterController extends GetxController {
 
         if (second.statusCode == 200 || second.statusCode == 201) {
           _snackSuccess("Face registered successfully!");
-          Get.back(result: true);
-          return;
+        await  PrefManager().writeValue(key: PrefConst.isregistered, value: "true");
+         Get.offAllNamed(AdminRoutes.HOME);// ✅ go to home screen after successful registration
+         
         }
 
         _snackError("Failed to register face: (${second.statusCode}) ${second.message}");

@@ -1,8 +1,10 @@
-// infrastructure/app_drawer/admin_drawer.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:monteage_employee/controllers/profile_controller.dart';
 import 'package:monteage_employee/infrastructure/utils/pref_manager.dart';
+
 import '../../infrastructure/routes/admin_routes.dart';
 
 class AdminDrawer extends StatefulWidget {
@@ -13,150 +15,176 @@ class AdminDrawer extends StatefulWidget {
 }
 
 class _AdminDrawerState extends State<AdminDrawer> {
-  String? hoveredRoute;
+  late final EmployeeProfileController profileC =
+      Get.isRegistered<EmployeeProfileController>()
+      ? Get.find<EmployeeProfileController>()
+      : Get.put(EmployeeProfileController());
 
   @override
   Widget build(BuildContext context) {
     final currentRoute = Get.currentRoute;
 
-    return SafeArea(
-      child: Drawer(
-        backgroundColor: Colors.white,
+    return Drawer(
+      width: 328.w,
+      backgroundColor: const Color(0xFFF6F1ED),
+      child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // ==================== HEADER ====================
-            Container(
-              width: double.infinity,
-              height: 150.h,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFFC71585), // Red Violet
-                    Color(0xFF4A0000), // Oxblood
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+            Padding(
+              padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 10.h),
+              child: _buildHeader(context),
+            ),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w),
+              child: Text(
+                'Navigate',
+                style: GoogleFonts.inter(
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.8,
+                  color: const Color(0xFF8B7D77),
                 ),
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    "Monteage Employee",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20.sp,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 8.h),
-                  Text(
-                    "MONTEAGE ATTENDANCE MANAGEMENT",
-                    style: TextStyle(
-                      color: Colors.yellow[300],
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
             ),
-
-            // ==================== HOME STYLE CARDS ====================
-            Padding(
-              padding: EdgeInsets.all(16.w),
-              child: Column(
-                children: [
-
-                  _actionCard(
-                    title: "PROFILE EMPLOYEE",
-                    subtitle: "Basic Information ",
-                    icon: Icons.face_retouching_natural,
-                    gradient: const [
-                      Color(0xFF2563EB),
-                      Color(0xFF3B82F6),
-                    ],
-                    isActive: currentRoute == AdminRoutes.profile,
-                    onTap: () => Get.toNamed(AdminRoutes.profile),
-                  ),
-
-                  SizedBox(height: 12.h),
-
-
-                  _actionCard(
-                    title: "Face Register Attendance",
-                    subtitle: "Face & location based",
-                    icon: Icons.face_retouching_natural,
-                    gradient: const [
-                      Color(0xFF16A34A),
-                      Color(0xFF22C55E),
-                    ],
-                    isActive: currentRoute == AdminRoutes.faceRegister,
-                    onTap: () => Get.toNamed(AdminRoutes.faceRegister),
-                  ),
-
-                  SizedBox(height: 12.h),
-
-                  _actionCard(
-                    title: "Attendance History",
-                    subtitle: "View daily attendance records",
-                    icon: Icons.history,
-                    gradient: const [
-                      Color(0xFF2563EB),
-                      Color(0xFF3B82F6),
-                    ],
-                    isActive: currentRoute == AdminRoutes.attendanceHistory,
-                    onTap: () => Get.toNamed(AdminRoutes.attendanceHistory),
-                  ),
-
-                  SizedBox(height: 12.h),
-
-                  _actionCard(
-                    title: "Today's Attendance",
-                    subtitle: "Verification status & details",
-                    icon: Icons.fact_check,
-                    gradient: [
-                      Colors.grey.shade700,
-                      Colors.grey.shade900,
-                    ],
-                    isActive: currentRoute == AdminRoutes.attendanceToday,
-                    onTap: () => Get.toNamed(AdminRoutes.attendanceToday),
-                  ),
-
-                  SizedBox(height: 12.h),
-
-                  // ==================== LOGOUT CARD ====================
-                  _actionCard(
-                    title: "Logout",
-                    subtitle: "Exit from your account",
-                    icon: Icons.logout,
-                    gradient: [
-                      Colors.red.shade600,
-                      Colors.red.shade900,
-                    ],
-                    isActive: false,
-                    onTap: () async{
-                      // TODO: clear storage/session if needed
-                      Get.offAllNamed(AdminRoutes.login);
-                      Get.snackbar("LogOut", "You have been logged out successfully.",
-                        snackPosition: SnackPosition.TOP,
-                        backgroundColor: Colors.green,
-                        colorText: Colors.white,
-                      );
-                      await PrefManager().clearPref();
-                    },
-                  ),
-                ],
-              ),
-            ),
-
-            // ==================== EXTRA MENU ITEMS (optional) ====================
+            SizedBox(height: 10.h),
             Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: const [
-                    // keep empty as your previous code
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(14.w, 0, 14.w, 12.h),
+                children: [
+                  _DrawerNavItem(
+                    title: 'Dashboard',
+                    subtitle: 'Back to your attendance overview',
+                    icon: Icons.grid_view_rounded,
+                    accent: const Color(0xFF6A3027),
+                    isActive: currentRoute == AdminRoutes.HOME,
+                    onTap: () => _openRoute(context, AdminRoutes.HOME),
+                  ),
+                  SizedBox(height: 10.h),
+                  _DrawerNavItem(
+                    title: 'Employee Profile',
+                    subtitle: 'Review your account details',
+                    icon: Icons.badge_rounded,
+                    accent: const Color(0xFF2563EB),
+                    isActive: currentRoute == AdminRoutes.profile,
+                    onTap: () => _openRoute(context, AdminRoutes.profile),
+                  ),
+                  SizedBox(height: 10.h),
+                  _DrawerNavItem(
+                    title: 'Mark Attendance',
+                    subtitle: 'Face and location based check-in',
+                    icon: Icons.how_to_reg_rounded,
+                    accent: const Color(0xFF1E8E5A),
+                    isActive: currentRoute == AdminRoutes.MARK_FACE_ATTENDANCE,
+                    onTap: () =>
+                        _openRoute(context, AdminRoutes.MARK_FACE_ATTENDANCE),
+                  ),
+                  SizedBox(height: 10.h),
+                  // _DrawerNavItem(
+                  //   title: 'Face Register',
+                  //   subtitle: 'Manage your face verification setup',
+                  //   icon: Icons.face_retouching_natural_rounded,
+                  //   accent: const Color(0xFF0F9D9A),
+                  //   isActive: currentRoute == AdminRoutes.faceRegister,
+                  //   onTap: () => _openRoute(context, AdminRoutes.faceRegister),
+                  // ),
+                  SizedBox(height: 10.h),
+                  _DrawerNavItem(
+                    title: 'Attendance History',
+                    subtitle: 'Browse previous attendance records',
+                    icon: Icons.history_rounded,
+                    accent: const Color(0xFF4F46E5),
+                    isActive: currentRoute == AdminRoutes.attendanceHistory,
+                    onTap: () =>
+                        _openRoute(context, AdminRoutes.attendanceHistory),
+                  ),
+                  SizedBox(height: 10.h),
+                  _DrawerNavItem(
+                    title: 'Today\'s Attendance',
+                    subtitle: 'Check your current shift status',
+                    icon: Icons.fact_check_rounded,
+                    accent: const Color(0xFF7C3AED),
+                    isActive: currentRoute == AdminRoutes.attendanceToday,
+                    onTap: () =>
+                        _openRoute(context, AdminRoutes.attendanceToday),
+                  ),
+                  SizedBox(height: 10.h),
+                  _DrawerNavItem(
+                    title: 'Check Out',
+                    subtitle: 'Finish the day with a verified exit',
+                    icon: Icons.logout_rounded,
+                    accent: const Color(0xFFC75B2A),
+                    isActive: currentRoute == AdminRoutes.checkoutattendace,
+                    onTap: () =>
+                        _openRoute(context, AdminRoutes.checkoutattendace),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(14.w, 0, 14.w, 16.h),
+              child: Container(
+                padding: EdgeInsets.all(14.w),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24.r),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x12000000),
+                      blurRadius: 16,
+                      offset: Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      height: 44.h,
+                      width: 44.h,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFE6E1),
+                        borderRadius: BorderRadius.circular(14.r),
+                      ),
+                      child: const Icon(
+                        Icons.power_settings_new_rounded,
+                        color: Color(0xFFB54545),
+                      ),
+                    ),
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Logout',
+                            style: GoogleFonts.manrope(
+                              fontSize: 15.sp,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFF241917),
+                            ),
+                          ),
+                          SizedBox(height: 3.h),
+                          Text(
+                            'Clear the current session and return to login.',
+                            style: GoogleFonts.inter(
+                              fontSize: 11.5.sp,
+                              fontWeight: FontWeight.w500,
+                              color: const Color(0xFF7B6F6A),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => _logout(context),
+                      child: Text(
+                        'Exit',
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFFB54545),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -167,84 +195,358 @@ class _AdminDrawerState extends State<AdminDrawer> {
     );
   }
 
-  // ✅ HomeScreen style card
-  Widget _actionCard({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required List<Color> gradient,
-    required VoidCallback onTap,
-    required bool isActive,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16.r),
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 14.w),
+  Widget _buildHeader(BuildContext context) {
+    return Obx(() {
+      final profile = profileC.profile.value;
+      final user = profile?.user;
+      final name = user == null
+          ? 'Monteage Employee'
+          : profileC.titleCase(
+              user.fullName.isNotEmpty
+                  ? user.fullName
+                  : '${user.firstName} ${user.lastName}',
+            );
+      final department = user == null
+          ? 'Attendance management workspace'
+          : profileC.titleCase(user.department);
+      final imageUrl = user == null ? '' : profileC.fullImageUrl(user.profileImage);
+
+      return Container(
+        padding: EdgeInsets.all(18.w),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16.r),
-          gradient: LinearGradient(
+          borderRadius: BorderRadius.circular(28.r),
+          gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: gradient,
+            colors: [Color(0xFF241917), Color(0xFF6A3027), Color(0xFFC75B43)],
           ),
           boxShadow: const [
             BoxShadow(
-              color: Color(0x33000000),
-              blurRadius: 12,
-              offset: Offset(0, 6),
+              color: Color(0x246A3027),
+              blurRadius: 22,
+              offset: Offset(0, 10),
             ),
           ],
-          border: isActive
-              ? Border.all(color: Colors.white.withOpacity(0.65), width: 1.2)
-              : null,
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              height: 44.h,
-              width: 44.h,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.18),
-                borderRadius: BorderRadius.circular(12.r),
-              ),
-              child: Icon(icon, color: Colors.white, size: 24.sp),
-            ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w900,
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.14),
+                    borderRadius: BorderRadius.circular(999.r),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.dashboard_customize_rounded,
+                          size: 14.sp, color: Colors.white),
+                      SizedBox(width: 6.w),
+                      Text(
+                        'MONTEAGE',
+                        style: GoogleFonts.inter(
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.6,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                Material(
+                  color: Colors.white.withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(16.r),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16.r),
+                    onTap: () => profileC.fetchProfile(showSuccess: true),
+                    child: Padding(
+                      padding: EdgeInsets.all(10.w),
+                      child: const Icon(Icons.refresh_rounded, color: Colors.white),
                     ),
                   ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
-                      fontSize: 11.5.sp,
-                      fontWeight: FontWeight.w600,
+                ),
+              ],
+            ),
+            SizedBox(height: 18.h),
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(3.w),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.16),
+                    borderRadius: BorderRadius.circular(22.r),
+                  ),
+                  child: CircleAvatar(
+                    radius: 28.r,
+                    backgroundColor: const Color(0xFFF5E6DF),
+                    child: ClipOval(
+                      child: imageUrl.isEmpty
+                          ? Icon(
+                              Icons.person_rounded,
+                              color: const Color(0xFF6A3027),
+                              size: 30.sp,
+                            )
+                          : Image.network(
+                              imageUrl,
+                              width: 56.r,
+                              height: 56.r,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Icon(
+                                Icons.person_rounded,
+                                color: const Color(0xFF6A3027),
+                                size: 30.sp,
+                              ),
+                            ),
                     ),
                   ),
-                ],
-              ),
+                ),
+                SizedBox(width: 14.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.manrope(
+                          fontSize: 20.sp,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          height: 1.15,
+                        ),
+                      ),
+                      SizedBox(height: 5.h),
+                      Text(
+                        department,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white.withOpacity(0.82),
+                        ),
+                      ),
+                      SizedBox(height: 10.h),
+                      Wrap(
+                        spacing: 8.w,
+                        runSpacing: 8.h,
+                        children: [
+                          _HeaderPill(
+                            label: user?.employeeId ?? 'Employee',
+                            icon: Icons.badge_outlined,
+                          ),
+                          _HeaderPill(
+                            label: profileC.isLoading.value
+                                ? 'Syncing'
+                                : user == null
+                                ? 'Offline'
+                                : user.isActive
+                                ? 'Active'
+                                : 'Inactive',
+                            icon: profileC.isLoading.value
+                                ? Icons.sync
+                                : user != null && user.isActive
+                                ? Icons.check_circle_outline
+                                : Icons.remove_circle_outline,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            Icon(
-              Icons.arrow_forward_ios,
-              color: Colors.white,
-              size: 16.sp,
+            SizedBox(height: 16.h),
+            InkWell(
+              onTap: () => _openRoute(context, AdminRoutes.profile),
+              borderRadius: BorderRadius.circular(18.r),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(18.r),
+                  border: Border.all(color: Colors.white.withOpacity(0.12)),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Open full profile',
+                        style: GoogleFonts.inter(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    Icon(Icons.arrow_forward_rounded,
+                        color: Colors.white, size: 18.sp),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
+      );
+    });
+  }
+
+  Future<void> _openRoute(BuildContext context, String route) async {
+    Navigator.of(context).pop();
+    if (Get.currentRoute == route) {
+      return;
+    }
+
+    await Future<void>.delayed(const Duration(milliseconds: 120));
+    Get.toNamed(route);
+  }
+
+  Future<void> _logout(BuildContext context) async {
+    Navigator.of(context).pop();
+    await PrefManager().clearPref();
+    if (Get.isRegistered<EmployeeProfileController>()) {
+      Get.delete<EmployeeProfileController>(force: true);
+    }
+    Get.offAllNamed(AdminRoutes.login);
+    Get.snackbar(
+      'LogOut',
+      'You have been logged out successfully.',
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: Colors.green,
+      colorText: Colors.white,
+    );
+  }
+}
+
+class _DrawerNavItem extends StatelessWidget {
+  const _DrawerNavItem({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.accent,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color accent;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(22.r),
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 14.w),
+          decoration: BoxDecoration(
+            color: isActive ? accent.withOpacity(0.1) : Colors.white,
+            borderRadius: BorderRadius.circular(22.r),
+            border: Border.all(
+              color: isActive ? accent.withOpacity(0.35) : const Color(0xFFEDE2DC),
+              width: isActive ? 1.3 : 1,
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x12000000),
+                blurRadius: 14,
+                offset: Offset(0, 7),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                height: 44.h,
+                width: 44.h,
+              decoration: BoxDecoration(
+                  color: accent.withOpacity(isActive ? 0.16 : 0.12),
+                  borderRadius: BorderRadius.circular(14.r),
+                ),
+                child: Icon(icon, color: accent, size: 23.sp),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: GoogleFonts.manrope(
+                        color: const Color(0xFF241917),
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        color: const Color(0xFF7B6F6A),
+                        fontSize: 11.5.sp,
+                        fontWeight: FontWeight.w500,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                isActive ? Icons.radio_button_checked : Icons.arrow_forward_ios_rounded,
+                color: accent,
+                size: isActive ? 18.sp : 15.sp,
+              ),
+            ],
+       
+        ),
+      ),
+    ));
+  }
+}
+
+class _HeaderPill extends StatelessWidget {
+  const _HeaderPill({required this.label, required this.icon});
+
+  final String label;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.16),
+        borderRadius: BorderRadius.circular(999.r),
+        border: Border.all(color: Colors.white.withOpacity(0.14)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14.sp, color: Colors.white),
+          SizedBox(width: 6.w),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 11.sp,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+        ],
       ),
     );
   }

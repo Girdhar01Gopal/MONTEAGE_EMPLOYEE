@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import '../controllers/profile_controller.dart';
 
 class EmployeeProfileScreen extends GetView<EmployeeProfileController> {
@@ -9,52 +12,94 @@ class EmployeeProfileScreen extends GetView<EmployeeProfileController> {
     required IconData icon,
     required String title,
     required String value,
+    Color? accentColor,
   }) {
+    final accent = accentColor ?? const Color(0xFF6A3027);
+
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
+        borderRadius: BorderRadius.circular(24.r),
+        border: Border.all(color: const Color(0xFFEDE2DC), width: 1),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x12000000),
+            blurRadius: 14,
+            offset: Offset(0, 7),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
-            height: 42,
-            width: 42,
+            height: 48.h,
+            width: 48.h,
             decoration: BoxDecoration(
-              color: const Color(0xFF6C63FF).withOpacity(0.12),
-              borderRadius: BorderRadius.circular(12),
+              color: accent.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(14.r),
             ),
-            child: Icon(icon, color: const Color(0xFF6C63FF)),
+            child: Icon(icon, color: accent, size: 24.sp),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 14.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(color: Colors.black54, fontSize: 12)),
-                const SizedBox(height: 4),
-                Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF8B7D77),
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                SizedBox(height: 6.h),
+                Text(
+                  value,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.manrope(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF241917),
+                  ),
+                ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
   }
 
-  Widget _badge({required String text, required Color color}) {
+  Widget _statusBadge({
+    required String text,
+    required Color color,
+    required IconData icon,
+  }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: color),
+        color: color.withOpacity(0.14),
+        borderRadius: BorderRadius.circular(999.r),
+        border: Border.all(color: color.withOpacity(0.28)),
       ),
-      child: Text(
-        text,
-        style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14.sp, color: color),
+          SizedBox(width: 6.w),
+          Text(
+            text,
+            style: GoogleFonts.inter(
+              fontWeight: FontWeight.w700,
+              fontSize: 11.sp,
+              color: color,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -62,159 +107,359 @@ class EmployeeProfileScreen extends GetView<EmployeeProfileController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7FB),
+      backgroundColor: const Color(0xFFF6F1ED),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF6C63FF),
-        title: const Text("Employee Profile", style: TextStyle(color: Colors.white)),
-        iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-            onPressed: () => controller.fetchProfile(showSuccess: true),
-            icon: const Icon(Icons.refresh, color: Colors.white),
-          )
-        ],
+        elevation: 0,
+        toolbarHeight: 72.h,
+        backgroundColor: const Color(0xFFF6F1ED),
+        surfaceTintColor: Colors.transparent,
+        leadingWidth: 72.w,
+        leading: Padding(
+          padding: EdgeInsets.only(left: 16.w),
+          child: Container(
+            margin: EdgeInsets.symmetric(vertical: 12.h),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16.r),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x14000000),
+                  blurRadius: 12,
+                  offset: Offset(0, 6),
+                ),
+              ],
+            ),
+            child: IconButton(
+              icon: const Icon(
+                Icons.arrow_back_rounded,
+                color: Color(0xFF241917),
+              ),
+              onPressed: () => Get.back(),
+            ),
+          ),
+        ),
+        titleSpacing: 0,
+        title: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Profile Details',
+                style: GoogleFonts.manrope(
+                  fontSize: 20.sp,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF241917),
+                ),
+              ),
+              Text(
+                'Your account information',
+                style: GoogleFonts.inter(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF756A66),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const CircularProgressIndicator(),
+                SizedBox(height: 16.h),
+                Text(
+                  'Loading your profile',
+                  style: GoogleFonts.manrope(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF241917),
+                  ),
+                ),
+              ],
+            ),
+          );
         }
 
         final p = controller.profile.value;
         if (p == null) {
           return Center(
-            child: ElevatedButton(
-              onPressed: controller.fetchProfile,
-              child: const Text("Retry"),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  height: 62.h,
+                  width: 62.h,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFB54545).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(20.r),
+                  ),
+                  child: const Icon(
+                    Icons.cloud_off_rounded,
+                    color: Color(0xFFB54545),
+                    size: 28,
+                  ),
+                ),
+                SizedBox(height: 16.h),
+                Text(
+                  'Profile not available',
+                  style: GoogleFonts.manrope(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF241917),
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  'We could not load your details. Try again.',
+                  style: GoogleFonts.inter(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF756A66),
+                  ),
+                ),
+                SizedBox(height: 20.h),
+                FilledButton(
+                  onPressed: controller.fetchProfile,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFFB54545),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 24.w,
+                      vertical: 14.h,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16.r),
+                    ),
+                  ),
+                  child: Text(
+                    'Retry',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
             ),
           );
         }
 
         final u = p.user;
         final imgUrl = controller.fullImageUrl(u.profileImage);
+        final displayName = controller.titleCase(
+          u.fullName.isNotEmpty ? u.fullName : '${u.firstName} ${u.lastName}',
+        );
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF6C63FF), Color(0xFF5A52E0)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)],
-                ),
-                child: Row(
-                  children: [
-                    // ✅ Avatar + Edit Icon
-                    Stack(
-                      children: [
-                        CircleAvatar(
-                          radius: 36,
-                          backgroundColor: Colors.white.withOpacity(0.3),
-                          child: ClipOval(
-                            child: imgUrl.isEmpty
-                                ? const Icon(Icons.person, color: Colors.white, size: 40)
-                                : Image.network(
-                              imgUrl,
-                              width: 72,
-                              height: 72,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) =>
-                              const Icon(Icons.person, color: Colors.white, size: 40),
-                            ),
-                          ),
-                        ),
-
-                        Positioned(
-                          right: 0,
-                          bottom: 0,
-                          child: InkWell(
-                            onTap: controller.goToFaceRegister, // ✅ opens face register
-                            borderRadius: BorderRadius.circular(30),
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(30),
-                                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
-                              ),
-                              child: const Icon(Icons.edit, size: 18, color: Color(0xFF6C63FF)),
-                            ),
-                          ),
-                        ),
+        return SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 24.h),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(18.w),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(28.r),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFF241917),
+                        Color(0xFF6A3027),
+                        Color(0xFFC75B43),
                       ],
                     ),
-
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x2A6A3027),
+                        blurRadius: 22,
+                        offset: Offset(0, 12),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          Text(
-                            controller.titleCase(
-                              u.fullName.isNotEmpty ? u.fullName : "${u.firstName} ${u.lastName}",
+                          Container(
+                            padding: EdgeInsets.all(3.w),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.16),
+                              borderRadius: BorderRadius.circular(24.r),
                             ),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                            child: CircleAvatar(
+                              radius: 32.r,
+                              backgroundColor: const Color(0xFFF5E6DF),
+                              child: ClipOval(
+                                child: imgUrl.isEmpty
+                                    ? Icon(
+                                        Icons.person_rounded,
+                                        color: const Color(0xFF6A3027),
+                                        size: 36.sp,
+                                      )
+                                    : Image.network(
+                                        imgUrl,
+                                        width: 64.r,
+                                        height: 64.r,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Icon(
+                                          Icons.person_rounded,
+                                          color: const Color(0xFF6A3027),
+                                          size: 36.sp,
+                                        ),
+                                      ),
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 6),
-                          Text(
-                            controller.titleCase(u.department),
-                            style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 13),
+                          SizedBox(width: 14.w),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  displayName,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.manrope(
+                                    fontSize: 22.sp,
+                                    height: 1.15,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                SizedBox(height: 6.h),
+                                Text(
+                                  controller.titleCase(u.department),
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.white.withOpacity(0.82),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              _badge(
-                                text: u.isActive ? "ACTIVE" : "INACTIVE",
-                                color: u.isActive ? Colors.green : Colors.red,
+                          Material(
+                            color: Colors.white.withOpacity(0.14),
+                            borderRadius: BorderRadius.circular(16.r),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(16.r),
+                              onTap: controller.goToFaceRegister,
+                              child: Padding(
+                                padding: EdgeInsets.all(10.w),
+                                child: const Icon(
+                                  Icons.edit_rounded,
+                                  color: Colors.white,
+                                ),
                               ),
-                              _badge(
-                                text: u.isFaceRegistered ? "FACE REGISTERED" : "FACE NOT REGISTERED",
-                                color: u.isFaceRegistered ? Colors.green : Colors.orange,
-                              ),
-                            ],
+                            ),
                           ),
                         ],
                       ),
-                    )
-                  ],
+                      SizedBox(height: 16.h),
+                      Wrap(
+                        spacing: 8.w,
+                        runSpacing: 8.h,
+                        children: [
+                          _statusBadge(
+                            text: u.isActive ? 'Active' : 'Inactive',
+                            icon: u.isActive
+                                ? Icons.check_circle
+                                : Icons.cancel,
+                            color: u.isActive
+                                ? const Color(0xFF2AB673)
+                                : const Color(0xFFD85E5E),
+                          ),
+                          _statusBadge(
+                            text: u.isFaceRegistered
+                                ? 'Face Verified'
+                                : 'Face Pending',
+                            icon: u.isFaceRegistered
+                                ? Icons.verified_user
+                                : Icons.face_retouching_off,
+                            color: u.isFaceRegistered
+                                ? const Color(0xFF5F8BFF)
+                                : const Color(0xFFF0A43C),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 14),
-
-              _infoTile(icon: Icons.badge, title: "Employee ID", value: u.employeeId),
-              const SizedBox(height: 10),
-              _infoTile(icon: Icons.person_outline, title: "Username", value: controller.titleCase(u.username)),
-              const SizedBox(height: 10),
-              _infoTile(icon: Icons.email_outlined, title: "Email", value: u.email),
-              const SizedBox(height: 10),
-              _infoTile(icon: Icons.account_circle_outlined, title: "User ID", value: u.id.toString()),
-              const SizedBox(height: 10),
-
-              _infoTile(
-                icon: Icons.face_retouching_natural,
-                title: "Face Registered At",
-                value: controller.formatDateTimeIndian(u.faceRegisteredAt),
-              ),
-              const SizedBox(height: 10),
-
-              _infoTile(
-                icon: Icons.calendar_today,
-                title: "Date Joined",
-                value: controller.formatDateTimeIndian(u.dateJoined),
-              ),
-              const SizedBox(height: 14),
-            ],
+                SizedBox(height: 24.h),
+                Text(
+                  'Account Information',
+                  style: GoogleFonts.manrope(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF241917),
+                  ),
+                ),
+                SizedBox(height: 12.h),
+                _infoTile(
+                  icon: Icons.badge_rounded,
+                  title: 'Employee ID',
+                  value: u.employeeId,
+                  accentColor: const Color(0xFF2563EB),
+                ),
+                SizedBox(height: 12.h),
+                _infoTile(
+                  icon: Icons.person_rounded,
+                  title: 'Full Name',
+                  value: displayName,
+                  accentColor: const Color(0xFF6A3027),
+                ),
+                SizedBox(height: 12.h),
+                _infoTile(
+                  icon: Icons.person_outline_rounded,
+                  title: 'Username',
+                  value: controller.titleCase(u.username),
+                  accentColor: const Color(0xFF1E8E5A),
+                ),
+                SizedBox(height: 12.h),
+                _infoTile(
+                  icon: Icons.email_rounded,
+                  title: 'Email Address',
+                  value: u.email,
+                  accentColor: const Color(0xFF4F46E5),
+                ),
+                SizedBox(height: 12.h),
+                _infoTile(
+                  icon: Icons.tag_rounded,
+                  title: 'User ID',
+                  value: u.id.toString(),
+                  accentColor: const Color(0xFF7C3AED),
+                ),
+                SizedBox(height: 24.h),
+                Text(
+                  'Verification Details',
+                  style: GoogleFonts.manrope(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF241917),
+                  ),
+                ),
+                SizedBox(height: 12.h),
+                _infoTile(
+                  icon: Icons.face_retouching_natural_rounded,
+                  title: 'Face Registered At',
+                  value: controller.formatDateTimeIndian(u.faceRegisteredAt),
+                  accentColor: const Color(0xFF0F9D9A),
+                ),
+                SizedBox(height: 12.h),
+                _infoTile(
+                  icon: Icons.calendar_today_rounded,
+                  title: 'Date Joined',
+                  value: controller.formatDateOnlyIndian(u.dateJoined),
+                  accentColor: const Color(0xFFC75B2A),
+                ),
+                SizedBox(height: 24.h),
+              ],
+            ),
           ),
         );
       }),

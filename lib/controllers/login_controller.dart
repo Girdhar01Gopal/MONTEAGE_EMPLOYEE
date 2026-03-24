@@ -6,6 +6,8 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:monteage_employee/infrastructure/routes/admin_routes.dart';
+import 'package:monteage_employee/infrastructure/utils/pref_const.dart';
+import 'package:monteage_employee/infrastructure/utils/pref_manager.dart';
 
 class LoginController extends GetxController {
   final usernameController = TextEditingController();
@@ -13,6 +15,7 @@ class LoginController extends GetxController {
 
   final isLoading = false.obs;
   final isPasswordHidden = true.obs;
+  final isregistered = false.obs;
 
   final box = GetStorage();
 
@@ -26,6 +29,11 @@ class LoginController extends GetxController {
       "Forgot password flow not connected yet.",
       snackPosition: SnackPosition.TOP,
     );
+  }
+@override
+  void onInit() async{
+    super.onInit();
+   isregistered.value = await PrefManager().readValue(key: PrefConst.isregistered) == "false";
   }
 
   /// ✅ Auto-skip login if tokens already exist
@@ -125,8 +133,13 @@ class LoginController extends GetxController {
         backgroundColor: Colors.green,
         colorText: Colors.white,
       );
+      if(isregistered.value == true){
+        Get.offAllNamed(AdminRoutes.HOME);
+      }else{
+        Get.offAllNamed(AdminRoutes.faceRegister);
+      }
 
-      Get.offAllNamed(AdminRoutes.HOME);
+      
     } catch (e) {
       Get.snackbar(
         "Error",
