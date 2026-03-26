@@ -91,6 +91,7 @@ dependencies:
   google_mlkit_face_detection:
 
 
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

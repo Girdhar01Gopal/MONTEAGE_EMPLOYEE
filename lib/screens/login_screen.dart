@@ -351,9 +351,9 @@ class LoginScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "Corporate World",
+                              "Monteage Corporate World",
                               style: GoogleFonts.manrope(
-                                fontSize: 28.sp,
+                                fontSize: 20.sp,
                                 fontWeight: FontWeight.w800,
                                 color: const Color(0xFF241917),
                               ),
