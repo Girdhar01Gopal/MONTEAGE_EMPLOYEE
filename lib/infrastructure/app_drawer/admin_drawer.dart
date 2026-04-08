@@ -79,7 +79,7 @@ class _AdminDrawerState extends State<AdminDrawer> {
                     onTap: () =>
                         _openRoute(context, AdminRoutes.MARK_FACE_ATTENDANCE),
                   ),
-                  SizedBox(height: 10.h),
+                  //SizedBox(height: 10.h),
                   // _DrawerNavItem(
                   //   title: 'Face Register',
                   //   subtitle: 'Manage your face verification setup',
@@ -121,72 +121,69 @@ class _AdminDrawerState extends State<AdminDrawer> {
                 ],
               ),
             ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(14.w, 0, 14.w, 16.h),
-              child: Container(
-                padding: EdgeInsets.all(14.w),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24.r),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x12000000),
-                      blurRadius: 16,
-                      offset: Offset(0, 8),
+            Container(
+              padding: EdgeInsets.all(14.w),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24.r),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x12000000),
+                    blurRadius: 16,
+                    offset: Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    height: 44.h,
+                    width: 44.h,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFE6E1),
+                      borderRadius: BorderRadius.circular(14.r),
                     ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      height: 44.h,
-                      width: 44.h,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFE6E1),
-                        borderRadius: BorderRadius.circular(14.r),
-                      ),
-                      child: const Icon(
-                        Icons.power_settings_new_rounded,
-                        color: Color(0xFFB54545),
-                      ),
+                    child: const Icon(
+                      Icons.power_settings_new_rounded,
+                      color: Color(0xFFB54545),
                     ),
-                    SizedBox(width: 12.w),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Logout',
-                            style: GoogleFonts.manrope(
-                              fontSize: 15.sp,
-                              fontWeight: FontWeight.w800,
-                              color: const Color(0xFF241917),
-                            ),
+                  ),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Logout',
+                          style: GoogleFonts.manrope(
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF241917),
                           ),
-                          SizedBox(height: 3.h),
-                          Text(
-                            'Clear the current session and return to login.',
-                            style: GoogleFonts.inter(
-                              fontSize: 11.5.sp,
-                              fontWeight: FontWeight.w500,
-                              color: const Color(0xFF7B6F6A),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () => _logout(context),
-                      child: Text(
-                        'Exit',
-                        style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFFB54545),
                         ),
+                        SizedBox(height: 3.h),
+                        Text(
+                          'Clear the current session and return to login.',
+                          style: GoogleFonts.inter(
+                            fontSize: 11.5.sp,
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFF7B6F6A),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => _logout(context),
+                    child: Text(
+                      'Exit',
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFFB54545),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ],

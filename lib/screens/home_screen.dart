@@ -58,9 +58,9 @@ class HomeScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'MONTEAGE',
+                'MONTEAGE IT SOLUTIONS PVT LTD',
                 style: GoogleFonts.manrope(
-                  fontSize: 20.sp,
+                  fontSize: 13.sp,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.1,
                   color: const Color(0xFF241917),
