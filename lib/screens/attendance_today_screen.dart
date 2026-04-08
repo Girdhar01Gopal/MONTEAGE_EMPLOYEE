@@ -207,7 +207,8 @@ class _TodayAttendanceCard extends StatelessWidget {
     final lng = data.location.longitude;
     final acc = data.location.accuracy;
 
-    final address = c.cleanAddress(data.location.address);
+    //final address = c.cleanAddress(data.location.address);
+    final address = c.resolvedAddress.value;
 
     return Container(
       margin: EdgeInsets.only(bottom: 16.h),
