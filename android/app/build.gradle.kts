@@ -3,10 +3,11 @@ plugins {
     id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
 }
-0\
+
 import java.util.Properties
 import java.io.FileInputStream
 
+// Load local properties for versioning
 val localProperties = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
@@ -15,9 +16,10 @@ if (localPropertiesFile.exists()) {
     }
 }
 
-var flutterVersionCode = localProperties.getProperty("flutter.versionCode") ?: "1"
-var flutterVersionName = localProperties.getProperty("flutter.versionName") ?: "1.0"
+val flutterVersionCode = localProperties.getProperty("flutter.versionCode") ?: "1"
+val flutterVersionName = localProperties.getProperty("flutter.versionName") ?: "1.0"
 
+// Load keystore properties for signing
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
@@ -33,8 +35,8 @@ android {
         applicationId = "com.myattendance.monteage"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.0.2"
+        versionCode = flutterVersionCode.toInt()
+        versionName = flutterVersionName
         multiDexEnabled = true
     }
 
@@ -46,7 +48,7 @@ android {
             storePassword = keystoreProperties["storePassword"] as String?
         }
     }
-   
+
     buildTypes {
         getByName("release") {
             signingConfig = signingConfigs.getByName("release")
@@ -56,7 +58,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
-        isCoreLibraryDesugaringEnabled = true // ✅ Required for flutter_local_notifications
+        isCoreLibraryDesugaringEnabled = true // Required for flutter_local_notifications
     }
 
     kotlinOptions {
@@ -67,11 +69,11 @@ android {
 }
 
 flutter {
-    source = "../.."
+    source = "../.." // Make sure this path is correct if it's not default
 }
 
 dependencies {
     implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
     implementation("com.google.firebase:firebase-analytics")
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4") // ✅ Required
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4") // Required
 }

@@ -28,6 +28,12 @@ import '../../screens/login_screen.dart';
 import '../../screens/mark_face_attendance_screen.dart';
 import '../../screens/register_screen.dart';
 
+// Import task screens and bindings
+import '../../screens/task_given_screen.dart';
+import '../../screens/task_received_screen.dart';
+import '../../bindings/task_given_binding.dart';
+import '../../bindings/task_received_binding.dart';
+
 class AdminRoutes {
   // ==================
   // Route Names
@@ -39,8 +45,8 @@ class AdminRoutes {
   static const MARK_FACE_ATTENDANCE = "/mark-face-attendance";
   static const attendanceDetails = '/attendance-details';
   static const attendanceHistory = "/attendance-history";
-  static const  registerScreen = '/register';
-  static const  faceRegister = '/face-register';
+  static const registerScreen = '/register';
+  static const faceRegister = '/face-register';
   static const attendanceToday = "/attendance-today";
   static const BOOT = "/boot";
   static const checkoutattendace = "/checkoutattendace";
@@ -48,13 +54,9 @@ class AdminRoutes {
   static const forgotpassword = "/forgotpassword";
   static const faceidlogin = "/faceidlogin";
 
-
-
-
-
-
-
-
+  // New Task Routes
+  static const taskGiven = '/task-given';
+  static const taskReceived = '/task-received';
 
   // ==================
   // Route Definitions
@@ -68,10 +70,10 @@ class AdminRoutes {
       transitionDuration: Duration(milliseconds: 400),
     ),
 
-  GetPage(
+    GetPage(
       name: BOOT,
       page: () => PermissionBootScreen(),
-    transition: Transition.rightToLeft,
+      transition: Transition.rightToLeft,
       transitionDuration: Duration(milliseconds: 200),
     ),
 
@@ -89,7 +91,6 @@ class AdminRoutes {
       transition: Transition.rightToLeft,
       binding: FaceIdLoginBinding(),
     ),
-
 
     GetPage(
       name: MARK_FACE_ATTENDANCE,
@@ -112,8 +113,6 @@ class AdminRoutes {
       binding: checkoutAttendanceBinding(),
     ),
 
-
-
     // ---------- HOME ----------
     GetPage(
       name: HOME,
@@ -121,7 +120,6 @@ class AdminRoutes {
       transition: Transition.rightToLeft,
       binding: HomeBinding(),
     ),
-
 
     // ---------- NOTIFICATIONS ----------
     GetPage(
@@ -133,14 +131,14 @@ class AdminRoutes {
 
     GetPage(
       name: attendanceDetails,
-      page: () =>  AttendanceDetailsPage(),
+      page: () => AttendanceDetailsPage(),
       transition: Transition.rightToLeft,
       binding: AttendanceBinding(),
     ),
 
     GetPage(
       name: attendanceHistory,
-      page: () =>  AttendanceHistoryScreen(),
+      page: () => AttendanceHistoryScreen(),
       transition: Transition.rightToLeft,
       binding: AttendanceHistoryBinding(),
     ),
@@ -152,29 +150,41 @@ class AdminRoutes {
       binding: RegisterBinding(),
     ),
 
-
     GetPage(
       name: forgotpassword,
-      page: () =>  ForgotPasswordScreen(),
+      page: () => ForgotPasswordScreen(),
       transition: Transition.rightToLeft,
       binding: ForgotPasswordBinding(),
     ),
 
-
-
     GetPage(
       name: faceRegister,
-      page: () =>  FaceRegisterScreen(),
+      page: () => FaceRegisterScreen(),
       transition: Transition.rightToLeft,
       binding: FaceRegisterBinding(),
     ),
 
     GetPage(
       name: attendanceToday,
-      page: () =>  AttendanceTodayScreen(),
+      page: () => AttendanceTodayScreen(),
       transition: Transition.rightToLeft,
       binding: AttendanceTodayBinding(),
     ),
 
+    // ---------- TASKS GIVEN ----------
+    GetPage(
+      name: taskGiven,
+      page: () => TaskGivenScreen(),
+      transition: Transition.rightToLeft,
+      binding: TaskGivenBinding(),
+    ),
+
+    // ---------- TASKS RECEIVED ----------
+    GetPage(
+      name: taskReceived,
+      page: () => TaskReceivedScreen(),
+      transition: Transition.rightToLeft,
+      binding: TaskReceivedBinding(),
+    ),
   ];
 }

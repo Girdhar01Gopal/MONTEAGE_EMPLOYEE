@@ -168,6 +168,37 @@ class HomeScreen extends StatelessWidget {
                               Get.toNamed(AdminRoutes.checkoutattendace),
                         ),
                       ),
+                      SizedBox(
+  width: cardWidth,
+  child: _ActionCard(
+    eyebrow: 'Tasks You Assigned',
+    title: 'Given Tasks',
+    subtitle: 'Manage and track the tasks you\'ve assigned, monitor their progress, and ensure completion.',
+    icon: Icons.assignment_rounded,
+    accent: const Color(0xFF00796B), // Accent color (Teal)
+    background: const [
+      Color(0xFFE0F2F1), // Light Teal
+      Color(0xFFB2DFDB), // Pale Teal
+    ],
+    onTap: () => Get.toNamed(AdminRoutes.taskGiven),
+  ),
+),
+SizedBox(
+  width: cardWidth,
+  child: _ActionCard(
+    eyebrow: 'Tasks Assigned to You',
+    title: 'Received Tasks',
+    subtitle: 'Keep track of your assigned tasks, add progress updates, and mark them complete.',
+    icon: Icons.fact_check_rounded,
+    accent: const Color(0xFFFF7043), // Accent color (Coral)
+    background: const [
+      Color(0xFFFFEBEE), // Light Coral
+      Color(0xFFFFCDD2), // Pale Coral
+    ],
+    onTap: () => Get.toNamed(AdminRoutes.taskReceived),
+  ),
+),
+                        
                     ],
                   );
                 },
