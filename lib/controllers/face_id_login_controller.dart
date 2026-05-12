@@ -42,6 +42,7 @@ class FaceIdLoginController extends GetxController {
         performanceMode: FaceDetectorMode.accurate,
       ),
     );
+    print("tset: ${accessToken.value}");
   }
 
   Future<void> takePhoto() async {
@@ -245,7 +246,7 @@ class FaceIdLoginController extends GetxController {
     }
 
     Get.offAllNamed(
-      AdminRoutes.HOME,
+      AdminRoutes.mainScreen,
       arguments: {
         "user": Map<String, dynamic>.from(userData),
         "access_token": accessToken.value,

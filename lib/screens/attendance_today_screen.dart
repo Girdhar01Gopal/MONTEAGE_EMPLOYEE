@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../controllers/attendance_today_controller.dart';
 import '../models/attendance_today.dart';
+import '../widgets/bottom_nav_wrapper.dart';
 
 class AttendanceTodayScreen extends StatelessWidget {
   const AttendanceTodayScreen({super.key});
@@ -12,64 +13,14 @@ class AttendanceTodayScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = Get.find<AttendanceTodayController>();
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF6F1ED),
-      appBar: AppBar(
-        elevation: 0,
+    return BottomNavWrapper(
+      child: Scaffold(
         backgroundColor: const Color(0xFFF6F1ED),
-        leading: Padding(
-          padding: EdgeInsets.only(left: 12.w),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16.r),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x1A000000),
-                  blurRadius: 10,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () => Get.back(),
-                borderRadius: BorderRadius.circular(16.r),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: const Color(0xFF6A3027),
-                  size: 22.sp,
-                ),
-              ),
-            ),
-          ),
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Today's Attendance",
-              style: GoogleFonts.manrope(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w800,
-                color: const Color(0xFF241917),
-              ),
-            ),
-            Text(
-              "View your check-in details",
-              style: GoogleFonts.inter(
-                fontSize: 11.sp,
-                color: const Color(0xFF8B7D77),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-        centerTitle: false,
-        actions: [
-          Padding(
-            padding: EdgeInsets.only(right: 12.w),
+        appBar: AppBar(
+          elevation: 0,
+          backgroundColor: const Color(0xFFF6F1ED),
+          leading: Padding(
+            padding: EdgeInsets.only(left: 12.w),
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -85,10 +36,10 @@ class AttendanceTodayScreen extends StatelessWidget {
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: c.fetchToday,
+                  onTap: () => Get.back(),
                   borderRadius: BorderRadius.circular(16.r),
                   child: Icon(
-                    Icons.refresh_rounded,
+                    Icons.arrow_back,
                     color: const Color(0xFF6A3027),
                     size: 22.sp,
                   ),
@@ -96,77 +47,129 @@ class AttendanceTodayScreen extends StatelessWidget {
               ),
             ),
           ),
-        ],
-      ),
-      body: Obx(() {
-        if (c.isLoading.value) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6A3027)),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Today's Attendance",
+                style: GoogleFonts.manrope(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF241917),
                 ),
-                SizedBox(height: 16.h),
-                Text(
-                  'Loading attendance...',
-                  style: GoogleFonts.manrope(
-                    fontSize: 14.sp,
-                    color: const Color(0xFF8B7D77),
-                    fontWeight: FontWeight.w600,
-                  ),
+              ),
+              Text(
+                "View your check-in details",
+                style: GoogleFonts.inter(
+                  fontSize: 11.sp,
+                  color: const Color(0xFF8B7D77),
+                  fontWeight: FontWeight.w500,
                 ),
-              ],
-            ),
-          );
-        }
-
-        final AttendanceToday? data = c.today.value;
-        if (data == null) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.event_busy_rounded,
-                  size: 80.sp,
-                  color: const Color(0xFFD4CCC6).withOpacity(0.6),
-                ),
-                SizedBox(height: 16.h),
-                Text(
-                  "No attendance marked today",
-                  style: GoogleFonts.manrope(
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF241917),
-                  ),
-                ),
-                SizedBox(height: 8.h),
-                Text(
-                  "Mark your attendance to see details",
-                  style: GoogleFonts.inter(
-                    fontSize: 13.sp,
-                    color: const Color(0xFF8B7D77),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-
-        return SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-            child: Column(
-              children: [
-                _TodayAttendanceCard(data, c),
-                SizedBox(height: 16.h),
-              ],
-            ),
+              ),
+            ],
           ),
-        );
-      }),
+          centerTitle: false,
+          actions: [
+            Padding(
+              padding: EdgeInsets.only(right: 12.w),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16.r),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x1A000000),
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: c.fetchToday,
+                    borderRadius: BorderRadius.circular(16.r),
+                    child: Icon(
+                      Icons.refresh_rounded,
+                      color: const Color(0xFF6A3027),
+                      size: 22.sp,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        body: Obx(() {
+          if (c.isLoading.value) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6A3027)),
+                  ),
+                  SizedBox(height: 16.h),
+                  Text(
+                    'Loading attendance...',
+                    style: GoogleFonts.manrope(
+                      fontSize: 14.sp,
+                      color: const Color(0xFF8B7D77),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+      
+          final AttendanceToday? data = c.today.value;
+          if (data == null) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.event_busy_rounded,
+                    size: 80.sp,
+                    color: const Color(0xFFD4CCC6).withOpacity(0.6),
+                  ),
+                  SizedBox(height: 16.h),
+                  Text(
+                    "No attendance marked today",
+                    style: GoogleFonts.manrope(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF241917),
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  Text(
+                    "Mark your attendance to see details",
+                    style: GoogleFonts.inter(
+                      fontSize: 13.sp,
+                      color: const Color(0xFF8B7D77),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+      
+          return SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+              child: Column(
+                children: [
+                  _TodayAttendanceCard(data, c),
+                  SizedBox(height: 16.h),
+                ],
+              ),
+            ),
+          );
+        }),
+      ),
     );
   }
 }

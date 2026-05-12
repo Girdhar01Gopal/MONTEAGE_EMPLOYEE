@@ -6,49 +6,40 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
 import '../models/profile_model.dart';
-import '../screens/login_screen.dart';
 import '../screens/FaceRegisterScreen.dart';
 
 class EmployeeProfileController extends GetxController {
   final box = GetStorage();
 
   final String baseUrl = "http://att.monteage.co.in/";
-  final String profileApi = "http://att.monteage.co.in/attendance/api/auth/profile/";
-  final String refreshApi = "http://att.monteage.co.in/attendance/api/auth/refresh/";
+  final String profileApi =
+      "http://att.monteage.co.in/attendance/api/auth/profile/";
+  final String refreshApi =
+      "http://att.monteage.co.in/attendance/api/auth/refresh/";
 
   final isLoading = false.obs;
   final Rxn<ProfileModel> profile = Rxn<ProfileModel>();
 
-  String get _accessToken => (box.read("access_token") ?? "").toString().trim();
-  String get _refreshToken => (box.read("refresh_token") ?? "").toString().trim();
+  String get _accessToken =>
+      (box.read("access_token") ?? "").toString().trim();
+  String get _refreshToken =>
+      (box.read("refresh_token") ?? "").toString().trim();
 
   @override
-  void onInit() {
-    super.onInit();
-    fetchProfile(); // ✅ auto load on first create
-  }
+void onInit() {
+  super.onInit();
+  print('=== TOKEN CHECK ===');
+  print('Access: ${box.read("access_token")}');
+  print('Refresh: ${box.read("refresh_token")}');
+  print('All storage: ${box.getValues()}');
+  fetchProfile();
+}
 
-  // ✅ MUST: clear old user profile state
   void resetProfileState() {
     profile.value = null;
     isLoading.value = false;
   }
 
-  // ✅ Call this on Logout button
-  void logout({String message = "Please login again"}) {
-    resetProfileState();
-    box.erase();
-
-    // ✅ destroy controller so next login creates fresh instance
-    if (Get.isRegistered<EmployeeProfileController>()) {
-      Get.delete<EmployeeProfileController>(force: true);
-    }
-
-    Get.offAll(() => const LoginScreen());
-    _snackError("Logged Out", message);
-  }
-
-  // ✅ Profile image edit -> open face register screen
   Future<void> goToFaceRegister() async {
     final result = await Get.to(() => const FaceRegisterScreen());
     if (result == true) {
@@ -57,32 +48,27 @@ class EmployeeProfileController extends GetxController {
   }
 
   void _snackSuccess(String title, String msg) {
-    Get.snackbar(
-      title,
-      msg,
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: Colors.green,
-      colorText: Colors.white,
-    );
+    Get.snackbar(title, msg,
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.green,
+        colorText: Colors.white);
   }
 
   void _snackError(String title, String msg) {
-    Get.snackbar(
-      title,
-      msg,
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: Colors.red,
-      colorText: Colors.white,
-    );
+    Get.snackbar(title, msg,
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red,
+        colorText: Colors.white);
   }
 
   Future<void> fetchProfile({bool showSuccess = false}) async {
-    // ✅ IMPORTANT: clear old profile before fetching new one
     profile.value = null;
-
     isLoading.value = true;
     try {
+      print('ACCESS TOKEN: $_accessToken'); 
       final res = await _authorizedGet(Uri.parse(profileApi));
+      print('PROFILE STATUS: ${res.statusCode}'); // ← add this
+      print('PROFILE BODY: ${res.body}');
 
       if (res.statusCode == 200) {
         final decoded = jsonDecode(res.body) as Map<String, dynamic>;
@@ -90,16 +76,19 @@ class EmployeeProfileController extends GetxController {
         profile.value = p;
 
         if (p.user.isFaceRegistered == false) {
-          _snackError("Face Not Registered", "Register face first, then profile will be shown.");
+          _snackError("Face Not Registered",
+              "Register face first, then profile will be shown.");
         } else {
-          if (showSuccess) _snackSuccess("Success", "Profile loaded successfully.");
+          if (showSuccess)
+            _snackSuccess("Success", "Profile loaded successfully.");
         }
         return;
       }
 
+      
       if (res.statusCode == 401) {
-        // ✅ session expired -> full logout
-        logout(message: "Session expired. Please login again.");
+        _snackError("Error",
+            "Unable to load profile. Please try again later.");
         return;
       }
 
@@ -128,7 +117,8 @@ class EmployeeProfileController extends GetxController {
     return http.get(
       uri,
       headers: {
-        "Authorization": "Bearer ${(box.read("access_token") ?? "").toString()}",
+        "Authorization":
+            "Bearer ${(box.read("access_token") ?? "").toString()}",
         "Accept": "application/json",
       },
     );
@@ -150,14 +140,12 @@ class EmployeeProfileController extends GetxController {
 
     final decoded = jsonDecode(res.body);
     final newAccess = decoded['access']?.toString() ?? "";
-
     if (newAccess.isEmpty) return false;
 
     await box.write("access_token", newAccess);
     return true;
   }
 
-  // ---------- UI helpers ----------
   String fullImageUrl(String? path) {
     final p = (path ?? "").trim();
     if (p.isEmpty) return "";
@@ -171,19 +159,19 @@ class EmployeeProfileController extends GetxController {
     return s
         .split(RegExp(r"\s+"))
         .where((w) => w.isNotEmpty)
-        .map((w) => w[0].toUpperCase() + (w.length > 1 ? w.substring(1).toLowerCase() : ""))
+        .map((w) =>
+            w[0].toUpperCase() +
+            (w.length > 1 ? w.substring(1).toLowerCase() : ""))
         .join(" ");
   }
 
   String formatDateTimeIndian(DateTime? dt) {
     if (dt == null) return "--";
-    final local = dt.toLocal();
-    return DateFormat("dd-MM-yyyy hh:mm a").format(local);
+    return DateFormat("dd-MM-yyyy hh:mm a").format(dt.toLocal());
   }
 
   String formatDateOnlyIndian(DateTime? dt) {
     if (dt == null) return "--";
-    final local = dt.toLocal();
-    return DateFormat("dd-MM-yyyy").format(local);
+    return DateFormat("dd-MM-yyyy").format(dt.toLocal());
   }
 }

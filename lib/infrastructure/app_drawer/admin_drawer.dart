@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:monteage_employee/controllers/profile_controller.dart';
+import 'package:monteage_employee/controllers/employee_data_controller.dart';
 import 'package:monteage_employee/infrastructure/utils/pref_manager.dart';
 
 import '../../infrastructure/routes/admin_routes.dart';
@@ -15,10 +16,10 @@ class AdminDrawer extends StatefulWidget {
 }
 
 class _AdminDrawerState extends State<AdminDrawer> {
-  late final EmployeeProfileController profileC =
-      Get.isRegistered<EmployeeProfileController>()
-      ? Get.find<EmployeeProfileController>()
-      : Get.put(EmployeeProfileController());
+  late final EmployeeDataController employeeC =
+      Get.isRegistered<EmployeeDataController>()
+          ? Get.find<EmployeeDataController>()
+          : Get.put(EmployeeDataController());
 
   @override
   Widget build(BuildContext context) {
@@ -57,38 +58,38 @@ class _AdminDrawerState extends State<AdminDrawer> {
                     subtitle: 'Back to your attendance overview',
                     icon: Icons.grid_view_rounded,
                     accent: const Color(0xFF6A3027),
-                    isActive: currentRoute == AdminRoutes.HOME,
-                    onTap: () => _openRoute(context, AdminRoutes.HOME),
-                  ),
-                  SizedBox(height: 10.h),
-                  _DrawerNavItem(
-                    title: 'Employee Profile',
-                    subtitle: 'Review your account details',
-                    icon: Icons.badge_rounded,
-                    accent: const Color(0xFF2563EB),
-                    isActive: currentRoute == AdminRoutes.profile,
-                    onTap: () => _openRoute(context, AdminRoutes.profile),
-                  ),
-                  SizedBox(height: 10.h),
-                  _DrawerNavItem(
-                    title: 'Mark Attendance',
-                    subtitle: 'Face and location based check-in',
-                    icon: Icons.how_to_reg_rounded,
-                    accent: const Color(0xFF1E8E5A),
-                    isActive: currentRoute == AdminRoutes.MARK_FACE_ATTENDANCE,
-                    onTap: () =>
-                        _openRoute(context, AdminRoutes.MARK_FACE_ATTENDANCE),
+                    isActive: currentRoute == AdminRoutes.mainScreen,
+                    onTap: () => _openRoute(context, AdminRoutes.mainScreen),
                   ),
                   //SizedBox(height: 10.h),
                   // _DrawerNavItem(
-                  //   title: 'Face Register',
-                  //   subtitle: 'Manage your face verification setup',
-                  //   icon: Icons.face_retouching_natural_rounded,
-                  //   accent: const Color(0xFF0F9D9A),
-                  //   isActive: currentRoute == AdminRoutes.faceRegister,
-                  //   onTap: () => _openRoute(context, AdminRoutes.faceRegister),
+                  //   title: 'Employee Profile',
+                  //   subtitle: 'Review your account details',
+                  //   icon: Icons.badge_rounded,
+                  //   accent: const Color(0xFF2563EB),
+                  //   isActive: currentRoute == AdminRoutes.profile,
+                  //   onTap: () => _openRoute(context, AdminRoutes.profile),
                   // ),
                   SizedBox(height: 10.h),
+                  _DrawerNavItem(
+  title: 'Mark Attendance',
+  subtitle: 'Check in or check out with face & location',
+  icon: Icons.face_retouching_natural_rounded,
+  accent: const Color(0xFF1E8E5A),
+  isActive: currentRoute == AdminRoutes.attendance,
+  onTap: () => _openRoute(context, AdminRoutes.attendance),
+),
+SizedBox(height: 10.h),
+                  // _DrawerNavItem(
+                  //   title: 'Mark Attendance',
+                  //   subtitle: 'Face and location based check-in',
+                  //   icon: Icons.how_to_reg_rounded,
+                  //   accent: const Color(0xFF1E8E5A),
+                  //   isActive: currentRoute == AdminRoutes.MARK_FACE_ATTENDANCE,
+                  //   onTap: () =>
+                  //       _openRoute(context, AdminRoutes.MARK_FACE_ATTENDANCE),
+                  // ),
+                  // SizedBox(height: 10.h),
                   _DrawerNavItem(
                     title: 'Attendance History',
                     subtitle: 'Browse previous attendance records',
@@ -103,21 +104,40 @@ class _AdminDrawerState extends State<AdminDrawer> {
                     title: 'Today\'s Attendance',
                     subtitle: 'Check your current shift status',
                     icon: Icons.fact_check_rounded,
-                    accent: const Color(0xFF7C3AED),
+                    accent: const Color.fromARGB(255, 240, 118, 118),
                     isActive: currentRoute == AdminRoutes.attendanceToday,
                     onTap: () =>
                         _openRoute(context, AdminRoutes.attendanceToday),
                   ),
                   SizedBox(height: 10.h),
                   _DrawerNavItem(
-                    title: 'Check Out',
-                    subtitle: 'Finish the day with a verified exit',
-                    icon: Icons.logout_rounded,
-                    accent: const Color(0xFFC75B2A),
-                    isActive: currentRoute == AdminRoutes.checkoutattendace,
+                    title: 'Leave Approval',
+                    subtitle: 'Apply and track your leave requests',
+                    icon: Icons.check_circle_rounded,
+                    accent: const Color.fromARGB(255, 221, 233, 111),
+                    isActive: currentRoute == AdminRoutes.leaveManagement,
                     onTap: () =>
-                        _openRoute(context, AdminRoutes.checkoutattendace),
+                        _openRoute(context, AdminRoutes.leaveManagement),
                   ),
+                  SizedBox(height: 10.h),
+                  _DrawerNavItem(
+                    title: 'Manage Tasks',
+                    subtitle: 'Monitor and update your assigned tasks',
+                    icon: Icons.assignment_rounded,
+                    accent: const Color.fromARGB(255, 111, 233, 231),
+                    isActive: currentRoute == AdminRoutes.task,
+                    onTap: () => _openRoute(context, AdminRoutes.task),
+                  ),
+                 SizedBox(height: 10.h),
+                  // _DrawerNavItem(
+                  //   title: 'Check Out',
+                  //   subtitle: 'Finish the day with a verified exit',
+                  //   icon: Icons.logout_rounded,
+                  //   accent: const Color(0xFFC75B2A),
+                  //   isActive: currentRoute == AdminRoutes.checkoutattendace,
+                  //   onTap: () =>
+                  //       _openRoute(context, AdminRoutes.checkoutattendace),
+                  // ),
                 ],
               ),
             ),
@@ -194,19 +214,10 @@ class _AdminDrawerState extends State<AdminDrawer> {
 
   Widget _buildHeader(BuildContext context) {
     return Obx(() {
-      final profile = profileC.profile.value;
-      final user = profile?.user;
-      final name = user == null
-          ? 'Monteage Employee'
-          : profileC.titleCase(
-              user.fullName.isNotEmpty
-                  ? user.fullName
-                  : '${user.firstName} ${user.lastName}',
-            );
-      final department = user == null
-          ? 'Attendance management workspace'
-          : profileC.titleCase(user.department);
-      final imageUrl = user == null ? '' : profileC.fullImageUrl(user.profileImage);
+      final employee = employeeC.employee.value;
+      final name = employee?.employeeName ?? 'Monteage Employee';
+      final designation = employee?.designation ?? 'Attendance management workspace';
+      final employeeId = employee?.employeeId.toString() ?? 'Employee';
 
       return Container(
         padding: EdgeInsets.all(18.w),
@@ -231,7 +242,8 @@ class _AdminDrawerState extends State<AdminDrawer> {
             Row(
               children: [
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.14),
                     borderRadius: BorderRadius.circular(999.r),
@@ -260,10 +272,11 @@ class _AdminDrawerState extends State<AdminDrawer> {
                   borderRadius: BorderRadius.circular(16.r),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(16.r),
-                    onTap: () => profileC.fetchProfile(showSuccess: true),
+                    onTap: () => employeeC.loadEmployee(),
                     child: Padding(
                       padding: EdgeInsets.all(10.w),
-                      child: const Icon(Icons.refresh_rounded, color: Colors.white),
+                      child: const Icon(Icons.refresh_rounded,
+                          color: Colors.white),
                     ),
                   ),
                 ),
@@ -281,24 +294,10 @@ class _AdminDrawerState extends State<AdminDrawer> {
                   child: CircleAvatar(
                     radius: 28.r,
                     backgroundColor: const Color(0xFFF5E6DF),
-                    child: ClipOval(
-                      child: imageUrl.isEmpty
-                          ? Icon(
-                              Icons.person_rounded,
-                              color: const Color(0xFF6A3027),
-                              size: 30.sp,
-                            )
-                          : Image.network(
-                              imageUrl,
-                              width: 56.r,
-                              height: 56.r,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Icon(
-                                Icons.person_rounded,
-                                color: const Color(0xFF6A3027),
-                                size: 30.sp,
-                              ),
-                            ),
+                    child: Icon(
+                      Icons.person_rounded,
+                      color: const Color(0xFF6A3027),
+                      size: 30.sp,
                     ),
                   ),
                 ),
@@ -320,7 +319,7 @@ class _AdminDrawerState extends State<AdminDrawer> {
                       ),
                       SizedBox(height: 5.h),
                       Text(
-                        department,
+                        designation,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.inter(
@@ -335,22 +334,12 @@ class _AdminDrawerState extends State<AdminDrawer> {
                         runSpacing: 8.h,
                         children: [
                           _HeaderPill(
-                            label: user?.employeeId ?? 'Employee',
+                            label: employeeId,
                             icon: Icons.badge_outlined,
                           ),
                           _HeaderPill(
-                            label: profileC.isLoading.value
-                                ? 'Syncing'
-                                : user == null
-                                ? 'Offline'
-                                : user.isActive
-                                ? 'Active'
-                                : 'Inactive',
-                            icon: profileC.isLoading.value
-                                ? Icons.sync
-                                : user != null && user.isActive
-                                ? Icons.check_circle_outline
-                                : Icons.remove_circle_outline,
+                            label: 'Active',
+                            icon: Icons.check_circle_outline,
                           ),
                         ],
                       ),
@@ -364,11 +353,13 @@ class _AdminDrawerState extends State<AdminDrawer> {
               onTap: () => _openRoute(context, AdminRoutes.profile),
               borderRadius: BorderRadius.circular(18.r),
               child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+                padding:
+                    EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(18.r),
-                  border: Border.all(color: Colors.white.withOpacity(0.12)),
+                  border:
+                      Border.all(color: Colors.white.withOpacity(0.12)),
                 ),
                 child: Row(
                   children: [
@@ -395,24 +386,43 @@ class _AdminDrawerState extends State<AdminDrawer> {
   }
 
   Future<void> _openRoute(BuildContext context, String route) async {
-    Navigator.of(context).pop();
-    if (Get.currentRoute == route) {
-      return;
-    }
+  Navigator.of(context).pop();
+  await Future<void>.delayed(const Duration(milliseconds: 120));
 
-    await Future<void>.delayed(const Duration(milliseconds: 120));
-    Get.toNamed(route);
+  // For main tab routes — go to MainScreen with correct tab
+  if (route == AdminRoutes.mainScreen) {
+    Get.offAllNamed(AdminRoutes.mainScreen);
+    return;
   }
+  if (route == AdminRoutes.task) {
+    Get.offAllNamed(AdminRoutes.mainScreen, arguments: {'tab': 1});
+    return;
+  }
+  if (route == AdminRoutes.profile) {
+    Get.offAllNamed(AdminRoutes.mainScreen, arguments: {'tab': 3});
+    return;
+  }
+
+  // For all other screens — just push normally
+  if (Get.currentRoute == route) return;
+  Get.toNamed(route);
+}
 
   Future<void> _logout(BuildContext context) async {
     Navigator.of(context).pop();
     await PrefManager().clearPref();
-    if (Get.isRegistered<EmployeeProfileController>()) {
-      Get.delete<EmployeeProfileController>(force: true);
+    
+    // Clear all storage
+    GetStorage().erase();
+
+    // Delete controllers
+    if (Get.isRegistered<EmployeeDataController>()) {
+      Get.delete<EmployeeDataController>(force: true);
     }
+
     Get.offAllNamed(AdminRoutes.login);
     Get.snackbar(
-      'LogOut',
+      'Logged Out',
       'You have been logged out successfully.',
       snackPosition: SnackPosition.TOP,
       backgroundColor: Colors.green,
@@ -452,7 +462,9 @@ class _DrawerNavItem extends StatelessWidget {
             color: isActive ? accent.withOpacity(0.1) : Colors.white,
             borderRadius: BorderRadius.circular(22.r),
             border: Border.all(
-              color: isActive ? accent.withOpacity(0.35) : const Color(0xFFEDE2DC),
+              color: isActive
+                  ? accent.withOpacity(0.35)
+                  : const Color(0xFFEDE2DC),
               width: isActive ? 1.3 : 1,
             ),
             boxShadow: const [
@@ -468,7 +480,7 @@ class _DrawerNavItem extends StatelessWidget {
               Container(
                 height: 44.h,
                 width: 44.h,
-              decoration: BoxDecoration(
+                decoration: BoxDecoration(
                   color: accent.withOpacity(isActive ? 0.16 : 0.12),
                   borderRadius: BorderRadius.circular(14.r),
                 ),
@@ -503,15 +515,17 @@ class _DrawerNavItem extends StatelessWidget {
                 ),
               ),
               Icon(
-                isActive ? Icons.radio_button_checked : Icons.arrow_forward_ios_rounded,
+                isActive
+                    ? Icons.radio_button_checked
+                    : Icons.arrow_forward_ios_rounded,
                 color: accent,
                 size: isActive ? 18.sp : 15.sp,
               ),
             ],
-       
+          ),
         ),
       ),
-    ));
+    );
   }
 }
 

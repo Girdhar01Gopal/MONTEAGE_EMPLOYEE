@@ -264,6 +264,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import '../services/attendance_sync_service.dart';
 
 class CheckOutAttendanceController extends GetxController {
   final ImagePicker _picker = ImagePicker();
@@ -494,52 +495,91 @@ class CheckOutAttendanceController extends GetxController {
   // Submit Checkout (face match must happen on backend)
   // -----------------------------
   Future<void> submitCheckoutAttendance() async {
-    // ✅ must be face-registered
-    final ok = await _ensureFaceRegistered();
-    if (!ok) return;
+  final ok = await _ensureFaceRegistered();
+  if (!ok) return;
 
-    final img = selectedImage.value;
+  final img = selectedImage.value;
+  if (img == null) {
+    _snackError("Missing Photo", "Please take/upload a photo first.");
+    return;
+  }
 
-    if (img == null) {
-      _snackError("Missing Photo", "Please take/upload a photo first.");
-      return;
-    }
+  final lat = latText.value.trim();
+  final lng = lngText.value.trim();
 
-    final lat = latText.value.trim();
-    final lng = lngText.value.trim();
+  if (!_isValidLatLng(lat) || !_isValidLatLng(lng)) {
+    _snackError("Location Required", "Please enable location and refresh.");
+    return;
+  }
 
-    if (!_isValidLatLng(lat) || !_isValidLatLng(lng)) {
-      _snackError("Location Required", "Please enable location and refresh.");
-      return;
-    }
+  try {
+    isSubmittingAttendance.value = true;
 
-    try {
-      isSubmittingAttendance.value = true;
+    // ── Check internet first ──────────────────────────────────────────
+    final connected = await AttendanceSyncService.isConnected();
 
-      final result = await _postMultipart(
-        url: checkoutAttendanceUrl,
-        fields: {"latitude": lat, "longitude": lng},
-        imageFile: img,
+    if (!connected) {
+      // ── Save to Hive cache ────────────────────────────────────────
+      await AttendanceSyncService.savePending(
+        type: 'checkout',
+        latitude: lat,
+        longitude: lng,
+        imagePath: img.path,
+        token: (box.read("access_token") ?? "").toString().trim(),
       );
 
-      if (result.statusCode == 200 || result.statusCode == 201) {
-        _snackSuccess("Checkout successful!");
-      } else {
-        // ✅ This is where "other person's face" error will appear (backend must send it)
-        final msg = (result.json?["message"] ??
-            result.json?["detail"] ??
-            result.json?["error"] ??
-            result.rawBody)
-            .toString();
-
-        _snackError("Failed", "(${result.statusCode}) $msg");
-      }
-    } catch (e) {
-      _snackError("Error", "Submit failed: $e");
-    } finally {
-      isSubmittingAttendance.value = false;
+      Get.snackbar(
+        "Saved Offline",
+        "No internet. Checkout saved and will sync automatically when connected.",
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: const Color(0xFFF59E0B),
+        colorText: Colors.white,
+        duration: const Duration(seconds: 4),
+      );
+      return;
     }
+
+    // ── Online: submit normally ───────────────────────────────────────
+    final result = await _postMultipart(
+      url: checkoutAttendanceUrl,
+      fields: {"latitude": lat, "longitude": lng},
+      imageFile: img,
+    );
+
+    if (result.statusCode == 200 || result.statusCode == 201) {
+      _snackSuccess("Checkout successful!");
+    } else {
+      final msg = (result.json?["message"] ??
+              result.json?["detail"] ??
+              result.json?["error"] ??
+              result.rawBody)
+          .toString();
+      _snackError("Failed", "(${result.statusCode}) $msg");
+    }
+  } catch (e) {
+    // ── On any error save offline ─────────────────────────────────────
+    try {
+      await AttendanceSyncService.savePending(
+        type: 'checkout',
+        latitude: lat,
+        longitude: lng,
+        imagePath: img.path,
+        token: (box.read("access_token") ?? "").toString().trim(),
+      );
+      Get.snackbar(
+        "Saved Offline",
+        "Network error. Checkout saved and will sync when connected.",
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: const Color(0xFFF59E0B),
+        colorText: Colors.white,
+      );
+    } catch (_) {
+      _snackError("Error", "Submit failed: $e");
+    }
+  } finally {
+    isSubmittingAttendance.value = false;
   }
+}
 }
 
 class _ApiResult {

@@ -1,10 +1,11 @@
 import 'package:get/get.dart';
-import '../controllers/home_controller.dart'; // Import HomeController
+import '../controllers/home_controller.dart';
+import '../controllers/employee_data_controller.dart';
 
 class HomeBinding extends Bindings {
   @override
   void dependencies() {
-    // Register the HomeController to be lazily loaded when needed
     Get.lazyPut<HomeController>(() => HomeController());
+    Get.lazyPut<EmployeeDataController>(() => EmployeeDataController());
   }
 }

@@ -114,30 +114,7 @@ class EmployeeProfileScreen extends GetView<EmployeeProfileController> {
         backgroundColor: const Color(0xFFF6F1ED),
         surfaceTintColor: Colors.transparent,
         leadingWidth: 72.w,
-        leading: Padding(
-          padding: EdgeInsets.only(left: 16.w),
-          child: Container(
-            margin: EdgeInsets.symmetric(vertical: 12.h),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16.r),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x14000000),
-                  blurRadius: 12,
-                  offset: Offset(0, 6),
-                ),
-              ],
-            ),
-            child: IconButton(
-              icon: const Icon(
-                Icons.arrow_back_rounded,
-                color: Color(0xFF241917),
-              ),
-              onPressed: () => Get.back(),
-            ),
-          ),
-        ),
+        automaticallyImplyLeading: false,
         titleSpacing: 0,
         title: Padding(
           padding: const EdgeInsets.all(8.0),

@@ -1,21 +1,16 @@
 class ProfileModel {
   final UserModel user;
 
-  ProfileModel({
-    required this.user,
-  });
+  ProfileModel({required this.user});
 
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
     return ProfileModel(
-      user: UserModel.fromJson(json['user']),
+      // ✅ Safe — if 'user' is null, use empty map
+      user: UserModel.fromJson(json['user'] as Map<String, dynamic>? ?? {}),
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'user': user.toJson(),
-    };
-  }
+  Map<String, dynamic> toJson() => {'user': user.toJson()};
 }
 
 class UserModel {
@@ -28,9 +23,9 @@ class UserModel {
   final String fullName;
   final String department;
   final bool isFaceRegistered;
-  final DateTime faceRegisteredAt;
+  final DateTime? faceRegisteredAt;  // ✅ nullable
   final String profileImage;
-  final DateTime dateJoined;
+  final DateTime? dateJoined;        // ✅ nullable
   final bool isActive;
 
   UserModel({
@@ -43,45 +38,48 @@ class UserModel {
     required this.fullName,
     required this.department,
     required this.isFaceRegistered,
-    required this.faceRegisteredAt,
+    this.faceRegisteredAt,
     required this.profileImage,
-    required this.dateJoined,
+    this.dateJoined,
     required this.isActive,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'] as int,
-      username: json['username'] as String,
-      email: json['email'] as String,
-      employeeId: json['employee_id'] as String,
-      firstName: json['first_name'] as String,
-      lastName: json['last_name'] as String,
-      fullName: json['full_name'] as String,
-      department: json['department'] as String,
-      isFaceRegistered: json['is_face_registered'] as bool,
-      faceRegisteredAt: DateTime.parse(json['face_registered_at']),
-      profileImage: json['profile_image'] as String,
-      dateJoined: DateTime.parse(json['date_joined']),
-      isActive: json['is_active'] as bool,
+      // ✅ All fields null-safe with fallbacks
+      id: (json['id'] as int?) ?? 0,
+      username: (json['username'] as String?) ?? '',
+      email: (json['email'] as String?) ?? '',
+      employeeId: (json['employee_id'] as String?) ?? '',
+      firstName: (json['first_name'] as String?) ?? '',
+      lastName: (json['last_name'] as String?) ?? '',
+      fullName: (json['full_name'] as String?) ?? '',
+      department: (json['department'] as String?) ?? '',
+      isFaceRegistered: (json['is_face_registered'] as bool?) ?? false,
+      faceRegisteredAt: json['face_registered_at'] != null
+          ? DateTime.tryParse(json['face_registered_at'].toString())
+          : null,
+      profileImage: (json['profile_image'] as String?) ?? '',
+      dateJoined: json['date_joined'] != null
+          ? DateTime.tryParse(json['date_joined'].toString())
+          : null,
+      isActive: (json['is_active'] as bool?) ?? false,
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'username': username,
-      'email': email,
-      'employee_id': employeeId,
-      'first_name': firstName,
-      'last_name': lastName,
-      'full_name': fullName,
-      'department': department,
-      'is_face_registered': isFaceRegistered,
-      'face_registered_at': faceRegisteredAt.toIso8601String(),
-      'profile_image': profileImage,
-      'date_joined': dateJoined.toIso8601String(),
-      'is_active': isActive,
-    };
-  }
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'username': username,
+        'email': email,
+        'employee_id': employeeId,
+        'first_name': firstName,
+        'last_name': lastName,
+        'full_name': fullName,
+        'department': department,
+        'is_face_registered': isFaceRegistered,
+        'face_registered_at': faceRegisteredAt?.toIso8601String(),
+        'profile_image': profileImage,
+        'date_joined': dateJoined?.toIso8601String(),
+        'is_active': isActive,
+      };
 }

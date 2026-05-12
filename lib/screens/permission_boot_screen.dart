@@ -52,9 +52,7 @@ class _PermissionBootScreenState extends State<PermissionBootScreen>
   }
 
   bool _hasValidTokens() {
-    final access = (box.read("access_token") ?? "").toString().trim();
-    final refresh = (box.read("refresh_token") ?? "").toString().trim();
-    return access.isNotEmpty && refresh.isNotEmpty;
+    return box.read<bool>("is_logged_in") ?? false;
   }
 
   void _goNext() {
@@ -62,7 +60,7 @@ class _PermissionBootScreenState extends State<PermissionBootScreen>
     _navigated = true;
 
     final isLoggedIn = _hasValidTokens();
-    Get.offAllNamed(isLoggedIn ? AdminRoutes.HOME : AdminRoutes.login);
+    Get.offAllNamed(isLoggedIn ? AdminRoutes.mainScreen : AdminRoutes.login);
   }
 
   Future<void> _checkAndProceed() async {

@@ -75,6 +75,7 @@ class LoginController extends GetxController {
       if (kDebugMode) {
         debugPrint("LOGIN STATUS: ${res.statusCode}");
         debugPrint("LOGIN BODY: ${res.body}");
+        debugPrint("LOGIN HEADERS: ${res.headers}");
       }
 
       dynamic body;
@@ -179,44 +180,106 @@ class LoginController extends GetxController {
     super.onClose();
   }
 }*/
-
+import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:monteage_employee/infrastructure/routes/admin_routes.dart';
-import 'package:monteage_employee/infrastructure/utils/pref_const.dart';
-import 'package:monteage_employee/infrastructure/utils/pref_manager.dart';
+import 'package:http/http.dart' as http;
+import 'package:monteage_employee/models/login_response_model.dart';
 
 class LoginController extends GetxController {
   final RxBool isLoading = false.obs;
-  final RxBool isregistered = false.obs;
+  final RxBool isPasswordHidden = true.obs;
+
+  void togglePasswordVisibility() {
+    isPasswordHidden.value = !isPasswordHidden.value;
+  }
+
   final GetStorage box = GetStorage();
 
-  @override
-  void onInit() {
-    super.onInit();
-    loadData();
-  }
+  final TextEditingController userIdController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
-  Future<void> loadData() async {
-    final value = await PrefManager().readValue(key: PrefConst.isregistered);
-    isregistered.value = value == "false";
-  }
+  Future<void> login() async {
+    final userId = userIdController.text.trim();
+    final password = passwordController.text.trim();
 
-  bool get isLoggedIn {
-    final access = (box.read("access_token") ?? "").toString().trim();
-    final refresh = (box.read("refresh_token") ?? "").toString().trim();
-    return access.isNotEmpty && refresh.isNotEmpty;
-  }
+    if (userId.isEmpty || password.isEmpty) {
+      Get.snackbar("Error", "Enter Employee Code & Password");
+      return;
+    }
 
-  Future<void> goToFaceIdLogin() async {
     if (isLoading.value) return;
-
     isLoading.value = true;
+
     try {
-      await Future.delayed(const Duration(milliseconds: 200));
-      Get.toNamed(AdminRoutes.faceidlogin);
+      final response = await http
+          .post(
+            Uri.parse(
+                "https://montempep.eduagentapp.com/api/MonteageEmpErp/AppEmpLogins/"),
+            headers: {"Content-Type": "application/json"},
+            body: jsonEncode({
+              "EmployeeCode": userId,
+              "Password": password,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      debugPrint("STATUS: ${response.statusCode}");
+      debugPrint("BODY: ${response.body}");
+
+      Map<String, dynamic> jsonData;
+      try {
+        jsonData = jsonDecode(response.body);
+      } catch (_) {
+        throw Exception("Invalid server response");
+      }
+
+      final result = LoginResponseModel.fromJson(jsonData);
+      debugPrint("PARSED DATA: ${result.data}");
+
+      if (response.statusCode == 200 && result.statuscode == 200) {
+        final emp = result.data;
+
+        if (emp == null) {
+          debugPrint("FULL RESPONSE: $jsonData");
+          Get.snackbar("Error", "User data missing from API");
+          return;
+        }
+
+        // Save data
+        box.write("employee_name", emp.employeeName);
+        box.write("employee_data", jsonEncode(emp.toJson()));
+        box.write("employee_id", emp.employeeId);
+        box.write("employee_code", emp.employeeCode);
+        box.write("employee_email", emp.email);
+        box.write("Designation", emp.designation);
+        box.write("designation", emp.designation);
+        box.write("contact_no", emp.contactNo);
+        box.write("photo", emp.photo);
+        box.write("is_logged_in", true);
+
+        Get.offAllNamed("/main");
+      } else {
+        throw Exception(result.message);
+      }
+    } catch (e, stack) {
+      debugPrint("ERROR: $e");
+      debugPrint("STACK TRACE: $stack");
+
+      Get.snackbar(
+        "Login Failed",
+        e.toString(),
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     } finally {
-      isLoading.value = false;
+      isLoading.value = false; // ✅ Always resets no matter what
     }
   }
+  void logout() {
+  box.erase(); 
+  Get.offAllNamed("/login");
+}
 }

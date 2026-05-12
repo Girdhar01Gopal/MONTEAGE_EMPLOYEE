@@ -187,6 +187,7 @@ class Result {
 
   final String createdAt;
   final String updatedAt;
+  String address;
 
   Result({
     required this.id,
@@ -221,6 +222,7 @@ class Result {
     required this.deviceInfo,
     required this.createdAt,
     required this.updatedAt,
+    this.address = "",
   });
 
   factory Result.fromJson(Map<String, dynamic> json) {
@@ -284,6 +286,7 @@ class Result {
 
       createdAt: json['created_at'] ?? '',
       updatedAt: json['updated_at'] ?? '',
+      address: json['address'] ?? "",
     );
   }
 
@@ -321,6 +324,7 @@ class Result {
       "device_info": deviceInfo,
       "created_at": createdAt,
       "updated_at": updatedAt,
+      "address": address,
     };
   }
 }

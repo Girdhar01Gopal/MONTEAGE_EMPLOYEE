@@ -183,7 +183,7 @@ class FaceRegisterController extends GetxController {
       if (first.statusCode == 200 || first.statusCode == 201) {
         _snackSuccess("Face registered successfully!");
           await  PrefManager().writeValue(key: PrefConst.isregistered, value: "true");
-         Get.offAllNamed(AdminRoutes.HOME);
+         Get.offAllNamed(AdminRoutes.mainScreen);
       }
 
       // If unauthorized -> refresh token -> retry once
@@ -201,7 +201,7 @@ class FaceRegisterController extends GetxController {
         if (second.statusCode == 200 || second.statusCode == 201) {
           _snackSuccess("Face registered successfully!");
         await  PrefManager().writeValue(key: PrefConst.isregistered, value: "true");
-         Get.offAllNamed(AdminRoutes.HOME);// ✅ go to home screen after successful registration
+         Get.offAllNamed(AdminRoutes.mainScreen);// ✅ go to home screen after successful registration
          
         }
 

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../controllers/employee_data_controller.dart';
 
 import '../controllers/home_controller.dart';
-import '../controllers/profile_controller.dart';
 import '../infrastructure/app_drawer/admin_drawer.dart';
 import '../infrastructure/routes/admin_routes.dart';
 
@@ -12,10 +12,10 @@ class HomeScreen extends StatelessWidget {
   HomeScreen({super.key});
 
   final HomeController controller = Get.put(HomeController());
-  final EmployeeProfileController profileC =
-      Get.isRegistered<EmployeeProfileController>()
-      ? Get.find<EmployeeProfileController>()
-      : Get.put(EmployeeProfileController());
+  final EmployeeDataController employeeC =
+    Get.isRegistered<EmployeeDataController>()
+    ? Get.find<EmployeeDataController>()
+    : Get.put(EmployeeDataController());
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
@@ -102,24 +102,21 @@ class HomeScreen extends StatelessWidget {
                     runSpacing: 12.h,
                     children: [
                       SizedBox(
-                        width: cardWidth,
-                        child: _ActionCard(
-                          eyebrow: 'Start shift',
-                          title: 'Mark Attendance',
-                          subtitle:
-                              'Verify face and location to check in securely.',
-                          icon: Icons.face_retouching_natural_rounded,
-                          accent: const Color(0xFF1E8E5A),
-                          background: const [
-                            Color(0xFFE4F7EC),
-                            Color(0xFFD6F0E2),
-                          ],
-                          onTap: () =>
-                              Get.toNamed(AdminRoutes.MARK_FACE_ATTENDANCE),
-                        ),
-                      ),
+  width: 180.w,
+  height: 230.h,
+  child: _ActionCard(
+    eyebrow: 'Attendance',
+    title: 'Mark Attendance',
+    subtitle: 'Check in or check out with face & location verification.',
+    icon: Icons.face_retouching_natural_rounded,
+    accent: const Color(0xFF1E8E5A),
+    background: const [Color(0xFFE4F7EC), Color(0xFFD6F0E2)],
+    onTap: () => Get.toNamed(AdminRoutes.attendance),
+  ),
+),
                       SizedBox(
-                        width: cardWidth,
+                        width: 180.w,
+                        height: 230.h,
                         child: _ActionCard(
                           eyebrow: 'Records',
                           title: 'Attendance History',
@@ -136,7 +133,8 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                       SizedBox(
-                        width: cardWidth,
+                        width: 180.w,
+                        height: 230.h,
                         child: _ActionCard(
                           eyebrow: 'Today',
                           title: 'Today\'s Attendance',
@@ -151,51 +149,86 @@ class HomeScreen extends StatelessWidget {
                           onTap: () => Get.toNamed(AdminRoutes.attendanceToday),
                         ),
                       ),
-                      SizedBox(
-                        width: cardWidth,
-                        child: _ActionCard(
-                          eyebrow: 'End shift',
-                          title: 'Check Out',
-                          subtitle:
-                              'Close the day with a verified check-out submission.',
-                          icon: Icons.logout_rounded,
-                          accent: const Color(0xFFC75B2A),
-                          background: const [
-                            Color(0xFFFFEBDD),
-                            Color(0xFFFFE1CC),
-                          ],
-                          onTap: () =>
-                              Get.toNamed(AdminRoutes.checkoutattendace),
-                        ),
-                      ),
-                      SizedBox(
-  width: cardWidth,
+                      // SizedBox(
+                      //   width: 180.w,
+                      //   height: 230.h,
+                      //   child: _ActionCard(
+                      //     eyebrow: 'End shift',
+                      //     title: 'Check Out',
+                      //     subtitle:
+                      //         'Close the day with a verified check-out submission.',
+                      //     icon: Icons.logout_rounded,
+                      //     accent: const Color(0xFFC75B2A),
+                      //     background: const [
+                      //       Color(0xFFFFEBDD),
+                      //       Color(0xFFFFE1CC),
+                      //     ],
+                      //     onTap: () =>
+                      //         Get.toNamed(AdminRoutes.checkoutattendace),
+                      //   ),
+                      // ),
+// SizedBox(
+//   width: 180.w,
+//   height: 230.h,
+//   child: _ActionCard(
+//     eyebrow: 'Tasks You Assigned',
+//     title: 'Given Tasks',
+//     subtitle: 'Manage and track the tasks you\'ve assigned, monitor their progress, and ensure completion.',
+//     icon: Icons.assignment_rounded,
+//     accent: const Color(0xFF00796B), // Accent color (Teal)
+//     background: const [
+//       Color(0xFFE0F2F1), // Light Teal
+//       Color(0xFFB2DFDB), // Pale Teal
+//     ],
+//     onTap: () => Get.toNamed(AdminRoutes.taskGiven),
+//   ),
+// ),
+// SizedBox(
+//   width: 180.w,
+//   height: 230.h,
+//   child: _ActionCard(
+//     eyebrow: 'Tasks Assigned to You',
+//     title: 'Received Tasks',
+//     subtitle: 'Keep track of your assigned tasks, add progress updates, and mark them complete.',
+//     icon: Icons.fact_check_rounded,
+//     accent: const Color(0xFFFF7043), // Accent color (Coral)
+//     background: const [
+//       Color(0xFFFFEBEE), // Light Coral
+//       Color(0xFFFFCDD2), // Pale Coral
+//     ],
+//     onTap: () => Get.toNamed(AdminRoutes.taskReceived),
+//   ),
+// ),
+// SizedBox(
+//   width: 180.w,
+//   height: 230.h,
+//   child: _ActionCard(
+//     eyebrow: 'Manage Tasks',
+//     title: 'View Task Status',
+//     subtitle: 'Monitor and update tasks for efficient workflow.',
+//     icon: Icons.task_rounded,
+//     accent: const Color(0xFFFF7043), // Green accent for a professional look
+//     background: const [
+//       Color(0xFFFFEBEE), // Light Coral
+//       Color(0xFFFFCDD2), // Slightly deeper mint background
+//     ],
+//     onTap: () => Get.toNamed(AdminRoutes.task), // Navigate to task screen
+//   ),
+// ),
+SizedBox(
+  width: 180.w,
+  height: 230.h,
   child: _ActionCard(
-    eyebrow: 'Tasks You Assigned',
-    title: 'Given Tasks',
-    subtitle: 'Manage and track the tasks you\'ve assigned, monitor their progress, and ensure completion.',
+    eyebrow: 'Leave Management',
+    title: 'Leave Approval',
+    subtitle: 'Apply for leave and track your requests.',
     icon: Icons.assignment_rounded,
     accent: const Color(0xFF00796B), // Accent color (Teal)
     background: const [
       Color(0xFFE0F2F1), // Light Teal
       Color(0xFFB2DFDB), // Pale Teal
     ],
-    onTap: () => Get.toNamed(AdminRoutes.taskGiven),
-  ),
-),
-SizedBox(
-  width: cardWidth,
-  child: _ActionCard(
-    eyebrow: 'Tasks Assigned to You',
-    title: 'Received Tasks',
-    subtitle: 'Keep track of your assigned tasks, add progress updates, and mark them complete.',
-    icon: Icons.fact_check_rounded,
-    accent: const Color(0xFFFF7043), // Accent color (Coral)
-    background: const [
-      Color(0xFFFFEBEE), // Light Coral
-      Color(0xFFFFCDD2), // Pale Coral
-    ],
-    onTap: () => Get.toNamed(AdminRoutes.taskReceived),
+    onTap: () => Get.toNamed(AdminRoutes.leaveManagement),
   ),
 ),
                         
@@ -211,219 +244,164 @@ SizedBox(
   }
 
   Widget _buildHeroCard() {
-    return Obx(() {
-      if (profileC.isLoading.value) {
-        return _StatusCard(
-          icon: Icons.hourglass_top_rounded,
-          title: 'Loading profile',
-          description:
-              'Fetching your employee details and latest account status.',
-          actionLabel: 'Refresh',
-          onAction: () => profileC.fetchProfile(showSuccess: false),
-          accent: const Color(0xFF8C5E4A),
-        );
-      }
+  return Obx(() {
+    final employee = employeeC.employee.value;
 
-      final profile = profileC.profile.value;
-      if (profile == null) {
-        return _StatusCard(
-          icon: Icons.cloud_off_rounded,
-          title: 'Profile unavailable',
-          description:
-              'We could not load your dashboard identity details right now.',
-          actionLabel: 'Retry',
-          onAction: () => profileC.fetchProfile(showSuccess: false),
-          accent: const Color(0xFFB54545),
-        );
-      }
-
-      final user = profile.user;
-      final imageUrl = profileC.fullImageUrl(user.profileImage);
-      final displayName = profileC.titleCase(
-        user.fullName.isNotEmpty
-            ? user.fullName
-            : '${user.firstName} ${user.lastName}',
+    if (employee == null) {
+      return _StatusCard(
+        icon: Icons.cloud_off_rounded,
+        title: 'Profile unavailable',
+        description: 'Could not load your profile details.',
+        actionLabel: 'Retry',
+        onAction: () => employeeC.loadEmployee(),
+        accent: const Color(0xFFB54545),
       );
+    }
 
-      return Container(
-        width: double.infinity,
-        padding: EdgeInsets.all(18.w),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(28.r),
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF241917), Color(0xFF6A3027), Color(0xFFC75B43)],
-          ),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x2A6A3027),
-              blurRadius: 22,
-              offset: Offset(0, 12),
-            ),
-          ],
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(18.w),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28.r),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF241917), Color(0xFF6A3027), Color(0xFFC75B43)],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const _TopBadge(
-                  icon: Icons.auto_awesome_rounded,
-                  label: 'Workspace',
-                ),
-                const Spacer(),
-                Material(
-                  color: Colors.white.withOpacity(0.14),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x2A6A3027),
+            blurRadius: 22,
+            offset: Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const _TopBadge(
+                icon: Icons.auto_awesome_rounded,
+                label: 'Workspace',
+              ),
+              const Spacer(),
+              Material(
+                color: Colors.white.withOpacity(0.14),
+                borderRadius: BorderRadius.circular(16.r),
+                child: InkWell(
                   borderRadius: BorderRadius.circular(16.r),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(16.r),
-                    onTap: () => profileC.fetchProfile(showSuccess: false),
-                    child: Padding(
-                      padding: EdgeInsets.all(10.w),
-                      child: const Icon(
-                        Icons.refresh_rounded,
+                  onTap: () => employeeC.loadEmployee(),
+                  child: Padding(
+                    padding: EdgeInsets.all(10.w),
+                    child: const Icon(
+                      Icons.refresh_rounded,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 18.h),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: EdgeInsets.all(3.w),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.16),
+                  borderRadius: BorderRadius.circular(24.r),
+                ),
+                child: CircleAvatar(
+                  radius: 30.r,
+                  backgroundColor: const Color(0xFFF5E6DF),
+                  child: Icon(
+                    Icons.person_rounded,
+                    color: const Color(0xFF6A3027),
+                    size: 32.sp,
+                  ),
+                ),
+              ),
+              SizedBox(width: 14.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      employee.employeeName,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.manrope(
+                        fontSize: 22.sp,
+                        height: 1.15,
+                        fontWeight: FontWeight.w800,
                         color: Colors.white,
                       ),
                     ),
-                  ),
+                    SizedBox(height: 6.h),
+                    Text(
+                      employee.email,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white.withOpacity(0.82),
+                      ),
+                    ),
+                    SizedBox(height: 10.h),
+                    _InfoPill(
+                      label: employee.designation,
+                      icon: Icons.work_outline_rounded,
+                      color: const Color(0xFF5F8BFF),
+                    ),
+                  ],
                 ),
-              ],
+              ),
+            ],
+          ),
+          SizedBox(height: 18.h),
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(22.r),
+              border: Border.all(color: Colors.white.withOpacity(0.12)),
             ),
-            SizedBox(height: 18.h),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Container(
-                  padding: EdgeInsets.all(3.w),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.16),
-                    borderRadius: BorderRadius.circular(24.r),
-                  ),
-                  child: CircleAvatar(
-                    radius: 30.r,
-                    backgroundColor: const Color(0xFFF5E6DF),
-                    child: ClipOval(
-                      child: imageUrl.isEmpty
-                          ? Icon(
-                              Icons.person_rounded,
-                              color: const Color(0xFF6A3027),
-                              size: 32.sp,
-                            )
-                          : Image.network(
-                              imageUrl,
-                              width: 60.r,
-                              height: 60.r,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Icon(
-                                Icons.person_rounded,
-                                color: const Color(0xFF6A3027),
-                                size: 32.sp,
-                              ),
-                            ),
-                    ),
+                Expanded(
+                  child: _MetricTile(
+                    label: 'Employee ID',
+                    value: employee.employeeId.toString(),
                   ),
                 ),
-                SizedBox(width: 14.w),
+                _metricDivider(),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        displayName,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.manrope(
-                          fontSize: 22.sp,
-                          height: 1.15,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
-                      ),
-                      SizedBox(height: 6.h),
-                      Text(
-                        user.email,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white.withOpacity(0.82),
-                        ),
-                      ),
-                      SizedBox(height: 10.h),
-                      Wrap(
-                        spacing: 8.w,
-                        runSpacing: 8.h,
-                        children: [
-                          _InfoPill(
-                            label: user.isActive ? 'Active' : 'Inactive',
-                            icon: user.isActive
-                                ? Icons.check_circle
-                                : Icons.cancel,
-                            color: user.isActive
-                                ? const Color(0xFF2AB673)
-                                : const Color(0xFFD85E5E),
-                          ),
-                          _InfoPill(
-                            label: user.isFaceRegistered
-                                ? 'Face Registered'
-                                : 'Face Pending',
-                            icon: user.isFaceRegistered
-                                ? Icons.verified_user
-                                : Icons.face_retouching_off,
-                            color: user.isFaceRegistered
-                                ? const Color(0xFF5F8BFF)
-                                : const Color(0xFFF0A43C),
-                          ),
-                        ],
-                      ),
-                    ],
+                  child: _MetricTile(
+                    label: 'Designation',
+                    value: employee.designation,
+                  ),
+                ),
+                _metricDivider(),
+                Expanded(
+                  child: Obx(
+                    () => _MetricTile(
+                      label: 'Today',
+                      value: controller.selectedDate.value,
+                    ),
                   ),
                 ),
               ],
             ),
-            SizedBox(height: 18.h),
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(22.r),
-                border: Border.all(color: Colors.white.withOpacity(0.12)),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _MetricTile(
-                      label: 'Employee ID',
-                      value: user.employeeId,
-                    ),
-                  ),
-                  _metricDivider(),
-                  Expanded(
-                    child: _MetricTile(
-                      label: 'Department',
-                      value: profileC.titleCase(user.department),
-                    ),
-                  ),
-                  _metricDivider(),
-                  Expanded(
-                    child: Obx(
-                      () => _MetricTile(
-                        label: 'Today',
-                        value: controller.selectedDate.value,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    });
-  }
+          ),
+        ],
+      ),
+    );
+  });
+}
 
   Widget _buildSectionHeader({
     required String title,

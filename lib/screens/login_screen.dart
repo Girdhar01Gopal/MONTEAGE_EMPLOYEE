@@ -289,7 +289,6 @@ class _ModernButton extends StatelessWidget {
   }
 }
 */
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -360,7 +359,7 @@ class LoginScreen extends StatelessWidget {
                             ),
                             SizedBox(height: 6.h),
                             Text(
-                              "Login in to your account",
+                              "Login to your account",
                               style: GoogleFonts.inter(
                                 fontSize: 13.sp,
                                 color: const Color(0xFF8B7D77),
@@ -368,43 +367,169 @@ class LoginScreen extends StatelessWidget {
                               ),
                             ),
                             SizedBox(height: 24.h),
-                            Obx(() {
-                              return SizedBox(
-                                width: double.infinity,
-                                height: 52.h,
-                                child: FilledButton(
-                                  onPressed: controller.isLoading.value
-                                      ? null
-                                      : controller.goToFaceIdLogin,
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: const Color(0xFF6A3027),
-                                    disabledBackgroundColor:
-                                    const Color(0xFFC9C9C9),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12.r),
-                                    ),
-                                  ),
-                                  child: controller.isLoading.value
-                                      ? SizedBox(
-                                    height: 22.h,
-                                    width: 22.w,
-                                    child:
-                                    const CircularProgressIndicator(
-                                      strokeWidth: 2.5,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                      : Text(
-                                    "Login with Face ID",
-                                    style: GoogleFonts.manrope(
-                                      fontSize: 15.sp,
-                                      fontWeight: FontWeight.w800,
-                                      color: Colors.white,
-                                    ),
+
+                            // User ID Field
+                            Text(
+                              "User ID",
+                              style: GoogleFonts.manrope(
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF241917),
+                              ),
+                            ),
+                            SizedBox(height: 8.h),
+                            TextField(
+                              controller: controller.userIdController,
+                              keyboardType: TextInputType.text,
+                              textInputAction: TextInputAction.next,
+                              style: GoogleFonts.inter(
+                                fontSize: 14.sp,
+                                color: const Color(0xFF241917),
+                              ),
+                              decoration: InputDecoration(
+                                hintText: "Enter your employee code",
+                                hintStyle: GoogleFonts.inter(
+                                  fontSize: 13.sp,
+                                  color: const Color(0xFFBDB0AB),
+                                ),
+                                prefixIcon: Icon(
+                                  Icons.person_outline_rounded,
+                                  color: const Color(0xFF8B7D77),
+                                  size: 20.sp,
+                                ),
+                                filled: true,
+                                fillColor: const Color(0xFFF6F1ED),
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 14.w,
+                                  vertical: 14.h,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12.r),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFFEDE2DC),
                                   ),
                                 ),
-                              );
-                            }),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12.r),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFFEDE2DC),
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12.r),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFF6A3027),
+                                    width: 1.5,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 16.h),
+
+                            // Password Field
+                            Text(
+                              "Password",
+                              style: GoogleFonts.manrope(
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF241917),
+                              ),
+                            ),
+                            SizedBox(height: 8.h),
+                            Obx(() => TextField(
+                              controller: controller.passwordController,
+                              obscureText: controller.isPasswordHidden.value,
+                              textInputAction: TextInputAction.done,
+                              onSubmitted: (_) => controller.login(),
+                              style: GoogleFonts.inter(
+                                fontSize: 14.sp,
+                                color: const Color(0xFF241917),
+                              ),
+                              decoration: InputDecoration(
+                                hintText: "Enter your password",
+                                hintStyle: GoogleFonts.inter(
+                                  fontSize: 13.sp,
+                                  color: const Color(0xFFBDB0AB),
+                                ),
+                                prefixIcon: Icon(
+                                  Icons.lock_outline_rounded,
+                                  color: const Color(0xFF8B7D77),
+                                  size: 20.sp,
+                                ),
+                                suffixIcon: GestureDetector(
+                                  onTap: controller.togglePasswordVisibility,
+                                  child: Icon(
+                                    controller.isPasswordHidden.value
+                                        ? Icons.visibility_off_outlined
+                                        : Icons.visibility_outlined,
+                                    color: const Color(0xFF8B7D77),
+                                    size: 20.sp,
+                                  ),
+                                ),
+                                filled: true,
+                                fillColor: const Color(0xFFF6F1ED),
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 14.w,
+                                  vertical: 14.h,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12.r),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFFEDE2DC),
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12.r),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFFEDE2DC),
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12.r),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFF6A3027),
+                                    width: 1.5,
+                                  ),
+                                ),
+                              ),
+                            )),
+                            SizedBox(height: 24.h),
+
+                            // Login Button
+                            Obx(() => SizedBox(
+                              width: double.infinity,
+                              height: 52.h,
+                              child: FilledButton(
+                                onPressed: controller.isLoading.value
+                                    ? null
+                                    : controller.login,
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: const Color(0xFF6A3027),
+                                  disabledBackgroundColor:
+                                      const Color(0xFFC9C9C9),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12.r),
+                                  ),
+                                ),
+                                child: controller.isLoading.value
+                                    ? SizedBox(
+                                        height: 22.h,
+                                        width: 22.w,
+                                        child: const CircularProgressIndicator(
+                                          strokeWidth: 2.5,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : Text(
+                                        "Login",
+                                        style: GoogleFonts.manrope(
+                                          fontSize: 15.sp,
+                                          fontWeight: FontWeight.w800,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                              ),
+                            )),
                             SizedBox(height: 16.h),
                           ],
                         ),

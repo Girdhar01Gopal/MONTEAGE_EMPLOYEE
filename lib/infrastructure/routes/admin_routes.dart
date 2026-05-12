@@ -27,12 +27,22 @@ import '../../screens/home_screen.dart';
 import '../../screens/login_screen.dart';
 import '../../screens/mark_face_attendance_screen.dart';
 import '../../screens/register_screen.dart';
+import '../../bindings/leave_management_binding.dart';
+import '../../screens/leave_management_screen.dart';
+import '../../bindings/task_binding.dart';
+
+
 
 // Import task screens and bindings
 import '../../screens/task_given_screen.dart';
 import '../../screens/task_received_screen.dart';
 import '../../bindings/task_given_binding.dart';
 import '../../bindings/task_received_binding.dart';
+import '../../bindings/task_binding.dart';
+import '../../screens/task_screen.dart';
+import '../../screens/main_screen.dart';
+import '../../screens/attendance_screen.dart';
+import '../../screens/calendar_screen.dart';
 
 class AdminRoutes {
   // ==================
@@ -52,11 +62,17 @@ class AdminRoutes {
   static const checkoutattendace = "/checkoutattendace";
   static const profile = "/profile";
   static const forgotpassword = "/forgotpassword";
-  static const faceidlogin = "/faceidlogin";
+  static const leaveManagement = "/leave-management";
+  static const faceidlogin = "/faceid-login";
+  static const attendance = '/attendance';
+  static const mainScreen = '/main';
+  static const projects = '/projects';
+  
 
   // New Task Routes
   static const taskGiven = '/task-given';
   static const taskReceived = '/task-received';
+  static const task = '/task';
 
   // ==================
   // Route Definitions
@@ -186,5 +202,41 @@ class AdminRoutes {
       transition: Transition.rightToLeft,
       binding: TaskReceivedBinding(),
     ),
+
+    GetPage(
+      name: task,
+      page: () => TaskScreen(),
+      transition: Transition.rightToLeft,
+      binding: TaskBinding(),
+    ),
+
+  GetPage(
+     name: leaveManagement,
+     page: () => LeaveManagementScreen(),
+     transition: Transition.rightToLeft,
+     binding: LeaveManagementBinding(),
+),
+
+
+GetPage(
+  name: attendance,
+  page: () => const AttendanceScreen(),
+  transition: Transition.rightToLeft,
+),
+
+GetPage(
+  name: mainScreen,
+  page: () => const MainScreen(),
+  transition: Transition.fadeIn,
+  bindings: [
+    HomeBinding(),
+    TaskBinding(),
+    EmployeeProfileBinding(),
+  ],
+),
+
+
+
+
   ];
 }
