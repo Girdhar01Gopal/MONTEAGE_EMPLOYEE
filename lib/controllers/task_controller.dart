@@ -7,7 +7,7 @@ import 'package:get_storage/get_storage.dart';
 import 'project_controller.dart';
 
 // ─────────────────────────────────────────────────────────────────────────
-// MODELS  (unchanged — do not edit)
+// MODELS  
 // ─────────────────────────────────────────────────────────────────────────
 
 class TaskStatus {
@@ -20,7 +20,10 @@ class TaskStatus {
   static const pmRejected = 'PMRejected';
 
   static bool isApproved(String s) => s == approved || s == 'Done' || s == 'Complete';
-  static bool isRejected(String s) => s == tlRejected || s == pmRejected || s == 'AssignerRejected';
+  // 'Rejected' is the raw backend value — the app maps tlRejected/pmRejected/AssignerRejected
+  // to 'Rejected' when posting and gets 'Rejected' back when fetching.
+  static bool isRejected(String s) =>
+      s == tlRejected || s == pmRejected || s == 'AssignerRejected' || s == 'Rejected';
   static bool isAwaiting(String s) =>
       s == submitted || s == awaitingTL || s == awaitingPM || s == 'AwaitingAssignerApproval';
 }
@@ -65,6 +68,15 @@ class EmployeeModel {
     teamLeadId:   null,
     juniors:      const [],
   );
+}
+
+/// Completed vs. pending task counts for one employee, used by the
+/// Employee List / Employee Detail sheets.
+class EmployeeTaskStats {
+  final int completed;
+  final int pending;
+  const EmployeeTaskStats({required this.completed, required this.pending});
+  int get total => completed + pending;
 }
 
 class RemarkModel {
@@ -235,8 +247,9 @@ class Data {
     createdDate           = json['CreatedDate'];
     date                  = json['Date'];
     modifiedDate          = json['ModifiedDate'];
-    createdby             = json['Createdby'];
-    updatedby             = json['Updatedby'];
+    createdby             = _parseInt(json['Createdby'])
+                         ?? _parseInt(json['AssignById']);
+    updatedby             = _parseInt(json['Updatedby']);
   }
 
   Map<String, dynamic> toJson() {
@@ -289,6 +302,20 @@ class Data {
   /// The effective status: local override wins over API value.
   String get effectiveStatus => overrideStatus ?? aStatus ?? TaskStatus.pending;
 
+  /// True only when the task has reached a genuine terminal "approved"
+  /// state. The backend's raw AStatus field reuses "Done"/"InProgress" to
+  /// mean "submitted, awaiting review" at every stage of the workflow —
+  /// the same value TaskStatus.isApproved treats as fully approved. That's
+  /// only safe to trust once a local override is missing AND the raw
+  /// status isn't one of those ambiguous values; otherwise (e.g. a
+  /// reviewer on a different device than whoever last acted on this task)
+  /// it would show as falsely "approved" when really still pending review.
+  bool get isGenuinelyApproved {
+    final ambiguousRaw =
+        (aStatus == 'Done' || aStatus == 'InProgress') && overrideStatus == null;
+    return TaskStatus.isApproved(effectiveStatus) && !ambiguousRaw;
+  }
+
   /// TL = EmployeeName / EmployeeId  (first assignee slot).
   String get teamLeadId   => employeeId?.toString() ?? '';
   String get teamLeadName => employeeName ?? '';
@@ -298,8 +325,13 @@ class Data {
   String? get juniorName => (employeeName1 ?? '').trim().isNotEmpty ? employeeName1 : null;
 
   /// Assigner = Createdby (numeric id stored at creation time).
-  String get assignedById   => createdby?.toString() ?? '';
-  String get assignedByName => updateByy ?? '';
+  /// Falls back to AssignById field which some endpoints populate instead.
+  String get assignedById   => (createdby != null && createdby! > 0)
+      ? createdby.toString()
+      : (updatedby != null && updatedby! > 0 ? updatedby.toString() : '');
+  String get assignedByName => (updateByy ?? '').isNotEmpty
+      ? updateByy!
+      : (progressUpdateBy ?? '');
 
   String get title       => taskTittle ?? '';
   String get description => proDescription ?? '';
@@ -309,10 +341,15 @@ class Data {
   bool get isOverdue {
     try {
       final due = DateFormat('yyyy-MM-dd').parse(dueDate);
-      return due.isBefore(DateTime.now()) && !TaskStatus.isApproved(effectiveStatus);
+      return due.isBefore(DateTime.now()) && !isGenuinelyApproved;
     } catch (_) {
       return false;
     }
+  }
+  static int? _parseInt(dynamic v) {
+    if (v == null) return null;
+    if (v is int) return v;
+    return int.tryParse(v.toString());
   }
 
   Data copyWith({
@@ -368,9 +405,14 @@ class Data {
 // ─────────────────────────────────────────────────────────────────────────
 
 class TaskController extends GetxController {
+  static const _successColor = Color(0xFF4CAF50);
+  static const _errorColor   = Color(0xFFE53935);
   final _box            = GetStorage();
   /// key = Data.uniqueId  →  override payload
   final _localOverrides = <String, Map<String, dynamic>>{};
+  /// key = original task's uniqueId  →  junior's name it was delegated to
+  final _delegations = <String, String>{};
+  String? delegatedJuniorFor(String taskId) => _delegations[taskId];
 
   final isLoading        = true.obs;
   final activeTab        = 0.obs;
@@ -382,6 +424,17 @@ class TaskController extends GetxController {
   /// Flat list of every Data item across all fetched TaskModel responses.
   final allTasks  = <Data>[].obs;
   final employees = <EmployeeModel>[].obs;
+  /// Index for O(1) live-task lookup by uniqueId. Kept in sync by
+  /// _rebuildIndex(), called whenever allTasks is mutated.
+  final taskIndex = <String, int>{};
+
+  void _rebuildIndex() {
+    taskIndex.clear();
+    for (int i = 0; i < allTasks.length; i++) {
+      final id = allTasks[i].uniqueId;
+      if (id.isNotEmpty) taskIndex[id] = i;
+    }
+  }
 
   static const String _apiBase = 'https://montempep.eduagentapp.com/api/MonteageEmpErp';
   static const String _taskListUrl        = '$_apiBase/AppTaskListByEmployeeId';
@@ -390,8 +443,9 @@ class TaskController extends GetxController {
   static const String _progressUpdateUrl  = '$_apiBase/MObProjectProgressUpdate';
   static const String _taskSubmitUrl      = '$_apiBase/MobProjectAllocateTeam';
   static const String _taskUpdateUrl      = '$_apiBase/AppTaskUpdate';
-  static const String _taskDeleteUrl      = '$_apiBase/AppTaskDelete';
   static const String _projectAllocateTeamUrl = '$_apiBase/MobProjectAllocateTeam';
+  static const String _pmProjectListUrl   = '$_apiBase/AppPMAssignProjectList';
+  static const String _taskWorkUrl        = '$_apiBase/MObProjectTaskWork';
 
   String get _accessToken =>
       (_box.read('access_token') ?? '').toString().trim();
@@ -432,7 +486,7 @@ class TaskController extends GetxController {
   int get _maxTabIndex {
     if (isProjectManager) return 1;
     if (isTeamLeader)     return 2;
-    return 0;
+    return 1; // regular employees: Tasks (0) + Projects (1)
   }
 
   int get effectiveTab => activeTab.value.clamp(0, _maxTabIndex).toInt();
@@ -447,13 +501,45 @@ class TaskController extends GetxController {
   if ((t.employeeId1 == null || t.employeeId1 == 0) &&
       myName.isNotEmpty &&
       (t.employeeName1 ?? '').trim().toLowerCase() == myName.trim().toLowerCase()) return true;
+  // PM has no separate "Received" tab — anything awaiting their final
+  // sign-off must surface here, even when a TL (not the PM) created the
+  // task. canPMApprove now catches AwaitingPMApproval unconditionally, so
+  // TL→junior tasks that bubbled up correctly will appear here for the PM.
+  if (isProjectManager && canPMApprove(t)) return true;
+  // Also surface tasks the PM should be able to see even before they reach
+  // AwaitingPMApproval — those assigned by the PM themselves at any stage.
+  if (isProjectManager) {
+    final myNameLower = myName.trim().toLowerCase();
+    final isPMInChain =
+        (t.employeeId1 == null || t.employeeId1 == 0) &&
+        myName.isNotEmpty &&
+        ((t.employeeName1 ?? '').trim().toLowerCase() == myNameLower ||
+         (t.assignedByName.trim().toLowerCase() == myNameLower));
+    if (isPMInChain) return true;
+  }
   return false;
 }).toList());
-
-  List<Data> get receivedTasks => _sortNewestFirst(allTasks.where((t) {
-  if (t.assignedById == myId || t.assignedByName == myName) return false;
-  return t.teamLeadId == myId || t.teamLeadName == myName ||
-      t.juniorId == myId || t.juniorName == myName;
+ List<Data> get receivedTasks => _sortNewestFirst(allTasks.where((t) {
+  final myNameLower = myName.trim().toLowerCase();
+  final isAssignedByMe = (t.assignedById.isNotEmpty && t.assignedById != '0' && t.assignedById == myId) ||
+      (myNameLower.isNotEmpty && t.assignedByName.trim().toLowerCase() == myNameLower);
+  // For regular employees: a task delegated TO them by a TL has
+  // createdby = TL, employeeId = junior (me). isAssignedByMe would be
+  // false (TL created it), so don't exclude it — let the slot checks below
+  // pick it up. Only exclude if I'm genuinely the assigner (I created it).
+  if (isAssignedByMe && !isRegularEmployee) return false;
+  if (isAssignedByMe && isRegularEmployee) {
+    // I created this task myself — only exclude if I'm also not the worker.
+    final imWorker = t.teamLeadId == myId ||
+        (myNameLower.isNotEmpty && t.teamLeadName.trim().toLowerCase() == myNameLower) ||
+        t.juniorId == myId ||
+        (myNameLower.isNotEmpty && (t.juniorName ?? '').trim().toLowerCase() == myNameLower);
+    if (!imWorker) return false;
+  }
+  return t.teamLeadId == myId ||
+      (myNameLower.isNotEmpty && t.teamLeadName.trim().toLowerCase() == myNameLower) ||
+      t.juniorId == myId ||
+      (myNameLower.isNotEmpty && (t.juniorName ?? '').trim().toLowerCase() == myNameLower);
 }).toList());
 
   List<Data> get _activeTasks {
@@ -464,23 +550,49 @@ class TaskController extends GetxController {
   // ── Stats ─────────────────────────────────────────────────────────────
   int get totalCount    => _activeTasks.length;
   int get activeCount   => _activeTasks.where((t) =>
-      !t.isOverdue && !TaskStatus.isApproved(t.effectiveStatus)).length;
+      !t.isOverdue && !t.isGenuinelyApproved).length;
   int get pendingCount  => _activeTasks.where((t) =>
       t.effectiveStatus == TaskStatus.pending && !t.isOverdue).length;
-  int get approvedCount => _activeTasks.where((t) =>
-      TaskStatus.isApproved(t.effectiveStatus)).length;
+  int get approvedCount => _activeTasks.where((t) => t.isGenuinelyApproved).length;
   int get overdueCount  => _activeTasks.where((t) => t.isOverdue).length;
+
+  /// Completed vs. pending counts for tasks this employee is doing —
+  /// as team lead or as junior, across the full task list (not just the
+  /// currently active tab), so it reflects their real workload.
+  EmployeeTaskStats taskStatsFor(EmployeeModel emp) {
+    final idStr = emp.employeeId.toString();
+    final nameLower = emp.employeeName.trim().toLowerCase();
+    final relevant = allTasks.where((t) {
+      final isTeamLead = t.teamLeadId == idStr ||
+          (nameLower.isNotEmpty && t.teamLeadName.trim().toLowerCase() == nameLower);
+      final isJunior = t.juniorId == idStr ||
+          (nameLower.isNotEmpty && (t.juniorName ?? '').trim().toLowerCase() == nameLower);
+      return isTeamLead || isJunior;
+    });
+    final completed = relevant.where((t) => t.isGenuinelyApproved).length;
+    final pending = relevant.length - completed;
+    return EmployeeTaskStats(completed: completed, pending: pending);
+  }
 
   // ── Approval guards ───────────────────────────────────────────────────
 
   bool canLeadApprove(Data t) {
     if (!isTeamLeader) return false;
+    final myNameLower = myName.trim().toLowerCase();
     final hasJunior  = (t.juniorId ?? '').trim().isNotEmpty;
     final isTLOfTask = t.teamLeadId == myId ||
-        t.teamLeadName.trim().toLowerCase() == myName.trim().toLowerCase() ||
-        t.assignedById == myId;
+        (myNameLower.isNotEmpty && t.teamLeadName.trim().toLowerCase() == myNameLower) ||
+        (myId.isNotEmpty && myId != '0' && t.assignedById == myId);
     final awaitingLead = t.effectiveStatus == TaskStatus.awaitingTL ||
-        (t.effectiveStatus == TaskStatus.submitted && hasJunior);
+        (t.effectiveStatus == TaskStatus.submitted && hasJunior) ||
+        // API "Done" / "InProgress" = employee submitted, awaiting TL review.
+        // Only trust this when there's no local override — if an override
+        // exists it already set the correct status above (e.g. AwaitingPMApproval
+        // after the TL approved), so the raw "Done" is stale and we must not
+        // re-activate the TL's approve button for a task they already approved.
+        ((t.aStatus == 'Done' || t.aStatus == 'InProgress') &&
+            t.overrideStatus == null &&
+            hasJunior);
     return hasJunior && isTLOfTask && awaitingLead;
   }
 
@@ -494,33 +606,74 @@ class TaskController extends GetxController {
             myName.isNotEmpty &&
             (t.employeeName1 ?? '').trim().toLowerCase() == myNameLower);
     final is3Way = taskIs3Way(t);
-    return t.effectiveStatus == TaskStatus.awaitingPM ||
-        (t.effectiveStatus == TaskStatus.submitted && isPMTheAssigner && !is3Way) ||
+    // AwaitingPMApproval is the unambiguous "assigner/TL already approved,
+    // PM is next" state. Trust it unconditionally — by the time a task
+    // reaches this status the intermediate reviewer (TL or assigner) has
+    // already signed off, so ANY PM can give the final approval regardless
+    // of whether they originally assigned the task. This covers the
+    // TL→junior direct-assign case (Bug 2b) where createdby is the TL,
+    // not the PM, so isPMTheAssigner would otherwise be false.
+    if (t.effectiveStatus == TaskStatus.awaitingPM) return true;
+    return (t.effectiveStatus == TaskStatus.submitted && isPMTheAssigner && !is3Way) ||
         (t.effectiveStatus == 'AwaitingAssignerApproval' && isPMTheAssigner) ||
-        // API "Done" / "InProgress" = employee submitted, awaiting PM review
-        (isPMTheAssigner &&
+        // API "Done" / "InProgress" = employee submitted, awaiting PM review.
+        // Excluded for 3-way tasks — those must clear TL review first.
+        (isPMTheAssigner && !is3Way &&
             (t.aStatus == 'Done' || t.aStatus == 'InProgress') &&
             t.overrideStatus == null);
   }
+  /// Covers the case markDone() routes to 'AwaitingAssignerApproval': a
+  /// 2-way task where the worker isn't the one who created it (e.g. a TL
+  /// assigning directly to a single junior, with no separate junior slot
+  /// used). Whoever assigned it reviews here, regardless of their role —
+  /// PMs are excluded since they already approve the same status via the
+  /// dedicated canPMApprove path above, calling pmApprove() instead.
+  bool canAssignerApprove(Data t) {
+    if (isProjectManager) return false;
+    if (t.effectiveStatus != 'AwaitingAssignerApproval') return false;
+    final myNameLower = myName.trim().toLowerCase();
+    return (t.assignedById.isNotEmpty && t.assignedById == myId) ||
+        (myNameLower.isNotEmpty &&
+            t.assignedByName.trim().toLowerCase() == myNameLower);
+  }
 
   bool _isWorker(Data t) {
+    final myNameLower = myName.trim().toLowerCase();
     final hasJunior = (t.juniorId ?? '').trim().isNotEmpty;
-    if (hasJunior) return t.juniorId == myId || t.juniorName == myName;
-    return t.teamLeadId == myId || t.teamLeadName == myName;
+    if (hasJunior) {
+      return t.juniorId == myId ||
+          (myNameLower.isNotEmpty &&
+              (t.juniorName ?? '').trim().toLowerCase() == myNameLower);
+    }
+    return t.teamLeadId == myId ||
+        (myNameLower.isNotEmpty &&
+            t.teamLeadName.trim().toLowerCase() == myNameLower);
   }
 
   bool canMarkDone(Data t) {
+    if (_delegations.containsKey(t.uniqueId)) return false;
     final actionable = t.effectiveStatus == TaskStatus.pending ||
-        t.effectiveStatus == TaskStatus.tlRejected ||
-        t.effectiveStatus == 'AssignerRejected' ||
-        t.effectiveStatus == TaskStatus.pmRejected;
+        TaskStatus.isRejected(t.effectiveStatus);
     return _isWorker(t) && actionable;
+  }
+
+  /// A team lead can hand an unstarted (or rejected) task to one of their
+  /// juniors instead of doing it themselves. This creates a separate new
+  /// task for the junior (see delegateToJunior) — once used, the original
+  /// shows a "Delegated to" note instead of Mark Done / Delegate again.
+  bool canDelegate(Data t) {
+    if (!isTeamLeader) return false;
+    if (_delegations.containsKey(t.uniqueId)) return false;
+    final hasJunior = (t.juniorId ?? '').trim().isNotEmpty;
+    if (hasJunior) return false;
+    return canMarkDone(t);
   }
 
   bool isSubmittedAwaitingReview(Data t) =>
       t.effectiveStatus == TaskStatus.awaitingTL ||
       t.effectiveStatus == TaskStatus.awaitingPM ||
-      t.effectiveStatus == TaskStatus.submitted;
+      t.effectiveStatus == TaskStatus.submitted ||
+      t.effectiveStatus == 'AwaitingAssignerApproval';
 
   // ── Lifecycle ─────────────────────────────────────────────────────────
   @override
@@ -531,6 +684,10 @@ class TaskController extends GetxController {
       stored.forEach((k, v) {
         _localOverrides[k.toString()] = Map<String, dynamic>.from(v as Map);
       });
+    }
+    final storedDelegations = _box.read<Map>('task_delegations');
+    if (storedDelegations != null) {
+      storedDelegations.forEach((k, v) => _delegations[k.toString()] = v.toString());
     }
     fetchAll();
   }
@@ -764,10 +921,31 @@ class TaskController extends GetxController {
 
   void _buildEmployeesFromNames(Set<String> nameSet) {
     final sorted = nameSet.toList()..sort();
-    employees.value = sorted.asMap().entries.map((e) => EmployeeModel(
-      employeeId: e.key + 1, employeeName: e.value, employeeCode: '',
-      projectId: '', projectName: '', name: e.value, isTeamLead: false,
-    )).toList();
+    employees.value = sorted.map((name) {
+      // Try to recover a real employee ID from tasks already in memory.
+      // allTasks is populated before _fetchEmployees resolves in fetchAll
+      // (Future.wait runs both concurrently), so this may be empty on first
+      // load — that's fine, the delegate dialog will just use 0 and the
+      // server will reject it, which is no worse than the old fake-ID path.
+      final nameLower = name.trim().toLowerCase();
+      int realId = 0;
+      for (final t in allTasks) {
+        if (t.teamLeadName.trim().toLowerCase() == nameLower &&
+            (t.employeeId ?? 0) > 0) {
+          realId = t.employeeId!;
+          break;
+        }
+        if ((t.juniorName ?? '').trim().toLowerCase() == nameLower &&
+            (t.employeeId1 ?? 0) > 0) {
+          realId = t.employeeId1!;
+          break;
+        }
+      }
+      return EmployeeModel(
+        employeeId: realId, employeeName: name, employeeCode: '',
+        projectId: '', projectName: '', name: name, isTeamLead: false,
+      );
+    }).toList();
   }
 
   List<EmployeeModel>? _parseEmployeeList(String body) {
@@ -817,6 +995,12 @@ class TaskController extends GetxController {
       final rawReceived = results[1];
       final rawPMList   = (isProjectManager && results.length > 2) ? results[2] : <Data>[];
 
+      // PM: also pull task works from all managed projects to surface
+      // TL-assigned tasks that are awaiting PM final approval.
+      final rawPMProjectWorks = isProjectManager
+          ? await _fetchPMProjectTaskWorks()
+          : <Data>[];
+
       // PM-given tasks: items where createdby matches myId
       final myIdInt = int.tryParse(myId) ?? 0;
       final rawPMGiven = rawPMList.where((t) =>
@@ -826,17 +1010,25 @@ class TaskController extends GetxController {
       final seen   = <String>{};
       final merged = <Data>[];
 
+      // Merge in order of priority: tasks the PM directly assigned first,
+      // then tasks from all PM-managed projects (catches TL-assigned tasks
+      // awaiting PM approval), then received tasks.
       for (final t in [...rawGiven, ...rawPMGiven]) {
         final key = t.uniqueId;
-        if (key.isNotEmpty && seen.add(key)) merged.add(t);
+        if (key.isEmpty || seen.add(key)) merged.add(t);
+      }
+      // PM project task works — surfaces TL-assigned tasks needing PM approval
+      for (final t in rawPMProjectWorks) {
+        final key = t.uniqueId;
+        if (key.isEmpty || seen.add(key)) merged.add(t);
       }
       for (final t in rawReceived) {
         final key = t.uniqueId;
-        if (key.isNotEmpty && seen.add(key)) merged.add(t);
+        if (key.isEmpty || seen.add(key)) merged.add(t);
       }
-
       if (merged.isNotEmpty) {
         allTasks.value = merged;
+        _rebuildIndex();
         _applyLocalOverrides();
         return;
       }
@@ -868,23 +1060,98 @@ class TaskController extends GetxController {
     } catch (e) { debugPrint('_fetchTasks error: $e'); }
     _applyLocalOverrides();
   }
-
-  Future<void> _fetchRegularEmployeeTasks() async {
-    final received = await _fetchDataList('$_receivedTasksUrl/$myId', label: 'RegularReceived');
-    if (received.isNotEmpty) {
-      allTasks.value = received;
-      _applyLocalOverrides();
-      return;
-    }
+/// For PM: fetches MObProjectTaskWork for every project the PM manages,
+  /// then merges all tasks into allTasks. This is the only way to surface
+  /// TL-assigned tasks that need PM final approval but have no PM ID in
+  /// the task record itself.
+  Future<List<Data>> _fetchPMProjectTaskWorks() async {
+    final pmTasks = <Data>[];
     try {
-      final res = await http
-          .get(Uri.parse('$_apiBase/MObProjectTaskWork/$myId'),
-              headers: _noAuthHeaders)
+      // Step 1: get the PM's project list
+      final projRes = await http
+          .get(Uri.parse('$_pmProjectListUrl/$myId'), headers: _noAuthHeaders)
           .timeout(const Duration(seconds: 12));
-      if (res.statusCode == 200) {
-        allTasks.value = _parseDataList(res.body);
+      debugPrint('📋 PMProjectList → ${projRes.statusCode}');
+      if (projRes.statusCode != 200) return pmTasks;
+
+      final decoded = jsonDecode(projRes.body);
+      List<dynamic>? projects;
+      if (decoded is List) {
+        projects = decoded;
+      } else if (decoded is Map) {
+        projects = decoded['data'] as List? ??
+            decoded['Data'] as List? ??
+            decoded['result'] as List?;
       }
-    } catch (e) { debugPrint('Regular fallback error: $e'); }
+      if (projects == null || projects.isEmpty) return pmTasks;
+
+      // Step 2: for each project, fetch MObProjectTaskWork/{projectId}
+      // Some backends use the project ID, some use employee ID — try both.
+      final seen = <String>{};
+      final futures = <Future<List<Data>>>[];
+      for (final p in projects) {
+        final projectId = (p['SProjectId'] ?? p['ProjectId'] ?? p['Id'] ?? 0).toString();
+        if (projectId == '0') continue;
+        futures.add(_fetchDataList('$_taskWorkUrl/$projectId',
+            label: 'PMProjWork-$projectId'));
+      }
+      final results = await Future.wait(futures);
+      for (final list in results) {
+        for (final t in list) {
+          final key = t.uniqueId;
+          if (key.isEmpty || seen.add(key)) pmTasks.add(t);
+        }
+      }
+    } catch (e) {
+      debugPrint('_fetchPMProjectTaskWorks error: $e');
+    }
+    return pmTasks;
+  }
+Future<void> _fetchRegularEmployeeTasks() async {
+    // MObProjectTaskWork is the only endpoint that reliably returns tasks
+    // for a regular employee regardless of designation. The TL-specific
+    // endpoints (MObProjectReciveWorkTL / MObProjectGivenWorkTL) filter
+    // server-side by designation and return nothing for plain employees.
+    List<Data> taskWorks = [];
+    try {
+      for (final useAuth in [false, true]) {
+        final res = await http
+            .get(Uri.parse('$_apiBase/MObProjectTaskWork/$myId'),
+                headers: useAuth ? _authHeaders : _noAuthHeaders)
+            .timeout(const Duration(seconds: 12));
+        debugPrint('📋 RegularTaskWork auth=$useAuth → ${res.statusCode}');
+        if (res.statusCode == 200) {
+          final items = _parseDataList(res.body);
+          if (items.isNotEmpty) {
+            taskWorks = items;
+            break;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Regular TaskWork fetch error: $e');
+    }
+
+    // Also try MObProjectReciveWorkTL as a secondary source — on some
+    // server configurations it does return records for non-TL employees
+    // (e.g. tasks where EmployeeId1 matches the caller). Merge without
+    // duplicating by uniqueId.
+    final received = await _fetchDataList(
+        '$_receivedTasksUrl/$myId', label: 'RegularReceived');
+
+    final seen   = <String>{};
+    final merged = <Data>[];
+    for (final t in [...taskWorks, ...received]) {
+      final key = t.uniqueId;
+      if (key.isEmpty || seen.add(key)) merged.add(t);
+    }
+
+    if (merged.isNotEmpty) {
+      allTasks.value = merged;
+    } else {
+      debugPrint('⚠️ No tasks found for regular employee $myId');
+    }
+    _rebuildIndex();
     _applyLocalOverrides();
   }
 
@@ -898,11 +1165,8 @@ class TaskController extends GetxController {
             .timeout(const Duration(seconds: 12));
         debugPrint('📋 $label [$url] auth=$useAuth → ${res.statusCode}');
         if (res.statusCode == 200) {
-
           final items = _parseDataList(res.body);
-              print(res.body);
           if (items.isNotEmpty) return items;
-
         }
       } catch (e) { debugPrint('$label fetch error: $e'); }
     }
@@ -943,11 +1207,11 @@ class TaskController extends GetxController {
         list = list.where((t) => t.isOverdue).toList();
         break;
       case 'Approved':
-        list = list.where((t) => TaskStatus.isApproved(t.effectiveStatus)).toList();
+        list = list.where((t) => t.isGenuinelyApproved).toList();
         break;
       case 'Active':
         list = list.where((t) =>
-            !t.isOverdue && !TaskStatus.isApproved(t.effectiveStatus)).toList();
+            !t.isOverdue && !t.isGenuinelyApproved).toList();
         break;
       case 'Rejected':
         list = list.where((t) => TaskStatus.isRejected(t.effectiveStatus)).toList();
@@ -969,6 +1233,75 @@ class TaskController extends GetxController {
   // ─────────────────────────────────────────────────────────────────────
   // ASSIGN TASK
   // ─────────────────────────────────────────────────────────────────────
+
+  /// Shared by assignTask() and delegateToJunior() — both create a new
+  /// task allocation via the exact same call/body shape, so a delegated
+  /// task has the same chance of being visible to its assignee as a
+  /// normally-assigned one. Returns the decoded response on success
+  /// (statuscode 200), or null.
+  Future<Map<String, dynamic>?> _createTaskAllocation({
+    required int employeeId,
+    required int employeeId1,
+    required String employeeName,
+    required String employeeName1,
+    required String employeeName2,
+    required String title,
+    required String description,
+    required String startDateApi,
+    required String dueDateApi,
+    required String priority,
+    required String recurrence,
+    required int projectId,
+    required String projectName,
+    List<String>? attachments,
+  }) async {
+    final body = <String, dynamic>{
+      'SProjectId':              projectId,
+      'ProjectId':               projectId,
+      'EmployeeId':              employeeId,
+      'EmployeeId1':             employeeId1,
+      'TaskTittle':              title,
+      'ProDescription':          description,
+      'UploadAllotFile':         (attachments != null && attachments.length > 2) ? attachments[2] : '',
+      'DeliveryEstimateDate1':   dueDateApi,
+      'EndDeliveryEstimateDate1':dueDateApi,
+      'Recurrence':              recurrence,
+      'Priority':                priority,
+      'TokenId':                 _generateToken(),
+      'AssignBy':                myId,
+      'ProjectName':             projectName,
+      'AssignById':              int.tryParse(myId) ?? 0,
+      'AssignDate':              startDateApi,
+      'Description':             description,
+      'IsActive':                true,
+      'EmployeeName':            employeeName,
+      'EmployeeName1':           employeeName1,
+      'EmployeeName2':           employeeName2,
+      'UploadImage':             (attachments != null && attachments.isNotEmpty) ? attachments[0] : '',
+      'UploadImage1':            (attachments != null && attachments.length > 1) ? attachments[1] : '',
+      'CreatedDate':             DateTime.now().toIso8601String(),
+      'ModifiedDate':            DateTime.now().toIso8601String(),
+      'Createdby':               int.tryParse(myId) ?? 0,
+      'Updatedby':               int.tryParse(myId) ?? 0,
+    };
+
+    final res = await http.post(Uri.parse(_taskSubmitUrl),
+        headers: _noAuthHeaders, body: jsonEncode(body));
+    debugPrint('_createTaskAllocation [${res.statusCode}]: ${res.body}');
+    if (res.statusCode != 200) return null;
+    try {
+      final decoded = jsonDecode(res.body) as Map<String, dynamic>;
+      if ((decoded['statuscode'] as int? ?? 0) != 200) return null;
+      return decoded;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _toApiDate(String d) {
+    try { return DateFormat('yyyy-MM-dd').format(DateFormat('dd-MM-yyyy').parse(d)); }
+    catch (_) { return d; }
+  }
 
   Future<void> assignTask({
     required List<String> teamLeadId,
@@ -1000,11 +1333,6 @@ class TaskController extends GetxController {
         empName3   = employees.firstWhereOrNull((e) => e.employeeId == idx3)?.employeeName ?? teamLeadId[2];
       }
 
-      String toApiDate(String d) {
-        try { return DateFormat('yyyy-MM-dd').format(DateFormat('dd-MM-yyyy').parse(d)); }
-        catch (_) { return d; }
-      }
-
       int selectedProjectId = int.tryParse(projectId?.trim() ?? '') ?? 0;
       if (selectedProjectId == 0 &&
           projectName?.trim().isNotEmpty == true &&
@@ -1019,86 +1347,71 @@ class TaskController extends GetxController {
       final emp1Id  = emp1Obj?.employeeId ?? 0;
       final emp2Id  = emp2Obj?.employeeId ?? 0;
 
-      final body = <String, dynamic>{
-        'SProjectId':              selectedProjectId,
-        'ProjectId':               selectedProjectId,
-        'EmployeeId':              emp1Id,
-        'EmployeeId1':             emp2Id,
-        'TaskTittle':              title,
-        'ProDescription':          description,
-        'UploadAllotFile':         (attachments != null && attachments.length > 2) ? attachments[2] : '',
-        'DeliveryEstimateDate1':   toApiDate(dueDate),
-        'EndDeliveryEstimateDate1':toApiDate(dueDate),
-        'Recurrence':              recurrence,
-        'Priority':                priority,
-        'TokenId':                 _generateToken(),
-        'AssignBy':                myId,
-        'ProjectName':             projectName ?? '',
-        'AssignById':              int.tryParse(myId) ?? 0,
-        'AssignDate':              toApiDate(startDate),
-        'Description':             description,
-        'IsActive':                true,
-        'EmployeeName':            empName1,
-        'EmployeeName1':           empName2,
-        'EmployeeName2':           empName3,
-        'UploadImage':             (attachments != null && attachments.isNotEmpty) ? attachments[0] : '',
-        'UploadImage1':            (attachments != null && attachments.length > 1) ? attachments[1] : '',
-        'CreatedDate':             DateTime.now().toIso8601String(),
-        'ModifiedDate':            DateTime.now().toIso8601String(),
-        'Createdby':               int.tryParse(myId) ?? 0,
-        'Updatedby':               int.tryParse(myId) ?? 0,
-      };
+      final decoded = await _createTaskAllocation(
+        employeeId:     emp1Id,
+        employeeId1:    emp2Id,
+        employeeName:   empName1,
+        employeeName1:  empName2,
+        employeeName2:  empName3,
+        title:          title,
+        description:    description,
+        startDateApi:   _toApiDate(startDate),
+        dueDateApi:     _toApiDate(dueDate),
+        priority:       priority,
+        recurrence:     recurrence,
+        projectId:      selectedProjectId,
+        projectName:    projectName ?? '',
+        attachments:    attachments,
+      );
 
-      final res = await http.post(Uri.parse(_taskSubmitUrl),
-          headers: _noAuthHeaders, body: jsonEncode(body));
-      debugPrint('assignTask [${res.statusCode}]: ${res.body}');
-
-      if (res.statusCode == 200) {
-        final decoded   = jsonDecode(res.body) as Map<String, dynamic>;
-        final statusCode = decoded['statuscode'] as int? ?? 0;
-        final message    = decoded['message']?.toString() ?? '';
-        if (statusCode == 200) {
-          // Build a Data stub to insert optimistically
-          final newData = Data(
-            sProjectId:            selectedProjectId,
-            projectName:           projectName,
-            employeeId:            emp1Id,
-            employeeId1:           emp2Id > 0 ? emp2Id : null,
-            employeeName:          empName1,
-            employeeName1:         empName2.isNotEmpty ? empName2 : null,
-            proDescription:        description,
-            deliveryEstimateDate1: toApiDate(dueDate),
-            endDeliveryEstimateDate1: toApiDate(dueDate),
-            allocateDate:          toApiDate(startDate),
-            recurrence:            recurrence,
-            priority:              priority,
-            aStatus:               TaskStatus.pending,
-            taskTittle:            title,
-            tokenId:               _generateToken(),
-            isActive:              true,
-            createdDate:           DateTime.now().toIso8601String(),
-            modifiedDate:          DateTime.now().toIso8601String(),
-            createdby:             int.tryParse(myId) ?? 0,
-            updatedby:             int.tryParse(myId) ?? 0,
-          );
-          allTasks.insert(0, newData);
-          allTasks.refresh();
-          Get.back();
-          Get.snackbar(
-            'Success',
-            message.isNotEmpty ? message : 'Task assigned successfully',
+      if (decoded != null) {
+        final message = decoded['message']?.toString() ?? '';
+        // Build a Data stub to insert optimistically
+        // proAllocatId uses a large sentinel so _sortNewestFirst always
+        // places this optimistic stub at the top until the next real fetch
+        // replaces it with a server-assigned ID. Using
+        // DateTime.now().millisecondsSinceEpoch guarantees uniqueness even
+        // if multiple tasks are assigned in the same session.
+        final optimisticId = DateTime.now().millisecondsSinceEpoch;
+        final newData = Data(
+          sProjectId:            selectedProjectId,
+          projectName:           projectName,
+          employeeId:            emp1Id,
+          employeeId1:           emp2Id > 0 ? emp2Id : null,
+          employeeName:          empName1,
+          employeeName1:         empName2.isNotEmpty ? empName2 : null,
+          proDescription:        description,
+          deliveryEstimateDate1: _toApiDate(dueDate),
+          endDeliveryEstimateDate1: _toApiDate(dueDate),
+          allocateDate:          _toApiDate(startDate),
+          recurrence:            recurrence,
+          priority:              priority,
+          aStatus:               TaskStatus.pending,
+          taskTittle:            title,
+          tokenId:               _generateToken(),
+          proAllocatId:          optimisticId,
+          isActive:              true,
+          createdDate:           DateTime.now().toIso8601String(),
+          modifiedDate:          DateTime.now().toIso8601String(),
+          createdby:             int.tryParse(myId) ?? 0,
+          updatedby:             int.tryParse(myId) ?? 0,
+        );
+        allTasks.insert(0, newData);
+        allTasks.refresh();
+        Get.back();
+        Get.snackbar(
+          'Success',
+          message.isNotEmpty ? message : 'Task assigned successfully',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: _successColor,
+          colorText: Colors.white,
+        );
+        _syncProjectTaskWorks();
+      } else {
+        Get.snackbar('Failed', 'Could not assign task',
             snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: const Color(0xFF4CAF50),
-            colorText: Colors.white,
-          );
-          _syncProjectTaskWorks();
-        } else {
-          Get.snackbar('Failed',
-              message.isNotEmpty ? message : 'Could not assign task',
-              snackPosition: SnackPosition.BOTTOM,
-              backgroundColor: const Color(0xFFE53935),
-              colorText: Colors.white);
-        }
+            backgroundColor: _errorColor,
+            colorText: Colors.white);
       }
     } catch (e) {
       Get.snackbar('Error', 'Failed to assign task: $e',
@@ -1159,14 +1472,14 @@ class TaskController extends GetxController {
           Get.back();
           Get.snackbar('Updated', 'Task updated successfully',
               snackPosition: SnackPosition.BOTTOM,
-              backgroundColor: const Color(0xFF4CAF50),
+              backgroundColor: _successColor,
               colorText: Colors.white);
           fetchAll();
         } else {
           Get.snackbar('Failed',
               decoded['message']?.toString() ?? 'Could not update task',
               snackPosition: SnackPosition.BOTTOM,
-              backgroundColor: const Color(0xFFE53935),
+              backgroundColor: _errorColor,
               colorText: Colors.white);
         }
       }
@@ -1178,32 +1491,115 @@ class TaskController extends GetxController {
     }
   }
 
-  // Future<void> deleteTask(String taskId) async {
-  //   try {
-  //     allTasks.removeWhere((t) => t.uniqueId == taskId);
-  //     final res = await http.delete(
-  //         Uri.parse('$_taskDeleteUrl/$taskId'),
-  //         headers: _noAuthHeaders);
-  //     if (res.statusCode == 200) {
-  //       final decoded = jsonDecode(res.body) as Map<String, dynamic>;
-  //       if ((decoded['statuscode'] as int? ?? 0) == 200) {
-  //         Get.snackbar('Deleted', 'Task removed successfully',
-  //             snackPosition: SnackPosition.BOTTOM);
-  //       } else {
-  //         fetchAll();
-  //         Get.snackbar('Failed',
-  //             decoded['message']?.toString() ?? 'Could not delete task',
-  //             snackPosition: SnackPosition.BOTTOM,
-  //             backgroundColor: const Color(0xFFE53935),
-  //             colorText: Colors.white);
-  //       }
-  //     } else { fetchAll(); }
-  //   } catch (e) { fetchAll(); }
-  // }
-
   // ─────────────────────────────────────────────────────────────────────
   // STATUS ACTIONS
   // ─────────────────────────────────────────────────────────────────────
+
+  /// Hands an unstarted task to a junior instead of the team lead doing it.
+  /// This creates a brand-new task via the same call assignTask() already
+  /// uses (confirmed working — the junior will see it in their Received
+  /// list), rather than mutating the original task's junior slot: that
+  /// was tried via MObProjectProgressUpdate and confirmed NOT to persist
+  /// server-side, so the junior never actually received it. The original
+  /// task is left untouched except for a local "Delegated to" note, so
+  /// the TL stops being shown conflicting actions on it.
+  Future<bool> delegateToJunior(
+      String taskId, String juniorId, String juniorName) async {
+    final original = allTasks.firstWhereOrNull((t) => t.uniqueId == taskId);
+    if (original == null) return false;
+    final juniorIdInt = int.tryParse(juniorId) ?? 0;
+    if (juniorIdInt == 0) {
+      Get.snackbar(
+        'Cannot Delegate',
+        'Employee ID could not be resolved. Please refresh and try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.orange.shade700,
+        colorText: Colors.white,
+      );
+      return false;
+    }
+
+    // The original task's dates come straight from the API (ISO-ish
+    // strings), not the dd-MM-yyyy format _toApiDate() expects — convert
+    // properly instead of passing them through as-is.
+    String isoToApiDate(String raw) {
+      if (raw.isEmpty) return '';
+      final dt = DateTime.tryParse(raw);
+      return dt == null ? '' : DateFormat('yyyy-MM-dd').format(dt);
+    }
+
+    final todayApi = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final startApi = isoToApiDate(original.startDate);
+    final dueApi   = isoToApiDate(original.dueDate);
+
+    isSubmitting(true);
+    try {
+      final decoded = await _createTaskAllocation(
+        employeeId:    juniorIdInt,
+        employeeId1:   0,
+        employeeName:  juniorName,
+        employeeName1: '',
+        employeeName2: '',
+        title:         original.title,
+        description:   original.description,
+        startDateApi:  startApi.isNotEmpty ? startApi : todayApi,
+        dueDateApi:    dueApi,
+        priority:      original.priority ?? 'Medium',
+        recurrence:    original.recurrence ?? 'None',
+        projectId:     original.sProjectId ?? 0,
+        projectName:   original.projectName ?? '',
+      );
+
+      if (decoded == null) {
+        Get.snackbar('Failed', 'Could not delegate task (server error)',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: _errorColor, colorText: Colors.white);
+        return false;
+      }
+
+      final nowIso = DateTime.now().toIso8601String();
+      final newTask = Data(
+        sProjectId:               original.sProjectId,
+        projectName:              original.projectName,
+        employeeId:               juniorIdInt,
+        employeeName:             juniorName,
+        proDescription:           original.description,
+        deliveryEstimateDate1:    dueApi,
+        endDeliveryEstimateDate1: dueApi,
+        allocateDate:             nowIso,
+        recurrence:               original.recurrence,
+        priority:                 original.priority,
+        aStatus:                  TaskStatus.pending,
+        taskTittle:               original.title,
+        tokenId:                  _generateToken(),
+        isActive:                 true,
+        createdDate:              nowIso,
+        modifiedDate:             nowIso,
+        createdby:                int.tryParse(myId) ?? 0,
+        updatedby:                int.tryParse(myId) ?? 0,
+      );
+      allTasks.insert(0, newTask);
+
+      _delegations[taskId] = juniorName;
+      _box.write('task_delegations', _delegations);
+      allTasks.refresh();
+
+      Get.snackbar(
+        'Delegated',
+        "$juniorName has this as a new task — you'll review it once they submit.",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: _successColor,
+        colorText: Colors.white,
+      );
+      return true;
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to delegate task: $e',
+          snackPosition: SnackPosition.BOTTOM);
+      return false;
+    } finally {
+      isSubmitting(false);
+    }
+  }
 
   Future<void> markDone(String taskId, {String description = 'Task completed'}) async {
     final task = allTasks.firstWhereOrNull((t) => t.uniqueId == taskId);
@@ -1214,11 +1610,31 @@ class TaskController extends GetxController {
         task.teamLeadId.trim().isNotEmpty &&
         task.teamLeadId != task.assignedById;
 
+    final hasAssignerAboveWorker = !hasJunior &&
+        task.assignedById.isNotEmpty &&
+        task.assignedById != task.teamLeadId;
+
+    // Declare nextStatus first so the clearing block below can reference it.
     final nextStatus = hasTLAboveWorker
         ? TaskStatus.awaitingTL
-        : TaskStatus.awaitingPM;
+        : hasAssignerAboveWorker
+            ? 'AwaitingAssignerApproval'
+            : TaskStatus.awaitingPM;
 
-    _patchLocal(taskId, nextStatus);
+    // Clear any previous rejection remarks when resubmitting so stale
+    // "Rejected by X" tiles don't remain visible after the new submission.
+    final i = allTasks.indexWhere((t) => t.uniqueId == taskId);
+    if (i != -1) {
+      allTasks[i] = allTasks[i].copyWith(
+        overrideStatus: nextStatus,
+        leadRemark:     null,
+        assignerRemark: null,
+        pmRemark:       null,
+      );
+      allTasks.refresh();
+    }
+
+    _patchLocal(taskId, nextStatus, clearRemarks: true);
     final ok = await _pushProgressUpdate(
       taskId: taskId, status: nextStatus,
       description: description, progress: 100,
@@ -1227,9 +1643,11 @@ class TaskController extends GetxController {
       ok ? 'Submitted' : 'Submitted (offline)',
       hasTLAboveWorker
           ? 'Task submitted — awaiting team lead review'
-          : 'Task submitted — awaiting PM approval',
+          : hasAssignerAboveWorker
+              ? 'Task submitted — awaiting review from whoever assigned it'
+              : 'Task submitted — awaiting PM approval',
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFF4CAF50),
+      backgroundColor: _successColor,
       colorText: Colors.white,
     );
   }
@@ -1245,7 +1663,7 @@ class TaskController extends GetxController {
       ok ? 'Approved' : 'Approved (offline)',
       'Team lead approved — awaiting project manager',
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFF4CAF50),
+      backgroundColor: _successColor,
       colorText: Colors.white,
     );
   }
@@ -1263,7 +1681,7 @@ class TaskController extends GetxController {
       ok ? 'Rejected' : 'Rejected (offline)',
       'Task rejected by team lead',
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFFE53935),
+      backgroundColor: _errorColor,
       colorText: Colors.white,
     );
   }
@@ -1279,7 +1697,7 @@ class TaskController extends GetxController {
       ok ? 'Approved' : 'Approved (offline)',
       'Task approved by project manager',
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFF4CAF50),
+      backgroundColor: _successColor,
       colorText: Colors.white,
     );
   }
@@ -1297,21 +1715,23 @@ class TaskController extends GetxController {
       ok ? 'Rejected' : 'Rejected (offline)',
       'Task rejected by project manager',
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFFE53935),
+      backgroundColor: _errorColor,
       colorText: Colors.white,
     );
   }
 
   Future<void> assignerApprove(String taskId) async {
-    final nextStatus = isProjectManager ? TaskStatus.approved : TaskStatus.awaitingPM;
+    // canAssignerApprove() gates PM out, so the assigner is always a non-PM
+    // role (TL). Always route to AwaitingPMApproval for the final approval step.
+    const nextStatus = TaskStatus.awaitingPM;
     _patchLocal(taskId, nextStatus);
     final ok = await _pushProgressUpdate(
         taskId: taskId, status: nextStatus, description: 'Approved by assigner');
     Get.snackbar(
       ok ? 'Approved' : 'Approved (offline)',
-      isProjectManager ? 'Task approved' : 'Approved — awaiting project manager',
+      'Approved — awaiting project manager',
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFF4CAF50),
+      backgroundColor: _successColor,
       colorText: Colors.white,
     );
   }
@@ -1329,7 +1749,7 @@ class TaskController extends GetxController {
       ok ? 'Rejected' : 'Rejected (offline)',
       'Task rejected',
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFFE53935),
+      backgroundColor: _errorColor,
       colorText: Colors.white,
     );
   }
@@ -1347,17 +1767,25 @@ class TaskController extends GetxController {
 
     debugPrint('⚙️ pushProgressUpdate taskId=$taskId proAllocatId=$proAllocatId status=$status aStatus=$aStatus');
 
-    final body = <String, dynamic>{
-      'ProAllocatId':       proAllocatId,
-      'EmpDescription':     description.isNotEmpty ? description : 'Status updated to $status',
-      'Progress':           progress,
-      'AStatus':            aStatus,
-      'ProgressUpdateBy':   myId,
+   final body = <String, dynamic>{
+      'ProAllocatId':         proAllocatId,
+      'EmpDescription':       description.isNotEmpty ? description : 'Status updated to $status',
+      'Progress':             progress,
+      'AStatus':              aStatus,
+      // Extended status — some backends store this in a custom column.
+      // Even if ignored, it costs nothing to send and may help future-proof.
+      'UpdatedStatus':        status,
+      'WorkflowStatus':       status,
+      'ProgressUpdateBy':     myId,
       'ProgressUpdateByName': myName,
-      'UpdatedStatus':      status,
-      'Remark':             description,
-      'RejectedBy':         myName,
-      'RejectedAt':         DateTime.now().toIso8601String(),
+      // Rejection context — stored in EmpDescription by the backend and
+      // shown to the worker via the _ApiRemarkTile fallback.
+      'Remark':               description,
+      'RejectedBy':           myName,
+      'RejectedById':         myId,
+      'RejectedAt':           DateTime.now().toIso8601String(),
+      'ModifiedDate':         DateTime.now().toIso8601String(),
+      'Updatedby':            int.tryParse(myId) ?? 0,
     };
 
     debugPrint('Initial body: $body');
@@ -1505,7 +1933,7 @@ class TaskController extends GetxController {
           Get.snackbar(
               'Success', decoded['message']?.toString() ?? 'Team allocated',
               snackPosition: SnackPosition.BOTTOM,
-              backgroundColor: const Color(0xFF4CAF50),
+              backgroundColor: _successColor,
               colorText: Colors.white);
           fetchAll();
           _syncProjectTaskWorks();
@@ -1543,12 +1971,13 @@ class TaskController extends GetxController {
   // PRIVATE HELPERS
   // ─────────────────────────────────────────────────────────────────────
 
-  void _patchLocal(String taskId, String status, {
+ void _patchLocal(String taskId, String status, {
     RemarkModel? leadRemark,
     RemarkModel? assignerRemark,
     RemarkModel? pmRemark,
+    bool clearRemarks = false,
   }) {
-    final existing = _localOverrides[taskId] ?? {};
+    final existing = clearRemarks ? <String, dynamic>{} : (_localOverrides[taskId] ?? {});
     _localOverrides[taskId] = {
       ...existing,
       'status': status,
@@ -1558,16 +1987,19 @@ class TaskController extends GetxController {
     };
     _box.write('task_overrides', _localOverrides.map((k, v) => MapEntry(k, v)));
 
+    // Clear any previous rejection remarks when resubmitting so stale
+    // "Rejected by X" tiles don't remain visible after the new submission.
     final i = allTasks.indexWhere((t) => t.uniqueId == taskId);
     if (i != -1) {
       allTasks[i] = allTasks[i].copyWith(
         overrideStatus: status,
-        leadRemark:     leadRemark     ?? allTasks[i].leadRemark,
-        assignerRemark: assignerRemark ?? allTasks[i].assignerRemark,
-        pmRemark:       pmRemark       ?? allTasks[i].pmRemark,
+        leadRemark:     null,
+        assignerRemark: null,
+        pmRemark:       null,
       );
       allTasks.refresh();
     }
+    _patchLocal(taskId, status);
   }
 
   void _applyLocalOverrides() {
@@ -1582,7 +2014,14 @@ class TaskController extends GetxController {
       final apiStatus      = t.aStatus ?? TaskStatus.pending;
       final overrideRank   = _statusRank(overrideStatus ?? '');
       final apiRank        = _statusRank(apiStatus);
-      final apiIsTerminal  = TaskStatus.isApproved(apiStatus);
+      // Raw "Done"/"InProgress"/"Rejected" are ambiguous — the backend
+      // reuses them at every stage of the workflow (see
+      // Data.isGenuinelyApproved). Only treat the unambiguous final
+      // values as proof the server has genuinely caught up; otherwise a
+      // perfectly correct local override (e.g. "AwaitingAssignerApproval")
+      // gets wiped out on the very next refresh, reverting the display
+      // to a misleadingly "done" raw status.
+      final apiIsTerminal  = apiStatus == TaskStatus.approved || apiStatus == 'Complete';
       final shouldApply    = !apiIsTerminal && overrideRank >= apiRank;
 
       if (!shouldApply) {
@@ -1617,6 +2056,7 @@ class TaskController extends GetxController {
       case TaskStatus.awaitingTL:              return 2;
       case 'AwaitingAssignerApproval':         return 3;
       case TaskStatus.awaitingPM:              return 4;
+      case 'Rejected':                         // raw API value
       case TaskStatus.tlRejected:
       case 'AssignerRejected':
       case TaskStatus.pmRejected:              return 5;
@@ -1636,9 +2076,10 @@ class TaskController extends GetxController {
 
   void _syncProjectTaskWorks() {
     try {
-      if (Get.isRegistered(tag: 'ProjectController') == true) {
-        // ignore: avoid_dynamic_calls
-        (Get.find(tag: 'ProjectController') as dynamic).fetchProjectTaskWorks();
+      // ProjectController is registered without a tag everywhere in the app.
+      // The previous tag-based lookup always silently failed.
+      if (Get.isRegistered<ProjectController>()) {
+        Get.find<ProjectController>().fetchProjectTaskWorks();
       }
     } catch (_) {}
   }
@@ -1666,6 +2107,15 @@ class TaskController extends GetxController {
 List<Data> _sortNewestFirst(List<Data> list) {
   final sorted = List<Data>.from(list);
   sorted.sort((a, b) {
+    // ProAllocatId is the database's auto-incrementing row id — a far
+    // more reliable "created more recently" signal than the date fields
+    // below, which come back empty for a lot of real records (the
+    // different list endpoints this app merges together don't populate
+    // them consistently). Trust it whenever both sides have one.
+    final pa = a.proAllocatId ?? 0;
+    final pb = b.proAllocatId ?? 0;
+    if (pa > 0 && pb > 0) return pb.compareTo(pa);
+
     DateTime? parseDate(Data t) {
       for (final d in [t.createdDate, t.allocateDate, t.date, t.modifiedDate]) {
         if (d != null && d.isNotEmpty) {

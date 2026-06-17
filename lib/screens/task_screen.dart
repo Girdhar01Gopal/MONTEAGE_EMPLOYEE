@@ -6,7 +6,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:get_storage/get_storage.dart' hide Data;
 import '../controllers/task_controller.dart';
 import '../controllers/project_controller.dart' hide Data;
 import '../models/project_model.dart';
@@ -15,31 +14,12 @@ import '../models/project_model.dart';
 // HELPER
 // ─────────────────────────────────────────────────────────────────────────
 
-String get _designation {
-  final box = GetStorage();
-  return (box.read('Designation') ?? box.read('designation') ?? '')
-      .toString()
-      .toLowerCase()
-      .trim()
-      .replaceAll(RegExp(r'\s+'), ' ');
-}
-
-bool get _isProjectManager =>
-    _designation == 'project manager' ||
-    _designation == 'projectmanager' ||
-    _designation == 'pm' ||
-    _designation == 'project_manager' ||
-    (_designation.contains('project') && _designation.contains('manager'));
-
-bool get _isTeamLeader =>
-    _designation == 'team leader' ||
-    _designation == 'teamleader' ||
-    _designation == 'tl' ||
-    _designation == 'team_leader' ||
-    _designation == 'team lead' ||
-    (_designation.contains('team') && _designation.contains('lead'));
-
-bool get _isRegularEmployee => !_isProjectManager && !_isTeamLeader;
+// Role detection lives solely on TaskController (isProjectManager /
+// isTeamLeader / isRegularEmployee) — these delegate to it so there is one
+// source of truth instead of a second copy of the designation-matching rules.
+bool get _isProjectManager => Get.find<TaskController>().isProjectManager;
+bool get _isTeamLeader => Get.find<TaskController>().isTeamLeader;
+bool get _isRegularEmployee => Get.find<TaskController>().isRegularEmployee;
 
 // ─────────────────────────────────────────────────────────────────────────
 // TASK BADGE
@@ -217,6 +197,7 @@ class _EmployeeListSheetState extends State<_EmployeeListSheet> {
                 itemCount: filtered.length,
                 itemBuilder: (_, i) {
                   final emp = filtered[i];
+                  final stats = c.taskStatsFor(emp);
                   return GestureDetector(
                     onTap: () {
                       Get.back();
@@ -270,6 +251,16 @@ class _EmployeeListSheetState extends State<_EmployeeListSheet> {
                                     style: GoogleFonts.inter(
                                         fontSize: 11.sp,
                                         color: const Color(0xFF8B7D77))),
+                                SizedBox(height: 6.h),
+                                Row(
+                                  children: [
+                                    _miniStat(Icons.check_circle_rounded,
+                                        Colors.green, '${stats.completed} done'),
+                                    SizedBox(width: 10.w),
+                                    _miniStat(Icons.pending_actions_rounded,
+                                        Colors.orange, '${stats.pending} pending'),
+                                  ],
+                                ),
                               ],
                             ),
                           ),
@@ -287,6 +278,19 @@ class _EmployeeListSheetState extends State<_EmployeeListSheet> {
       ),
     );
   }
+
+  Widget _miniStat(IconData icon, Color color, String label) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11.sp, color: color),
+          SizedBox(width: 3.w),
+          Text(label,
+              style: GoogleFonts.inter(
+                  fontSize: 10.sp,
+                  fontWeight: FontWeight.w600,
+                  color: color)),
+        ],
+      );
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -398,10 +402,74 @@ class _EmployeeDetailSheet extends StatelessWidget {
                     SizedBox(height: 12.h),
                     _row('Team Lead ID', employee.teamLeadId!),
                   ],
+                  SizedBox(height: 24.h),
+                  Text('Task Workload',
+                      style: GoogleFonts.manrope(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF241917))),
+                  SizedBox(height: 12.h),
+                  Obx(() {
+                    final stats =
+                        Get.find<TaskController>().taskStatsFor(employee);
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: _workloadTile(
+                            label: 'Completed',
+                            value: stats.completed,
+                            icon: Icons.check_circle_rounded,
+                            color: Colors.green,
+                          ),
+                        ),
+                        SizedBox(width: 10.w),
+                        Expanded(
+                          child: _workloadTile(
+                            label: 'Pending',
+                            value: stats.pending,
+                            icon: Icons.pending_actions_rounded,
+                            color: Colors.orange,
+                          ),
+                        ),
+                      ],
+                    );
+                  }),
                 ],
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _workloadTile({
+    required String label,
+    required int value,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(14.r),
+        border: Border.all(color: color.withOpacity(0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18.sp, color: color),
+          SizedBox(height: 8.h),
+          Text('$value',
+              style: GoogleFonts.manrope(
+                  fontSize: 18.sp, fontWeight: FontWeight.w800, color: color)),
+          SizedBox(height: 2.h),
+          Text(label,
+              style: GoogleFonts.inter(
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w600,
+                  color: color)),
         ],
       ),
     );
@@ -497,10 +565,8 @@ class _Body extends StatelessWidget {
     final isTL = _isTeamLeader;
     final isRegular = _isRegularEmployee;
 
-    if ((isManager || isTL) && !Get.isRegistered<ProjectController>()) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!Get.isRegistered<ProjectController>()) Get.put(ProjectController());
-      });
+    if (!Get.isRegistered<ProjectController>()) {
+      Get.put(ProjectController());
     }
 
     if (isRegular) {
@@ -514,21 +580,53 @@ class _Body extends StatelessWidget {
                 SizedBox(height: 12.h),
                 Obx(() {
                   if (!c.isSearchExpanded.value) return const SizedBox.shrink();
+                  final isProjectsTab = c.effectiveTab == 1;
+                  final pc = Get.isRegistered<ProjectController>()
+                      ? Get.find<ProjectController>()
+                      : null;
                   return Column(
                     children: [
                       _SearchBar(
-                          onChanged: c.setSearch,
-                          hint: 'Search by title or date…'),
+                        onChanged: isProjectsTab && pc != null
+                            ? pc.setTLSearch
+                            : c.setSearch,
+                        hint: isProjectsTab
+                            ? 'Search by project name…'
+                            : 'Search by title or date…',
+                      ),
                       SizedBox(height: 12.h),
                     ],
                   );
                 }),
-                _StatsCard(c: c, showEmpTile: false),
+                Obx(() {
+                  if (c.effectiveTab == 1) {
+                    final pc = Get.isRegistered<ProjectController>()
+                        ? Get.find<ProjectController>()
+                        : null;
+                    if (pc == null) return const SizedBox.shrink();
+                    return _RegularProjectStatsCard(pc: pc);
+                  }
+                  return _StatsCard(c: c, showEmpTile: false);
+                }),
                 SizedBox(height: 12.h),
               ],
             ),
           ),
-          Expanded(child: _RegularTaskList(c: c)),
+          Expanded(
+            child: Obx(() {
+              if (c.effectiveTab == 1) {
+                final pc = Get.isRegistered<ProjectController>()
+                    ? Get.find<ProjectController>()
+                    : null;
+                if (pc == null) {
+                  return const Center(
+                      child: CircularProgressIndicator(color: Color(0xFF6A3027)));
+                }
+                return _RegularProjectList(pc: pc);
+              }
+              return _RegularTaskList(c: c);
+            }),
+          ),
         ],
       );
     }
@@ -560,6 +658,18 @@ class _Body extends StatelessWidget {
                   ),
                   SizedBox(height: 12.h),
                 ],
+                if (!isPMProjectsTab && !isTLProjectsTab) ...[
+                  Padding(
+                    padding: EdgeInsets.only(bottom: 8.h, left: 4.w),
+                    child: Text(
+                      tab == 0 ? 'Given Tasks Overview' : 'Received Tasks Overview',
+                      style: GoogleFonts.manrope(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF8B7D77)),
+                    ),
+                  ),
+                ],
                 isPMProjectsTab
                     ? _ProjectStatsCard(pc: pc)
                     : isTLProjectsTab
@@ -583,11 +693,7 @@ class _Body extends StatelessWidget {
   Widget _buildList(bool isManager, bool isTL, int tab) {
     if (isManager && tab == 1) {
       if (!Get.isRegistered<ProjectController>()) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!Get.isRegistered<ProjectController>()) Get.put(ProjectController());
-        });
-        return const Center(
-            child: CircularProgressIndicator(color: Color(0xFF6A3027)));
+        Get.put(ProjectController());
       }
       final pc = Get.find<ProjectController>();
       return Obx(() {
@@ -621,19 +727,15 @@ class _Body extends StatelessWidget {
 
     if (isTL && tab == 2) {
       if (!Get.isRegistered<ProjectController>()) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!Get.isRegistered<ProjectController>()) Get.put(ProjectController());
-        });
-        return const Center(
-            child: CircularProgressIndicator(color: Color(0xFF6A3027)));
+        Get.put(ProjectController());
       }
       final pc = Get.find<ProjectController>();
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (pc.tlAllocateProjects.isEmpty && !pc.isLoading.value)
+        if (pc.tlAllocateProjects.isEmpty && !pc.isAllocateLoading.value)
           pc.fetchTLAllocateProjects();
       });
       return Obx(() {
-        if (pc.isLoading.value && pc.tlAllocateProjects.isEmpty) {
+        if (pc.isAllocateLoading.value && pc.tlAllocateProjects.isEmpty) {
           return const Center(
               child: CircularProgressIndicator(color: Color(0xFF6A3027)));
         }
@@ -793,6 +895,7 @@ class _TabToggle extends StatelessWidget {
               _tab('Projects', 2),
             ] else ...[
               _tab('Tasks', 0),
+              _tab('Projects', 1),
             ],
           ],
         ),
@@ -1168,14 +1271,23 @@ class _TLProjectStatsCard extends StatelessWidget {
   final ProjectController pc;
   const _TLProjectStatsCard({required this.pc});
 
+  TaskController get _tc {
+    if (!Get.isRegistered<TaskController>()) Get.put(TaskController());
+    return Get.find<TaskController>();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Obx(() {
       final all = pc.tlAllocateProjects;
-      final uniqueProjects =
-          all.map((p) => p.sProjectId).toSet().length;
-      final uniqueMembers =
-          all.map((p) => p.employeeId).toSet().length;
+      final uniqueProjects = all.map((p) => p.sProjectId).toSet().length;
+      final tc = _tc;
+      // Same employee roster TaskController already scopes per role —
+      // a team lead only ever gets their own juniors here (see
+      // _fetchEmployeesForTL), so reusing it instead of a separate
+      // "members" source keeps this number consistent with what tapping
+      // it opens.
+      final memberCount = tc.employees.length;
 
       return Container(
         padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 8.w),
@@ -1205,10 +1317,15 @@ class _TLProjectStatsCard extends StatelessWidget {
             ),
             _divider(),
             _statTile(
-              label: 'Members',
-              value: '$uniqueMembers',
+              label: 'My Team',
+              value: '$memberCount',
               icon: Icons.people_outline_rounded,
               color: Colors.green,
+              onTap: () => Get.bottomSheet(
+                _EmployeeListSheet(controller: tc),
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+              ),
             ),
           ],
         ),
@@ -1224,8 +1341,9 @@ class _TLProjectStatsCard extends StatelessWidget {
     required String value,
     required IconData icon,
     required Color color,
+    VoidCallback? onTap,
   }) {
-    return Column(
+    final content = Column(
       children: [
         Icon(icon, size: 22.sp, color: color),
         SizedBox(height: 5.h),
@@ -1235,13 +1353,24 @@ class _TLProjectStatsCard extends StatelessWidget {
                 fontWeight: FontWeight.w800,
                 color: const Color(0xFF241917))),
         SizedBox(height: 2.h),
-        Text(label,
-            style: GoogleFonts.inter(
-                fontSize: 9.sp,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF8B7D77))),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(label,
+                style: GoogleFonts.inter(
+                    fontSize: 9.sp,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF8B7D77))),
+            if (onTap != null) ...[
+              SizedBox(width: 2.w),
+              Icon(Icons.chevron_right_rounded, size: 11.sp, color: color),
+            ],
+          ],
+        ),
       ],
     );
+    if (onTap == null) return content;
+    return GestureDetector(onTap: onTap, child: content);
   }
 }
 
@@ -1359,6 +1488,40 @@ class _RemarkTile extends StatelessWidget {
                         fontSize: 12.sp, color: const Color(0xFF241917))),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// API REMARK TILE — shown when rejected with no local remark (fallback)
+// ─────────────────────────────────────────────────────────────────────────
+
+class _ApiRemarkTile extends StatelessWidget {
+  final String note;
+  const _ApiRemarkTile({required this.note});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.only(top: 8.h),
+      padding: EdgeInsets.all(10.w),
+      decoration: BoxDecoration(
+        color: Colors.red.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(10.r),
+        border: Border.all(color: Colors.red.withOpacity(0.20)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.comment_outlined, size: 14.sp, color: Colors.red),
+          SizedBox(width: 6.w),
+          Expanded(
+            child: Text(note,
+                style: GoogleFonts.inter(
+                    fontSize: 12.sp, color: const Color(0xFF241917))),
           ),
         ],
       ),
@@ -1488,6 +1651,63 @@ Future<String?> _showMarkDoneDialog(BuildContext context) async {
   );
 }
 
+Future<EmployeeModel?> _showDelegateDialog(
+    BuildContext context, TaskController c) async {
+  if (c.employees.isEmpty) {
+    Get.snackbar('No Juniors Found',
+        'You have no team members to delegate this task to.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.orange.shade50,
+        colorText: Colors.orange.shade800);
+    return null;
+  }
+  return showDialog<EmployeeModel>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: const Color(0xFFF6F1ED),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18.r)),
+      title: Text('Delegate to Junior',
+          style: GoogleFonts.manrope(
+              fontWeight: FontWeight.w800, color: const Color(0xFF241917))),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: ListView.builder(
+          shrinkWrap: true,
+          itemCount: c.employees.length,
+          itemBuilder: (_, i) {
+            final emp = c.employees[i];
+            return ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: CircleAvatar(
+                radius: 16.r,
+                backgroundColor: const Color(0xFFB54A3A).withOpacity(0.12),
+                child: Text(
+                  emp.employeeName.isNotEmpty ? emp.employeeName[0] : '?',
+                  style: GoogleFonts.manrope(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFFB54A3A)),
+                ),
+              ),
+              title: Text(emp.employeeName,
+                  style: GoogleFonts.inter(
+                      fontSize: 14.sp, color: const Color(0xFF241917))),
+              onTap: () => Navigator.pop(ctx, emp),
+            );
+          },
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: Text('Cancel',
+              style: GoogleFonts.manrope(color: const Color(0xFF8B7D77))),
+        ),
+      ],
+    ),
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // TASK CARD  — now uses Data instead of old flat TaskModel
 // ─────────────────────────────────────────────────────────────────────────
@@ -1528,24 +1748,16 @@ class _TaskCardState extends State<_TaskCard>
     _expanded ? _anim.forward() : _anim.reverse();
   }
 
+  // Delegates entirely to TaskController so the notification dot always
+  // matches the same approval/worker rules used for the action buttons —
+  // and now also lights up for workers with something to mark done, not
+  // just reviewers.
   bool _needsAction(TaskController c) {
     final t = widget.task;
-    final s = t.effectiveStatus;
-    final isApiPendingReview =
-        (t.aStatus == 'Done' || t.aStatus == 'InProgress') && t.overrideStatus == null;
-    if (_isProjectManager) {
-      final isGiven = c.givenTasks.any((g) => g.uniqueId == t.uniqueId);
-      return isGiven &&
-          (s == 'Submitted' ||
-              s == 'AwaitingPMApproval' ||
-              s == 'AwaitingAssignerApproval' ||
-              isApiPendingReview);
-    }
-    if (_isTeamLeader) {
-      final isGiven = c.givenTasks.any((g) => g.uniqueId == t.uniqueId);
-      return isGiven && (s == 'AwaitingLeadApproval' || isApiPendingReview);
-    }
-    return false;
+    return c.canLeadApprove(t) ||
+        c.canPMApprove(t) ||
+        c.canAssignerApprove(t) ||
+        c.canMarkDone(t);
   }
 
   Color get _priorityColor {
@@ -1564,7 +1776,7 @@ class _TaskCardState extends State<_TaskCard>
     final t = widget.task;
     final statusColor = _statusColor(t.effectiveStatus);
     final progress = _taskProgress(t);
-    final isApproved = TaskStatus.isApproved(t.effectiveStatus);
+    final isApproved = t.isGenuinelyApproved;
 
     return Container(
       margin: EdgeInsets.only(bottom: 14.h),
@@ -1678,38 +1890,20 @@ class _ExpandedTaskBody extends StatelessWidget {
   const _ExpandedTaskBody({required this.task, required this.c});
 
   /// Always resolve the live copy from the observable list.
-  Data _live() =>
-      c.allTasks.firstWhere((x) => x.uniqueId == task.uniqueId,
-          orElse: () => task);
+  /// Uses a Map lookup via uniqueId to avoid O(n) scan on every rebuild.
+  Data _live() {
+    final idx = c.taskIndex[task.uniqueId];
+    if (idx != null && idx < c.allTasks.length) return c.allTasks[idx];
+    return task;
+  }
 
-  static bool _isApproved(String s) => TaskStatus.isApproved(s);
   static bool _isRejected(String s) => TaskStatus.isRejected(s);
 
-  bool _isGivenByMe(Data t) =>
-      c.givenTasks.any((g) => g.uniqueId == t.uniqueId);
-
-  static String _stepLabel(String status) {
-    switch (status) {
-      case 'Pending':
-        return 'Not started';
-      case 'Submitted':
-        return 'Employee submitted';
-      case 'AwaitingLeadApproval':
-        return 'Awaiting TL review';
-      case 'AwaitingPMApproval':
-        return 'Awaiting PM approval';
-      case 'Approved':
-      case 'Done':
-      case 'Complete':
-        return 'Fully approved';
-      case 'LeadRejected':
-        return 'TL rejected';
-      case 'PMRejected':
-        return 'PM rejected';
-      default:
-        return status;
-    }
-  }
+  static bool _isAssignerChain(Data t) =>
+      !taskIs3Way(t) &&
+      t.assignedById.isNotEmpty &&
+      t.assignedById != '0' &&
+      t.assignedById != t.teamLeadId;
 
   @override
   Widget build(BuildContext context) {
@@ -1717,49 +1911,43 @@ class _ExpandedTaskBody extends StatelessWidget {
       final live = _live();
       final status = live.effectiveStatus;
 
-      final isPM = _isProjectManager;
       final isTL = _isTeamLeader;
       final isEmp = _isRegularEmployee;
       final currentTab = c.effectiveTab;
 
-      final isGiven = _isGivenByMe(live);
-
-      // API returns "Done"/"InProgress" to mean "employee submitted, awaiting review".
-      // Don't treat these as fully approved when they're in the given list.
-      final isApiPendingReview = isGiven &&
-          (live.aStatus == 'Done' || live.aStatus == 'InProgress') &&
-          live.overrideStatus == null;
-
-      final approved = _isApproved(status) && !isApiPendingReview;
+      final approved = live.isGenuinelyApproved;
       final rejected = _isRejected(status);
 
       final hasJunior =
           (live.juniorId ?? '').trim().isNotEmpty && live.juniorId != '0';
-      final hasTL = live.teamLeadId.trim().isNotEmpty;
-      final is3Way = hasJunior && hasTL;
-
-      final isWorkerCtx = isEmp || (isTL && currentTab == 1);
+      final is3Way = taskIs3Way(live);
 
       final canDone = c.canMarkDone(live);
+      final canDelegate = c.canDelegate(live);
+      final delegatedTo = c.delegatedJuniorFor(live.uniqueId);
       final isAwaiting = c.isSubmittedAwaitingReview(live);
 
-      final tlShouldReview = isTL &&
-          currentTab == 0 &&
-          isGiven &&
-          (status == TaskStatus.awaitingTL ||
-              (status == TaskStatus.submitted && is3Way) ||
-              isApiPendingReview);
+      // Approval eligibility is decided once, in the controller.
+      // No tab gate here: a 3-way task (PM → TL → junior) is something
+      // the TL *received* from the PM, not something the TL gave out, so
+      // it lives in the TL's "Received" tab — gating approval on
+      // currentTab == 0 would hide the Approve/Reject buttons exactly
+      // when the TL needs them. canLeadApprove already requires a junior
+      // to exist, so it can never fire for a task where the TL is also
+      // the sole worker (no self-review risk).
+      final canLApprove = c.canLeadApprove(live);
+      final canPApprove = c.canPMApprove(live);
+      final canAssignApprove = c.canAssignerApprove(live);
+      final anyReviewAction = canLApprove || canPApprove || canAssignApprove;
 
-      final pmShouldReview = isPM &&
-          currentTab == 0 &&
-          isGiven &&
-          (status == TaskStatus.awaitingPM ||
-              (status == TaskStatus.submitted && !is3Way) ||
-              isApiPendingReview);
-
-      final canLApprove = c.canLeadApprove(live) || tlShouldReview;
-      final canPApprove = c.canPMApprove(live) || pmShouldReview;
-      final anyReviewAction = canLApprove || canPApprove;
+      // A TL viewing their "Received" tab is usually the worker — except
+      // when they're a reviewer on this specific task (3-way TL review OR
+      // direct-assign where they're the assigner reviewing the submission).
+      // canLApprove and canAssignApprove both gate on the TL being the
+      // correct reviewer, so excluding either keeps the worker UI hidden
+      // exactly when the review UI should show instead.
+      final isWorkerCtx =
+          isEmp || (isTL && currentTab == 1 && !canLApprove && !canAssignApprove);
 
       String reviewerMsg = '';
       if (canLApprove) {
@@ -1769,6 +1957,9 @@ class _ExpandedTaskBody extends StatelessWidget {
         reviewerMsg = is3Way
             ? 'Team lead has approved this task. Give your final PM approval.'
             : 'Task submitted by the assignee. Give your final approval.';
+      } else if (canAssignApprove) {
+        reviewerMsg =
+            'Submitted by the assignee. Review before it goes to the PM.';
       }
 
       String workerWaitMsg = '';
@@ -1776,8 +1967,10 @@ class _ExpandedTaskBody extends StatelessWidget {
         switch (status) {
           case 'Submitted':
           case 'AwaitingPMApproval':
-          case 'AwaitingAssignerApproval':
             workerWaitMsg = 'Submitted to PM. Awaiting final approval.';
+            break;
+          case 'AwaitingAssignerApproval':
+            workerWaitMsg = 'Submitted. Awaiting review from your assigner.';
             break;
           case 'AwaitingLeadApproval':
             workerWaitMsg = 'Submitted. Awaiting team lead review.';
@@ -1813,12 +2006,12 @@ class _ExpandedTaskBody extends StatelessWidget {
                 ],
 
                 // ── Meta ────────────────────────────────────────────
-                if (!isEmp)
-                  _MetaRow(
-                      label: 'Assigned by',
-                      value: live.assignedByName.isNotEmpty
-                          ? live.assignedByName
-                          : '—'),
+                if (live.assignedByName.isNotEmpty)
+                  _MetaRow(label: 'Assigned by', value: live.assignedByName)
+                else if (live.teamLeadName.isNotEmpty && live.juniorId != null)
+                  // Delegated task: TL is in slot 1 (teamLeadName) and is
+                  // effectively the assigner even if updateByy is empty.
+                  _MetaRow(label: 'Delegated by', value: live.teamLeadName),
                 _MetaRow(
                   label: 'Assigned to',
                   value: () {
@@ -1841,123 +2034,62 @@ class _ExpandedTaskBody extends StatelessWidget {
                 if (live.leadRemark != null)
                   _RemarkTile(byLabel: 'TL', remark: live.leadRemark!),
                 if (live.assignerRemark != null)
-                  _RemarkTile(
-                      byLabel: 'Assigner', remark: live.assignerRemark!),
+                  _RemarkTile(byLabel: 'Assigner', remark: live.assignerRemark!),
                 if (live.pmRemark != null)
                   _RemarkTile(byLabel: 'PM', remark: live.pmRemark!),
+                // Fallback: when rejected by API but no local remark synced yet,
+                // show EmpDescription (the backend stores our remark there).
+                if (rejected &&
+                    live.leadRemark == null &&
+                    live.assignerRemark == null &&
+                    live.pmRemark == null &&
+                    (live.empDescription ?? '').trim().isNotEmpty)
+                  _ApiRemarkTile(note: live.empDescription!.trim()),
 
                 SizedBox(height: 8.h),
 
-                // ── Approved badge ───────────────────────────────────
+                // ── Status banners ────────────────────────────────────
+                // One shared banner style for every informational state
+                // below, rather than a near-identical Container+Row+Icon
+                // block repeated per case.
                 if (approved) ...[
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                        horizontal: 12.w, vertical: 8.h),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(10.r),
-                      border:
-                          Border.all(color: Colors.green.withOpacity(0.30)),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.check_circle_outline_rounded,
-                            size: 16.sp, color: Colors.green),
-                        SizedBox(width: 8.w),
-                        Text('Task completed and approved ✓',
-                            style: GoogleFonts.inter(
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.green.shade700)),
-                      ],
-                    ),
+                  _InfoBanner(
+                    icon: Icons.check_circle_outline_rounded,
+                    color: Colors.green,
+                    message: is3Way || _isAssignerChain(live)
+                        ? 'Approved by Project Manager ✓'
+                        : 'Task completed and approved ✓',
+                    bold: true,
                   ),
                   SizedBox(height: 8.h),
                 ],
-
-                // ── Rejected resubmit prompt ─────────────────────────
                 if (rejected && isWorkerCtx) ...[
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                        horizontal: 12.w, vertical: 10.h),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.07),
-                      borderRadius: BorderRadius.circular(10.r),
-                      border: Border.all(
-                          color: Colors.orange.withOpacity(0.30)),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.replay_rounded,
-                            size: 15.sp, color: Colors.orange),
-                        SizedBox(width: 8.w),
-                        Expanded(
-                          child: Text(
-                              'Your submission was rejected. See the remark above and resubmit.',
-                              style: GoogleFonts.inter(
-                                  fontSize: 12.sp,
-                                  color: Colors.orange.shade800)),
-                        ),
-                      ],
-                    ),
+                  _InfoBanner(
+                    icon: Icons.replay_rounded,
+                    color: Colors.orange,
+                    message: (live.leadRemark != null ||
+                            live.assignerRemark != null ||
+                            live.pmRemark != null ||
+                            (live.empDescription ?? '').trim().isNotEmpty)
+                        ? 'Your submission was rejected. See the remark above and resubmit.'
+                        : 'Your submission was rejected. Please review and resubmit.',
                   ),
                   SizedBox(height: 8.h),
                 ],
-
-                // ── Worker wait-state banner ─────────────────────────
                 if (workerWaitMsg.isNotEmpty && !approved) ...[
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                        horizontal: 12.w, vertical: 10.h),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.06),
-                      borderRadius: BorderRadius.circular(10.r),
-                      border: Border.all(
-                          color: Colors.blue.withOpacity(0.20)),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.hourglass_empty_rounded,
-                            size: 15.sp, color: Colors.blue),
-                        SizedBox(width: 8.w),
-                        Expanded(
-                          child: Text(workerWaitMsg,
-                              style: GoogleFonts.inter(
-                                  fontSize: 12.sp,
-                                  color: Colors.blue.shade800)),
-                        ),
-                      ],
-                    ),
+                  _InfoBanner(
+                    icon: Icons.hourglass_empty_rounded,
+                    color: Colors.blue,
+                    message: workerWaitMsg,
                   ),
                   SizedBox(height: 8.h),
                 ],
-
-                // ── Reviewer action banner ───────────────────────────
                 if (anyReviewAction) ...[
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                        horizontal: 12.w, vertical: 10.h),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.withOpacity(0.09),
-                      borderRadius: BorderRadius.circular(10.r),
-                      border: Border.all(
-                          color: Colors.amber.withOpacity(0.35)),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(Icons.notification_important_rounded,
-                            size: 15.sp, color: Colors.amber.shade800),
-                        SizedBox(width: 8.w),
-                        Expanded(
-                          child: Text(reviewerMsg,
-                              style: GoogleFonts.inter(
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.amber.shade900)),
-                        ),
-                      ],
-                    ),
+                  _InfoBanner(
+                    icon: Icons.notification_important_rounded,
+                    color: Colors.amber.shade800,
+                    message: reviewerMsg,
+                    bold: true,
                   ),
                   SizedBox(height: 12.h),
                 ],
@@ -1975,46 +2107,49 @@ class _ExpandedTaskBody extends StatelessWidget {
                   )
                 else ...[
 
-                  // ── WORKER: Mark Done ────────────────────────────────
-                  if (isWorkerCtx) ...[
-                    if (canDone || isAwaiting)
+                  // ── Delegated note (replaces worker/delegate actions) ──
+                  if (delegatedTo != null) ...[
+                    _InfoBanner(
+                      icon: Icons.forward_rounded,
+                      color: const Color(0xFF6A3027),
+                      message: 'Delegated to $delegatedTo',
+                      bold: true,
+                    ),
+                    SizedBox(height: 8.h),
+                  ] else ...[
+                    // ── WORKER: Mark Done ────────────────────────────────
+                    if (isWorkerCtx) ...[
+                      // Only show the action button when the worker can actually
+                      // act — pending (first submission) or rejected (resubmit).
+                    // When awaiting review the status banner above already
+                    // informs the worker; a disabled grey button adds nothing.
+                    if (canDone)
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
-                          onPressed: canDone
-                              ? () async {
-                                  final desc =
-                                      await _showMarkDoneDialog(context);
-                                  if (desc != null)
-                                    c.markDone(live.uniqueId,
-                                        description: desc);
-                                }
-                              : null,
+                          onPressed: () async {
+                            final desc = await _showMarkDoneDialog(context);
+                            if (desc != null)
+                              c.markDone(live.uniqueId, description: desc);
+                          },
                           icon: Icon(
-                            isAwaiting
-                                ? Icons.hourglass_top_rounded
+                            rejected
+                                ? Icons.replay_rounded
                                 : Icons.check_rounded,
                             size: 16.sp,
                             color: Colors.white,
                           ),
                           label: Text(
-                            isAwaiting
-                                ? 'Submitted — awaiting review'
-                                : rejected
-                                    ? 'Resubmit task'
-                                    : 'Mark as done',
+                            rejected ? 'Resubmit task' : 'Mark as done',
                             style: GoogleFonts.manrope(
                                 fontSize: 13.sp,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white),
                           ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: isAwaiting
-                                ? Colors.grey.shade400
-                                : rejected
-                                    ? Colors.orange
-                                    : const Color(0xFF4CAF50),
-                            disabledBackgroundColor: Colors.grey.shade400,
+                            backgroundColor: rejected
+                                ? Colors.orange
+                                : const Color(0xFF4CAF50),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12.r)),
                             elevation: 0,
@@ -2022,109 +2157,80 @@ class _ExpandedTaskBody extends StatelessWidget {
                           ),
                         ),
                       ),
+                    if (canDelegate) ...[
+                      SizedBox(height: 8.h),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            final junior =
+                                await _showDelegateDialog(context, c);
+                            if (junior != null) {
+                              c.delegateToJunior(live.uniqueId,
+                                  junior.employeeId.toString(),
+                                  junior.employeeName);
+                            }
+                          },
+                          icon: Icon(Icons.forward_rounded,
+                              size: 16.sp, color: const Color(0xFF6A3027)),
+                          label: Text(
+                            'Delegate to Junior',
+                            style: GoogleFonts.manrope(
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF6A3027)),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFF6A3027)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12.r)),
+                            padding: EdgeInsets.symmetric(vertical: 12.h),
+                          ),
+                        ),
+                      ),
+                    ],
                     SizedBox(height: 8.h),
                   ],
+                  ],
 
-                  // ── TL REVIEWER ──────────────────────────────────────
-                  if (canLApprove) ...[
-                    _SectionLabel('Team Lead Review'),
-                    SizedBox(height: 8.h),
-                    _ApproveRejectRow(
-                      approveLabel: 'Approve',
-                      approveIcon: Icons.thumb_up_alt_rounded,
+                  // ── Review sections ───────────────────────────────────
+                  // Same shape every time (label + approve/reject row) —
+                  // share one widget instead of three hand-rolled copies.
+                  if (canLApprove)
+                    _ReviewSection(
+                      label: 'Team Lead Review',
+                      labelColor: const Color(0xFF6A3027),
                       approveColor: const Color(0xFF4CAF50),
                       rejectColor: const Color(0xFFB54A3A),
                       onApprove: () => c.leadApprove(live.uniqueId),
                       onReject: (r) => c.leadReject(live.uniqueId, r),
-                      context: context,
                     ),
-                    SizedBox(height: 8.h),
-                  ],
 
-                  // ── PM FINAL REVIEWER ────────────────────────────────
-                  if (canPApprove) ...[
-                    _SectionLabel('PM Final Approval', color: Colors.purple),
-                    SizedBox(height: 8.h),
-                    _ApproveRejectRow(
+                  // For a 2-way task (no separate junior slot) the worker
+                  // didn't create themselves — e.g. a TL who assigned
+                  // directly to one junior. Approving here still escalates
+                  // to the PM for final sign-off (see assignerApprove()).
+                  if (canAssignApprove)
+                    _ReviewSection(
+                      label: 'Review Submission',
+                      labelColor: Colors.blue,
+                      approveColor: const Color(0xFF4CAF50),
+                      rejectColor: const Color(0xFFB54A3A),
+                      onApprove: () => c.assignerApprove(live.uniqueId),
+                      onReject: (r) => c.assignerReject(live.uniqueId, r),
+                    ),
+
+                  if (canPApprove)
+                    _ReviewSection(
+                      label: 'PM Final Approval',
+                      labelColor: Colors.purple,
                       approveLabel: 'Final Approve',
                       approveIcon: Icons.workspace_premium_rounded,
                       approveColor: Colors.purple,
                       rejectColor: Colors.purple,
                       onApprove: () => c.pmApprove(live.uniqueId),
                       onReject: (r) => c.pmReject(live.uniqueId, r),
-                      context: context,
                     ),
-                    SizedBox(height: 8.h),
-                  ],
-
-                  // ── Edit / Delete ────────────────────────────────────
-                  // if (!approved && isGiven) ...[
-                  //   SizedBox(height: 4.h),
-                  //   Row(
-                  //     mainAxisAlignment: MainAxisAlignment.end,
-                  //     children: [
-                  //       _IconTextBtn(
-                  //         icon: Icons.edit_outlined,
-                  //         label: 'Edit',
-                  //         color: const Color(0xFF6A3027),
-                  //         bg: const Color(0xFFE8DDD9),
-                  //         onTap: () => Get.bottomSheet(
-                  //           _TaskForm(c: c, existing: live),
-                  //           isScrollControlled: true,
-                  //           backgroundColor: Colors.transparent,
-                  //         ),
-                  //       ),
-                  //       SizedBox(width: 8.w),
-                  //       _IconTextBtn(
-                  //         icon: Icons.delete_outline_rounded,
-                  //         label: 'Delete',
-                  //         color: Colors.red,
-                  //         bg: Colors.red.withOpacity(0.10),
-                  //         onTap: () => showDialog(
-                  //           context: context,
-                  //           builder: (ctx) => AlertDialog(
-                  //             backgroundColor: const Color(0xFFF6F1ED),
-                  //             shape: RoundedRectangleBorder(
-                  //                 borderRadius: BorderRadius.circular(18.r)),
-                  //             title: Text('Delete task?',
-                  //                 style: GoogleFonts.manrope(
-                  //                     fontWeight: FontWeight.w800,
-                  //                     color: const Color(0xFF241917))),
-                  //             content: Text('This cannot be undone.',
-                  //                 style: GoogleFonts.inter(
-                  //                     fontSize: 13.sp,
-                  //                     color: const Color(0xFF8B7D77))),
-                  //             actions: [
-                  //               TextButton(
-                  //                 onPressed: () => Navigator.pop(ctx),
-                  //                 child: Text('Cancel',
-                  //                     style: GoogleFonts.manrope(
-                  //                         color: const Color(0xFF8B7D77))),
-                  //               ),
-                  //               ElevatedButton(
-                  //                 style: ElevatedButton.styleFrom(
-                  //                   backgroundColor: Colors.red,
-                  //                   shape: RoundedRectangleBorder(
-                  //                       borderRadius:
-                  //                           BorderRadius.circular(10.r)),
-                  //                   elevation: 0,
-                  //                 ),
-                  //                 onPressed: () {
-                  //                   Navigator.pop(ctx);
-                  //                   c.deleteTask(live.uniqueId);
-                  //                 },
-                  //                 child: Text('Delete',
-                  //                     style: GoogleFonts.manrope(
-                  //                         fontWeight: FontWeight.w700,
-                  //                         color: Colors.white)),
-                  //               ),
-                  //             ],
-                  //           ),
-                  //         ),
-                  //       ),
-                  //     ],
-                  //   ),
-                  // ],
                 ],
               ],
             ),
@@ -2144,9 +2250,16 @@ class _ApprovalChain extends StatelessWidget {
   final bool is3Way;
   const _ApprovalChain({required this.task, required this.is3Way});
 
+  // Assigner chain: TL assigned directly to junior (no slot 2, but assigner ≠ worker).
+  // Junior marks done → TL (assigner) reviews → PM approves.
+  bool get _isAssignerChain =>
+      !is3Way &&
+      task.assignedById.isNotEmpty &&
+      task.assignedById != '0' &&
+      task.assignedById != task.teamLeadId;
+
   @override
   Widget build(BuildContext context) {
-    final status = task.effectiveStatus;
     final steps = <_ChainStep>[];
 
     if (is3Way) {
@@ -2154,17 +2267,36 @@ class _ApprovalChain extends StatelessWidget {
         _ChainStep(
           label: 'Employee',
           sub: task.juniorName ?? task.teamLeadName,
-          state: _empState(status),
+          state: _empState(task),
         ),
         _ChainStep(
           label: 'TL Review',
           sub: task.teamLeadName,
-          state: _tlState(status),
+          state: _tlState(task),
         ),
         _ChainStep(
           label: 'PM Approve',
           sub: 'PM',
-          state: _pmState(status),
+          state: _pmState(task),
+        ),
+      ]);
+    } else if (_isAssignerChain) {
+      final assignerLabel = task.assignedByName.isNotEmpty ? task.assignedByName : 'TL';
+      steps.addAll([
+        _ChainStep(
+          label: 'Employee',
+          sub: task.teamLeadName.isNotEmpty ? task.teamLeadName : '—',
+          state: _empState(task),
+        ),
+        _ChainStep(
+          label: 'TL Review',
+          sub: assignerLabel,
+          state: _assignerReviewState(task),
+        ),
+        _ChainStep(
+          label: 'PM Approve',
+          sub: 'PM',
+          state: _pmState(task),
         ),
       ]);
     } else {
@@ -2172,12 +2304,12 @@ class _ApprovalChain extends StatelessWidget {
         _ChainStep(
           label: 'In Progress',
           sub: task.teamLeadName.isNotEmpty ? task.teamLeadName : '—',
-          state: _empState(status),
+          state: _empState(task),
         ),
         _ChainStep(
           label: 'PM Approve',
           sub: 'PM',
-          state: _pmState(status),
+          state: _pmState(task),
         ),
       ]);
     }
@@ -2208,15 +2340,17 @@ class _ApprovalChain extends StatelessWidget {
     );
   }
 
-  static _StepState _empState(String s) {
-    if (TaskStatus.isApproved(s)) return _StepState.done;
+  static _StepState _empState(Data task) {
+    final s = task.effectiveStatus;
+    if (task.isGenuinelyApproved) return _StepState.done;
     if (TaskStatus.isRejected(s)) return _StepState.rejected;
     if (s == 'Pending') return _StepState.pending;
     return _StepState.done;
   }
 
-  static _StepState _tlState(String s) {
-    if (TaskStatus.isApproved(s)) return _StepState.done;
+  static _StepState _tlState(Data task) {
+    final s = task.effectiveStatus;
+    if (task.isGenuinelyApproved) return _StepState.done;
     if (s == TaskStatus.tlRejected) return _StepState.rejected;
     if (s == TaskStatus.awaitingTL) return _StepState.active;
     if (s == TaskStatus.awaitingPM || s == 'AwaitingAssignerApproval')
@@ -2224,8 +2358,20 @@ class _ApprovalChain extends StatelessWidget {
     return _StepState.pending;
   }
 
-  static _StepState _pmState(String s) {
-    if (TaskStatus.isApproved(s)) return _StepState.done;
+  static _StepState _assignerReviewState(Data task) {
+    final s = task.effectiveStatus;
+    if (task.isGenuinelyApproved) return _StepState.done;
+    // Only use the specific local status for assigner rejection — raw 'Rejected'
+    // is ambiguous (could be assigner OR PM) so don't misattribute it here.
+    if (s == 'AssignerRejected') return _StepState.rejected;
+    if (s == 'AwaitingAssignerApproval') return _StepState.active;
+    if (s == TaskStatus.awaitingPM) return _StepState.done;
+    return _StepState.pending;
+  }
+
+  static _StepState _pmState(Data task) {
+    final s = task.effectiveStatus;
+    if (task.isGenuinelyApproved) return _StepState.done;
     if (s == TaskStatus.pmRejected) return _StepState.rejected;
     if (s == TaskStatus.awaitingPM || s == TaskStatus.submitted)
       return _StepState.active;
@@ -2309,6 +2455,49 @@ class _ChainNode extends StatelessWidget {
 // SMALL HELPERS
 // ─────────────────────────────────────────────────────────────────────────
 
+/// One shared style for every informational/status banner in the task
+/// detail view (approved, rejected, waiting, reviewer prompt, delegated),
+/// instead of a near-identical Container+Row+Icon block per case.
+class _InfoBanner extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String message;
+  final bool bold;
+  const _InfoBanner({
+    required this.icon,
+    required this.color,
+    required this.message,
+    this.bold = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(10.r),
+        border: Border.all(color: color.withOpacity(0.30)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 15.sp, color: color),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Text(message,
+                style: GoogleFonts.inter(
+                    fontSize: 12.sp,
+                    fontWeight: bold ? FontWeight.w600 : FontWeight.w400,
+                    color: color)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _SectionLabel extends StatelessWidget {
   final String text;
   final Color color;
@@ -2329,40 +2518,50 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-class _IconTextBtn extends StatelessWidget {
-  final IconData icon;
+// ─────────────────────────────────────────────────────────────────────────
+// REVIEW SECTION  — label + approve/reject row, shared by TL / Assigner /
+// PM review blocks instead of each hand-rolling the same two widgets.
+// ─────────────────────────────────────────────────────────────────────────
+
+class _ReviewSection extends StatelessWidget {
   final String label;
-  final Color color;
-  final Color bg;
-  final VoidCallback onTap;
-  const _IconTextBtn({
-    required this.icon,
+  final Color labelColor;
+  final String approveLabel;
+  final IconData approveIcon;
+  final Color approveColor;
+  final Color rejectColor;
+  final VoidCallback onApprove;
+  final void Function(String remark) onReject;
+
+  const _ReviewSection({
     required this.label,
-    required this.color,
-    required this.bg,
-    required this.onTap,
+    required this.labelColor,
+    this.approveLabel = 'Approve',
+    this.approveIcon = Icons.thumb_up_alt_rounded,
+    required this.approveColor,
+    required this.rejectColor,
+    required this.onApprove,
+    required this.onReject,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 7.h),
-        decoration: BoxDecoration(
-            color: bg, borderRadius: BorderRadius.circular(10.r)),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 14.sp, color: color),
-            SizedBox(width: 4.w),
-            Text(label,
-                style: GoogleFonts.manrope(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w700,
-                    color: color)),
-          ],
-        ),
+    return Padding(
+      padding: EdgeInsets.only(bottom: 8.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionLabel(label, color: labelColor),
+          SizedBox(height: 8.h),
+          _ApproveRejectRow(
+            approveLabel: approveLabel,
+            approveIcon: approveIcon,
+            approveColor: approveColor,
+            rejectColor: rejectColor,
+            onApprove: onApprove,
+            onReject: onReject,
+          ),
+        ],
       ),
     );
   }
@@ -2379,7 +2578,8 @@ class _ApproveRejectRow extends StatelessWidget {
   final Color rejectColor;
   final VoidCallback onApprove;
   final void Function(String remark) onReject;
-  final BuildContext context;
+  // context parameter removed — use build(context) instead to avoid
+  // passing a potentially stale context from a parent widget.
 
   const _ApproveRejectRow({
     required this.approveLabel,
@@ -2388,11 +2588,10 @@ class _ApproveRejectRow extends StatelessWidget {
     required this.rejectColor,
     required this.onApprove,
     required this.onReject,
-    required this.context,
   });
 
   @override
-  Widget build(BuildContext ctx) {
+  Widget build(BuildContext context) {
     return Row(
       children: [
         Expanded(
@@ -3021,6 +3220,41 @@ class _TaskFormState extends State<_TaskForm> {
   }
 
   Widget _projectDropdown() {
+    // When a project was preselected (e.g. "Assign Task" from inside a
+    // project card), show a clearly read-only banner instead of a
+    // dropdown that looks tappable but silently ignores taps.
+    final locked = widget.preselectedProjectId != null;
+    if (locked) {
+      return Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 13.h),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF0EAE6),
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(color: const Color(0xFFE0D5D0)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.lock_outline_rounded,
+                size: 16.sp, color: const Color(0xFF6A3027)),
+            SizedBox(width: 10.w),
+            Expanded(
+              child: Text(
+                _projectName?.isNotEmpty == true
+                    ? _projectName!
+                    : 'Selected Project',
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.manrope(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF241917)),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     if (!Get.isRegistered<ProjectController>()) Get.put(ProjectController());
     final pc = Get.find<ProjectController>();
     final isTL = _isTeamLeader;
@@ -3042,7 +3276,6 @@ class _TaskFormState extends State<_TaskForm> {
       }
     }
     final selectedId = _projectId?.isEmpty == true ? null : _projectId;
-    final locked = widget.preselectedProjectId != null;
     final seenIds = <String>{};
 
     final items = <DropdownMenuItem<String>>[
@@ -3052,29 +3285,6 @@ class _TaskFormState extends State<_TaskForm> {
             style: GoogleFonts.inter(fontSize: 13.sp)),
       ),
     ];
-
-    if (locked && selectedId != null) {
-      seenIds.add(selectedId);
-      items.add(DropdownMenuItem<String>(
-        value: selectedId,
-        child: Row(
-          children: [
-            Icon(Icons.folder_outlined,
-                size: 14.sp, color: const Color(0xFF6A3027)),
-            SizedBox(width: 8.w),
-            Expanded(
-              child: Text(
-                _projectName?.isNotEmpty == true
-                    ? _projectName!
-                    : 'Selected Project',
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.inter(fontSize: 13.sp),
-              ),
-            ),
-          ],
-        ),
-      ));
-    }
 
     for (final project in projectOptions) {
       final id = project['id'];
@@ -3107,18 +3317,16 @@ class _TaskFormState extends State<_TaskForm> {
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: selectedId,
-          onChanged: locked
-              ? null
-              : (v) => setState(() {
-                    _projectId = v;
-                    if (v == null) {
-                      _projectName = null;
-                      return;
-                    }
-                    final sel = projectOptions
-                        .firstWhereOrNull((p) => p['id'] == v);
-                    _projectName = sel?['name'] ?? _projectName;
-                  }),
+          onChanged: (v) => setState(() {
+            _projectId = v;
+            if (v == null) {
+              _projectName = null;
+              return;
+            }
+            final sel =
+                projectOptions.firstWhereOrNull((p) => p['id'] == v);
+            _projectName = sel?['name'] ?? _projectName;
+          }),
           hint: Text('None (standalone task)',
               style: GoogleFonts.inter(
                   fontSize: 13.sp, color: const Color(0xFF8B7D77))),
@@ -3791,18 +3999,22 @@ class _ProjectExpandedBody extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// TL PROJECT CARD — unchanged, uses TLProjectItem
+// TL ALLOCATE PROJECT CARD  (MobProjectAllocateTL item)
+// Mirrors PM's _ProjectCard: tap to expand, full detail + allocated work,
+// and a locked "Assign Task" shortcut for this exact project.
 // ─────────────────────────────────────────────────────────────────────────
 
-class _TLProjectCard extends StatefulWidget {
-  final TLProjectItem project;
-  const _TLProjectCard({required this.project});
+class _TLAllocateProjectCard extends StatefulWidget {
+  final TLAllocateProject project;
+  final bool showAssignTask;
+  const _TLAllocateProjectCard({required this.project, this.showAssignTask = true});
 
   @override
-  State<_TLProjectCard> createState() => _TLProjectCardState();
+  State<_TLAllocateProjectCard> createState() =>
+      _TLAllocateProjectCardState();
 }
 
-class _TLProjectCardState extends State<_TLProjectCard>
+class _TLAllocateProjectCardState extends State<_TLAllocateProjectCard>
     with SingleTickerProviderStateMixin {
   bool _expanded = false;
   late final AnimationController _anim;
@@ -3829,27 +4041,12 @@ class _TLProjectCardState extends State<_TLProjectCard>
     _expanded ? _anim.forward() : _anim.reverse();
   }
 
-  Color get _statusColor {
-    switch (widget.project.data
-        ?.firstWhereOrNull((d) => d.aStatus != null)
-        ?.aStatus
-        ?.toLowerCase()) {
-      case 'approved':
-      case 'done':
-      case 'complete':
-        return Colors.green;
-      case 'pending':
-        return Colors.orange;
-      case 'rejected':
-        return Colors.red;
-      default:
-        return Colors.blue;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final p = widget.project;
+    final fmt = DateFormat('dd MMM yyyy');
+    final dateLabel = p.assignDate != null ? fmt.format(p.assignDate!) : '—';
+
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
       decoration: BoxDecoration(
@@ -3871,12 +4068,13 @@ class _TLProjectCardState extends State<_TLProjectCard>
             child: Padding(
               padding: EdgeInsets.all(14.w),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
                     width: 4.w,
-                    height: 44.h,
+                    height: 56.h,
                     decoration: BoxDecoration(
-                        color: _statusColor,
+                        color: const Color(0xFF6A3027),
                         borderRadius: BorderRadius.circular(4.r)),
                   ),
                   SizedBox(width: 12.w),
@@ -3885,51 +4083,44 @@ class _TLProjectCardState extends State<_TLProjectCard>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          p.data
-                                      ?.firstWhereOrNull(
-                                          (d) => d.projectName != null)
-                                      ?.projectName
-                                      ?.isNotEmpty ==
-                                  true
-                              ? p.data!
-                                  .firstWhere((d) => d.projectName != null)
-                                  .projectName!
+                          p.projectName.isNotEmpty
+                              ? p.projectName
                               : 'Unnamed Project',
                           style: GoogleFonts.manrope(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF241917)),
                         ),
-                        SizedBox(height: 4.h),
+                        SizedBox(height: 6.h),
                         Row(
                           children: [
                             Icon(Icons.person_outline_rounded,
                                 size: 12.sp, color: const Color(0xFF8B7D77)),
                             SizedBox(width: 4.w),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 8.w, vertical: 3.h),
-                              decoration: BoxDecoration(
-                                  color: _statusColor.withOpacity(0.12),
-                                  borderRadius: BorderRadius.circular(20.r)),
+                            Expanded(
                               child: Text(
-                                (p.data
-                                                ?.firstWhereOrNull(
-                                                    (d) => d.aStatus != null)
-                                                ?.aStatus
-                                                ?.isEmpty ==
-                                            true
-                                        ? null
-                                        : p.data
-                                            ?.firstWhereOrNull(
-                                                (d) => d.aStatus != null)
-                                            ?.aStatus) ??
-                                    'Pending',
+                                p.employeeName.isNotEmpty
+                                    ? p.employeeName
+                                    : '—',
                                 style: GoogleFonts.inter(
-                                    fontSize: 10.sp,
-                                    fontWeight: FontWeight.w700,
-                                    color: _statusColor),
+                                    fontSize: 12.sp,
+                                    color: const Color(0xFF241917)),
+                                overflow: TextOverflow.ellipsis,
                               ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 4.h),
+                        Row(
+                          children: [
+                            Icon(Icons.calendar_today_outlined,
+                                size: 11.sp, color: const Color(0xFF8B7D77)),
+                            SizedBox(width: 4.w),
+                            Text(
+                              dateLabel,
+                              style: GoogleFonts.inter(
+                                  fontSize: 11.sp,
+                                  color: const Color(0xFF8B7D77)),
                             ),
                           ],
                         ),
@@ -3945,6 +4136,15 @@ class _TLProjectCardState extends State<_TLProjectCard>
               ),
             ),
           ),
+          AnimatedCrossFade(
+            firstChild: const SizedBox.shrink(),
+            secondChild: _TLAllocateProjectExpandedBody(
+                project: p, showAssignTask: widget.showAssignTask),
+            crossFadeState: _expanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 220),
+          ),
         ],
       ),
     );
@@ -3952,110 +4152,302 @@ class _TLProjectCardState extends State<_TLProjectCard>
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// TL ALLOCATE PROJECT CARD  (MobProjectAllocateTL item)
+// TL ALLOCATE PROJECT — EXPANDED BODY
 // ─────────────────────────────────────────────────────────────────────────
 
-class _TLAllocateProjectCard extends StatelessWidget {
+class _TLAllocateProjectExpandedBody extends StatelessWidget {
   final TLAllocateProject project;
-  const _TLAllocateProjectCard({required this.project});
+  final bool showAssignTask;
+  const _TLAllocateProjectExpandedBody(
+      {required this.project, this.showAssignTask = true});
+
+  ProjectController get _pc {
+    if (!Get.isRegistered<ProjectController>()) Get.put(ProjectController());
+    return Get.find<ProjectController>();
+  }
 
   @override
   Widget build(BuildContext context) {
     final fmt = DateFormat('dd MMM yyyy');
-    final dateLabel = project.assignDate != null
-        ? fmt.format(project.assignDate!)
-        : '—';
+    final dateLabel =
+        project.assignDate != null ? fmt.format(project.assignDate!) : '—';
 
-    return Container(
-      margin: EdgeInsets.only(bottom: 12.h),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18.r),
-        boxShadow: const [
-          BoxShadow(
-              color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 4))
-        ],
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(14.w),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 4.w,
-              height: 56.h,
-              decoration: BoxDecoration(
-                  color: const Color(0xFF6A3027),
-                  borderRadius: BorderRadius.circular(4.r)),
-            ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      children: [
+        Divider(
+            color: const Color(0xFFF0E8E4),
+            height: 1,
+            indent: 14.w,
+            endIndent: 14.w),
+        Padding(
+          padding: EdgeInsets.fromLTRB(14.w, 12.h, 14.w, 14.h),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _row(Icons.folder_outlined, 'Project',
+                  project.projectName.isNotEmpty
+                      ? project.projectName
+                      : 'Unnamed Project'),
+              SizedBox(height: 8.h),
+              _row(Icons.person_outline_rounded, 'Assigned To',
+                  project.employeeName.isNotEmpty
+                      ? project.employeeName
+                      : '—'),
+              SizedBox(height: 8.h),
+              _row(Icons.assignment_ind_outlined, 'Assigned By',
+                  project.assignBy.isNotEmpty ? project.assignBy : '—'),
+              SizedBox(height: 8.h),
+              _row(Icons.calendar_today_outlined, 'Assigned On', dateLabel),
+              SizedBox(height: 14.h),
+              Obx(() {
+                final pc = _pc;
+                final taskWorks =
+                    pc.taskWorksByProject(project.sProjectId.toString());
+                if (pc.isTaskWorksLoading.value) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(8),
+                      child: CircularProgressIndicator(
+                          color: Color(0xFF6A3027), strokeWidth: 2),
+                    ),
+                  );
+                }
+                if (taskWorks.isEmpty) {
+                  return Text(
+                    'No task details available yet for this project.',
+                    style: GoogleFonts.inter(
+                        fontSize: 12.sp, color: const Color(0xFF8B7D77)),
+                  );
+                }
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.work_outline_rounded,
+                            size: 13.sp, color: const Color(0xFF6A3027)),
+                        SizedBox(width: 6.w),
+                        Text('Allocated Work (${taskWorks.length})',
+                            style: GoogleFonts.manrope(
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF241917))),
+                      ],
+                    ),
+                    SizedBox(height: 8.h),
+                    ...taskWorks.map((tw) => _TaskWorkTile(taskWork: tw)),
+                  ],
+                );
+              }),
+              if (showAssignTask) ...[
+                SizedBox(height: 14.h),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Get.find<TaskController>().switchTab(0);
+                      Get.bottomSheet(
+                        _TaskForm(
+                          c: Get.find<TaskController>(),
+                          preselectedProjectId: project.sProjectId.toString(),
+                          preselectedProjectName: project.projectName,
+                        ),
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                      );
+                    },
+                    icon: Icon(Icons.add_task_rounded,
+                        size: 16.sp, color: Colors.white),
+                    label: Text(
+                      'Assign Task',
+                      style: GoogleFonts.manrope(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFB54A3A),
+                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r)),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _row(IconData icon, String label, String value) => Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 14.sp, color: const Color(0xFF6A3027)),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
                 children: [
-                  Text(
-                    project.projectName.isNotEmpty
-                        ? project.projectName
-                        : 'Unnamed Project',
+                  TextSpan(
+                    text: '$label: ',
                     style: GoogleFonts.manrope(
-                        fontSize: 14.sp,
+                        fontSize: 12.sp,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF241917)),
+                        color: const Color(0xFF8B7D77)),
                   ),
-                  SizedBox(height: 6.h),
-                  Row(
-                    children: [
-                      Icon(Icons.person_outline_rounded,
-                          size: 12.sp, color: const Color(0xFF8B7D77)),
-                      SizedBox(width: 4.w),
-                      Expanded(
-                        child: Text(
-                          project.employeeName.isNotEmpty
-                              ? project.employeeName
-                              : '—',
-                          style: GoogleFonts.inter(
-                              fontSize: 12.sp,
-                              color: const Color(0xFF241917)),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 4.h),
-                  Row(
-                    children: [
-                      Icon(Icons.assignment_ind_outlined,
-                          size: 12.sp, color: const Color(0xFF8B7D77)),
-                      SizedBox(width: 4.w),
-                      Expanded(
-                        child: Text(
-                          project.assignBy.isNotEmpty
-                              ? 'By ${project.assignBy}'
-                              : '—',
-                          style: GoogleFonts.inter(
-                              fontSize: 11.sp,
-                              color: const Color(0xFF8B7D77)),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Icon(Icons.calendar_today_outlined,
-                          size: 11.sp, color: const Color(0xFF8B7D77)),
-                      SizedBox(width: 3.w),
-                      Text(
-                        dateLabel,
-                        style: GoogleFonts.inter(
-                            fontSize: 11.sp,
-                            color: const Color(0xFF8B7D77)),
-                      ),
-                    ],
+                  TextSpan(
+                    text: value,
+                    style: GoogleFonts.inter(
+                        fontSize: 12.sp, color: const Color(0xFF241917)),
                   ),
                 ],
               ),
             ),
+          ),
+        ],
+      );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// REGULAR EMPLOYEE — PROJECT STATS CARD
+// ─────────────────────────────────────────────────────────────────────────
+
+class _RegularProjectStatsCard extends StatelessWidget {
+  final ProjectController pc;
+  const _RegularProjectStatsCard({required this.pc});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      // Trigger fetch if not yet loaded and not already loading
+      if (pc.tlAllocateProjects.isEmpty && !pc.isAllocateLoading.value) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (pc.tlAllocateProjects.isEmpty && !pc.isAllocateLoading.value) {
+            pc.fetchTLAllocateProjects();
+          }
+        });
+      }
+      final isLoading = pc.isAllocateLoading.value;
+      final projects  = pc.tlAllocateProjects;
+      final total     = projects.length;
+      final uniqueNames = projects.map((p) => p.sProjectId).toSet().length;
+      return Container(
+        padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 8.w),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24.r),
+          boxShadow: const [
+            BoxShadow(
+                color: Color(0x12000000), blurRadius: 14, offset: Offset(0, 7))
           ],
         ),
-      ),
+        child: isLoading
+            ? Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8.h),
+                  child: const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                        color: Color(0xFF6A3027), strokeWidth: 2),
+                  ),
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _statTile('Assigned', '$total', Icons.folder_outlined,
+                      const Color(0xFF6A3027)),
+                  Container(
+                      height: 38.h, width: 1, color: const Color(0xFFE8DDD9)),
+                  _statTile('Projects', '$uniqueNames',
+                      Icons.work_outline_rounded, Colors.blue),
+                ],
+              ),
+      );
+    });
+  }
+
+  Widget _statTile(
+      String label, String value, IconData icon, Color color) {
+    return Column(
+      children: [
+        Icon(icon, size: 22.sp, color: color),
+        SizedBox(height: 5.h),
+        Text(value,
+            style: GoogleFonts.manrope(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF241917))),
+        SizedBox(height: 2.h),
+        Text(label,
+            style: GoogleFonts.inter(
+                fontSize: 9.sp,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF8B7D77))),
+      ],
     );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// REGULAR EMPLOYEE — PROJECT LIST
+// ─────────────────────────────────────────────────────────────────────────
+
+class _RegularProjectList extends StatelessWidget {
+  final ProjectController pc;
+  const _RegularProjectList({required this.pc});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      if (pc.isAllocateLoading.value && pc.tlAllocateProjects.isEmpty) {
+        return const Center(
+            child: CircularProgressIndicator(color: Color(0xFF6A3027)));
+      }
+      final projects = pc.filteredTLAllocateProjects;
+      if (projects.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.folder_open_outlined,
+                  size: 58.sp, color: const Color(0xFF8B7D77)),
+              SizedBox(height: 12.h),
+              Text('No projects assigned to you',
+                  style: GoogleFonts.manrope(
+                      fontSize: 15.sp, color: const Color(0xFF8B7D77))),
+              SizedBox(height: 16.h),
+              ElevatedButton.icon(
+                onPressed: () => pc.fetchTLAllocateProjects(),
+                icon: Icon(Icons.refresh_rounded,
+                    size: 16.sp, color: Colors.white),
+                label: Text('Refresh',
+                    style: GoogleFonts.manrope(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFB54A3A),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.r)),
+                  elevation: 0,
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+      return ListView.builder(
+        padding: EdgeInsets.symmetric(horizontal: 16.w),
+        itemCount: projects.length,
+        itemBuilder: (_, i) => _TLAllocateProjectCard(
+            project: projects[i], showAssignTask: false),
+      );
+    });
   }
 }
 

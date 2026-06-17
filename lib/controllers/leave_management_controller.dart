@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
@@ -22,6 +23,7 @@ class LeaveTypeModel {
 
 class EmployeeLeaveModel {
  final int employeeLeaveId;
+  final int eLeaveAId;
   final int employeeId;
   final String employeeCode;
   final String employeeName;
@@ -35,10 +37,18 @@ class EmployeeLeaveModel {
   final DateTime? fromDate;
   final DateTime? toDate;
   final String? descriptionImageFile;
+  final String approveStatus1;
+  final String approveStatus2;
+  final String approveStatus3;
+  final String approveby1;
+  final String approveby2;
+  final String approveby3;
+  final DateTime? createdDate;
   final bool isActive;
 
  EmployeeLeaveModel({
     required this.employeeLeaveId,
+    required this.eLeaveAId,
     required this.employeeId,
     required this.employeeCode,
     required this.employeeName,
@@ -52,6 +62,13 @@ class EmployeeLeaveModel {
     this.fromDate,
     this.toDate,
     this.descriptionImageFile,
+    required this.approveStatus1,
+    required this.approveStatus2,
+    required this.approveStatus3,
+    required this.approveby1,
+    required this.approveby2,
+    required this.approveby3,
+    this.createdDate,
     required this.isActive,
   });
 
@@ -65,6 +82,7 @@ class EmployeeLeaveModel {
 
     return EmployeeLeaveModel(
       employeeLeaveId: json['EmployeeLeaveId'] ?? 0,
+      eLeaveAId: json['ELeaveAId'] ?? 0,
       employeeId: json['EmployeeId'] ?? 0,
       employeeCode: json['EmployeeCode']?.toString() ?? '',
       employeeName: json['EmployeeName']?.toString() ?? '',
@@ -78,6 +96,13 @@ class EmployeeLeaveModel {
       fromDate: parseDate(json['FromDate']),
       toDate: parseDate(json['ToDate']),
       descriptionImageFile: json['DescriptionImageFile']?.toString(),
+      approveStatus1: json['ApproveStatus1']?.toString() ?? 'Pending',
+      approveStatus2: json['ApproveStatus2']?.toString() ?? 'Pending',
+      approveStatus3: json['ApproveStatus3']?.toString() ?? 'Pending',
+      approveby1: json['Approveby1']?.toString() ?? '',
+      approveby2: json['Approveby2']?.toString() ?? '',
+      approveby3: json['Approveby3']?.toString() ?? '',
+      createdDate: parseDate(json['CreatedDate']),
       isActive: json['IsActive'] ?? false,
     );
   }
@@ -160,6 +185,8 @@ class LeaveController extends GetxController {
   // ── Config ────────────────────────────────────────────────────────────────
   static const String _baseUrl =
       'https://montempep.eduagentapp.com/api/MonteageEmpErp';
+  static const String _leaveSubmitUrl = '$_baseUrl/MObAddEmployyeLeaveA';
+  static const String _leaveSubmitImageUrl = '$_baseUrl/MObAddEmployyeLeaveimageA';
 
   // Set from your AuthController / session before using this controller.
   String authToken = '';
@@ -173,6 +200,11 @@ class LeaveController extends GetxController {
   /// Leave/WFH history cards shown in list.
   final RxList<Map<String, dynamic>> leaveHistory =
       <Map<String, dynamic>>[].obs;
+
+      /// Team member leaves shown to approver (TL/HR/PM view).
+  final RxList<Map<String, dynamic>> teamLeaveHistory =
+      <Map<String, dynamic>>[].obs;
+  final RxBool isLoadingTeamLeaves = false.obs;
 
   /// Balance per LeaveTypeId — from MobEmployeeLeaveId API (TotalBalanceLeave).
   final RxMap<int, int> leaveBalanceMap = <int, int>{}.obs;
@@ -190,6 +222,7 @@ class LeaveController extends GetxController {
   final Rx<DateTime?> fromDate = Rx<DateTime?>(null);
   final Rx<DateTime?> toDate = Rx<DateTime?>(null);
   final RxString prescriptionFileName = ''.obs;
+  final RxString prescriptionFilePath = ''.obs;
 
   // ── Shortcut ──────────────────────────────────────────────────────────────
   static LeaveController get to => Get.find<LeaveController>();
@@ -274,8 +307,9 @@ class LeaveController extends GetxController {
     await fetchLeaveTypes();
     if (employeeId != 0) {
       await Future.wait([
-        fetchEmployeeLeaves(),      // populates leaveBalanceMap (balance rows)
-        fetchEmployeeLeaveList(),   // populates leaveHistory (applied leaves)
+        fetchEmployeeLeaves(),
+        fetchEmployeeLeaveList(),
+        if (employeeRole != EmployeeRole.employee) fetchTeamLeaveList(),
       ]);
     }
   }
@@ -411,6 +445,39 @@ class LeaveController extends GetxController {
       // Silently fail — use cached value
     }
   }
+
+  // ── API: Fetch Team Leave List (for approvers) ────────────────────────────
+  // MobTeamEmployeeLeaveList(EmployeeId) — returns team members' leave requests
+
+  Future<void> fetchTeamLeaveList() async {
+    isLoadingTeamLeaves.value = true;
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/MobTeamEmployeeLeaveList/$employeeId'),
+        headers: _headers(),
+      );
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['statuscode'] == 200 && body['data'] != null) {
+          final records = (body['data'] as List)
+              .map((e) => EmployeeLeaveModel.fromJson(e))
+              .toList();
+
+          teamLeaveHistory.value = records
+              .where((r) => r.fromDate != null && r.toDate != null)
+              .map((r) => _buildTeamHistoryEntry(r))
+              .toList();
+        }
+      } else {
+        _showError('Could not load team leaves (${response.statusCode})');
+      }
+    } catch (e) {
+      _showError('Network error: $e');
+    } finally {
+      isLoadingTeamLeaves.value = false;
+    }
+  }
 // ── API: Fetch Leave History List ─────────────────────────────────────────
   // MobEmployeeLeaveList(EmployeeId) — returns actual applied leaves with dates
 
@@ -446,6 +513,36 @@ class LeaveController extends GetxController {
       isLoadingLeaves.value = false;
     }
   }
+
+  Map<String, dynamic> _buildTeamHistoryEntry(EmployeeLeaveModel r) => {
+        'id': '${r.eLeaveAId}',
+        'employee_leave_id': r.employeeLeaveId,
+        'e_leave_a_id': r.eLeaveAId,
+        'employee_name': r.employeeName,
+        'employee_code': r.employeeCode,
+        'leave_type': r.leaveType,
+        'leave_type_id': r.leaveTypeId,
+        'reason': r.leaveReason ?? '',
+        'from_date': DateFormat('yyyy-MM-dd').format(r.fromDate!),
+        'to_date': DateFormat('yyyy-MM-dd').format(r.toDate!),
+        'no_of_days': r.leaveNoDays,
+        'approve_status1': r.approveStatus1,
+        'approve_status2': r.approveStatus2,
+        'approve_status3': r.approveStatus3,
+        'approveby1': r.approveby1,
+        'approveby2': r.approveby2,
+        'approveby3': r.approveby3,
+        // Overall status: Approved if all 3 approved, Rejected if any rejected, else Pending
+        'status': _resolveOverallStatus(r.approveStatus1, r.approveStatus2, r.approveStatus3),
+        'applied_on': DateFormat('yyyy-MM-dd').format(r.createdDate ?? r.fromDate!),
+        'remarks': '',
+      };
+
+  String _resolveOverallStatus(String s1, String s2, String s3) {
+    if (s1 == 'Rejected' || s2 == 'Rejected' || s3 == 'Rejected') return 'Rejected';
+    if (s1 == 'Approved' && s2 == 'Approved' && s3 == 'Approved') return 'Approved';
+    return 'Pending';
+  }
   Map<String, dynamic> _buildHistoryEntry(EmployeeLeaveModel r) => {
         'id': r.employeeLeaveId > 0
             ? '${r.employeeLeaveId}'
@@ -475,6 +572,7 @@ class LeaveController extends GetxController {
     required String reason,
     required String workHandover,
     String? prescriptionFile,
+    bool useImageEndpoint = false,
   }) async {
     if (selectedLeaveType.value == null ||
         fromDate.value == null ||
@@ -482,22 +580,33 @@ class LeaveController extends GetxController {
 
     isSubmitting.value = true;
     try {
+      // Convert file to base64 if path exists
+      String? fileBase64;
+      if (prescriptionFilePath.value.isNotEmpty) {
+        try {
+          final file = File(prescriptionFilePath.value);
+          if (await file.exists()) {
+            final bytes = await file.readAsBytes();
+            fileBase64 = base64Encode(bytes);
+          }
+        } catch (e) {
+          print('Error reading prescription file: $e');
+        }
+      }
+
       final payload = jsonEncode({
         "EmployeeLeaveId": 0,
         "EmployeeId": employeeId,
         "LeaveTypeId": selectedLeaveType.value!.leaveTypeId,
         "LeaveReason": reason,
-        "FromDate": DateFormat('dd-MM-yyyy').format(fromDate.value!),
-        "ToDate": DateFormat('dd-MM-yyyy').format(toDate.value!),
+        "FromDate": DateFormat('yyyy-MM-dd').format(fromDate.value!),
+        "ToDate": DateFormat('yyyy-MM-dd').format(toDate.value!),
         "LeaveNoofday": numberOfDays,
-        "DescriptionImageFile":
-            (prescriptionFile != null && prescriptionFile.isNotEmpty)
-                ? prescriptionFile
-                : null,
+        "DescriptionImageFile": fileBase64,
       });
 
       final response = await http.post(
-        Uri.parse('$_baseUrl/MObAddEmployyeLeaveA'),
+        Uri.parse(useImageEndpoint ? _leaveSubmitImageUrl : _leaveSubmitUrl),
         headers: {
           ..._headers(),
           'Content-Type': 'application/json',
@@ -535,93 +644,157 @@ class LeaveController extends GetxController {
     }
   }
 
-  // ── API 5: Approve Leave ───────────────────────────────────────────────────
-  // TODO: Replace 'MobApproveLeave' with actual endpoint when received.
-
-  Future<void> approveLeave(String leaveId) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/MobApproveLeave'),
-        headers: {
-          ..._headers(),
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          "LeaveId": leaveId,
-          "ApprovedBy": employeeId,
-          "Status": "Approved",
-          "Remarks": "",
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final body = jsonDecode(response.body);
-        if (body['statuscode'] == 200) {
-          _updateLocalStatus(leaveId, 'Approved', '');
-        } else {
-          _showError(body['message'] ?? 'Approval failed.');
-          return;
-        }
-      } else {
-        _updateLocalStatus(leaveId, 'Approved', '');
-      }
-    } catch (_) {
-      _updateLocalStatus(leaveId, 'Approved', '');
-    }
-
-    Get.snackbar(
-      "Approved",
-      "Leave request has been approved.",
-      backgroundColor: Colors.green.shade50,
-      colorText: Colors.green.shade800,
-      snackPosition: SnackPosition.BOTTOM,
+  Future<void> submitLeaveWithImage({
+    required String reason,
+    required String workHandover,
+    required String prescriptionFile,
+  }) async {
+    await submitLeave(
+      reason: reason,
+      workHandover: workHandover,
+      prescriptionFile: prescriptionFile,
+      useImageEndpoint: true,
     );
   }
 
-  // ── API 6: Reject Leave ────────────────────────────────────────────────────
-  // TODO: Replace 'MobRejectLeave' with actual endpoint when received.
+  // ── API 5: Approve Leave — MObeaveApprove ─────────────────────────────────
+
+  Future<void> approveLeave(String leaveId) async {
+    final leave = teamLeaveHistory.firstWhereOrNull((l) => l['id'] == leaveId)
+        ?? leaveHistory.firstWhereOrNull((l) => l['id'] == leaveId);
+    if (leave == null) return;
+
+    final eLeaveAId = leave['e_leave_a_id'] ?? int.tryParse(leaveId) ?? 0;
+    await _callApproveApi(
+      eLeaveAId: eLeaveAId,
+      leaveId: leaveId,
+      newStatus: 'Approved',
+      approverName: _approverNameForRole(),
+    );
+  }
+
+  // ── API 6: Reject Leave — MObeaveApprove ──────────────────────────────────
 
   Future<void> rejectLeave(String leaveId, String remarks) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/MobRejectLeave'),
-        headers: {
-          ..._headers(),
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          "LeaveId": leaveId,
-          "RejectedBy": employeeId,
-          "Status": "Rejected",
-          "Remarks": remarks,
-        }),
-      );
+    final leave = teamLeaveHistory.firstWhereOrNull((l) => l['id'] == leaveId)
+        ?? leaveHistory.firstWhereOrNull((l) => l['id'] == leaveId);
+    if (leave == null) return;
 
-      if (response.statusCode == 200) {
-        final body = jsonDecode(response.body);
-        if (body['statuscode'] == 200) {
-          _updateLocalStatus(leaveId, 'Rejected', remarks);
-        } else {
-          _showError(body['message'] ?? 'Rejection failed.');
-          return;
-        }
-      } else {
-        _updateLocalStatus(leaveId, 'Rejected', remarks);
-      }
-    } catch (_) {
-      _updateLocalStatus(leaveId, 'Rejected', remarks);
-    }
-
-    Get.snackbar(
-      "Rejected",
-      "Leave request has been rejected.",
-      backgroundColor: Colors.red.shade50,
-      colorText: Colors.red.shade800,
-      snackPosition: SnackPosition.BOTTOM,
+    final eLeaveAId = leave['e_leave_a_id'] ?? int.tryParse(leaveId) ?? 0;
+    await _callApproveApi(
+      eLeaveAId: eLeaveAId,
+      leaveId: leaveId,
+      newStatus: 'Rejected',
+      approverName: _approverNameForRole(),
+      remarks: remarks,
     );
   }
 
   // ── Internal helpers ──────────────────────────────────────────────────────
+
+  String _approverNameForRole() {
+    switch (employeeRole) {
+      case EmployeeRole.teamLeader: return 'Team Leader';
+      case EmployeeRole.hrManager: return 'HR Manager';
+      case EmployeeRole.projectManager: return 'Project Manager';
+      default: return 'Admin';
+    }
+  }
+
+  // Builds the 3-slot approve payload based on caller's role.
+  // Role maps: TL → slot 1, HR → slot 2, PM → slot 3
+  Future<void> _callApproveApi({
+    required int eLeaveAId,
+    required String leaveId,
+    required String newStatus,
+    required String approverName,
+    String remarks = '',
+  }) async {
+    // Read current statuses from team list (or default Pending)
+    final leave = teamLeaveHistory.firstWhereOrNull((l) => l['id'] == leaveId)
+        ?? leaveHistory.firstWhereOrNull((l) => l['id'] == leaveId);
+
+    String s1 = leave?['approve_status1'] ?? 'Pending';
+    String s2 = leave?['approve_status2'] ?? 'Pending';
+    String s3 = leave?['approve_status3'] ?? 'Pending';
+    String b1 = leave?['approveby1'] ?? '';
+    String b2 = leave?['approveby2'] ?? '';
+    String b3 = leave?['approveby3'] ?? '';
+
+    // Update the slot matching this approver's role
+    switch (employeeRole) {
+      case EmployeeRole.teamLeader:
+        s1 = newStatus; b1 = approverName; break;
+      case EmployeeRole.hrManager:
+        s2 = newStatus; b2 = approverName; break;
+      case EmployeeRole.projectManager:
+        s3 = newStatus; b3 = approverName; break;
+      default:
+        s1 = newStatus; b1 = approverName;
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/MObeaveApprove'),
+        headers: {
+          ..._headers(),
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          "ELeaveAId": eLeaveAId,
+          "ApproveStatus1": s1,
+          "ApproveStatus2": s2,
+          "ApproveStatus3": s3,
+          "Approveby1": b1,
+          "Approveby2": b2,
+          "Approveby3": b3,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['statuscode'] == 200) {
+          final overall = _resolveOverallStatus(s1, s2, s3);
+          _updateLocalStatus(leaveId, overall, remarks);
+          _updateTeamLocalStatus(leaveId, s1, s2, s3, b1, b2, b3);
+          Get.snackbar(
+            newStatus == 'Approved' ? "Approved" : "Rejected",
+            "Leave has been ${newStatus.toLowerCase()}.",
+            backgroundColor: newStatus == 'Approved'
+                ? Colors.green.shade50
+                : Colors.red.shade50,
+            colorText: newStatus == 'Approved'
+                ? Colors.green.shade800
+                : Colors.red.shade800,
+            snackPosition: SnackPosition.BOTTOM,
+          );
+        } else {
+          _showError(body['message'] ?? 'Action failed.');
+        }
+      } else {
+        _showError('Server error (${response.statusCode})');
+      }
+    } catch (e) {
+      _showError('Network error: $e');
+    }
+  }
+
+  void _updateTeamLocalStatus(String id, String s1, String s2, String s3,
+      String b1, String b2, String b3) {
+    final idx = teamLeaveHistory.indexWhere((l) => l['id'] == id);
+    if (idx != -1) {
+      final updated = Map<String, dynamic>.from(teamLeaveHistory[idx]);
+      updated['approve_status1'] = s1;
+      updated['approve_status2'] = s2;
+      updated['approve_status3'] = s3;
+      updated['approveby1'] = b1;
+      updated['approveby2'] = b2;
+      updated['approveby3'] = b3;
+      updated['status'] = _resolveOverallStatus(s1, s2, s3);
+      teamLeaveHistory[idx] = updated;
+      teamLeaveHistory.refresh();
+    }
+  }
 
   Map<String, String> _headers() => {
         'Accept': 'application/json',
@@ -664,6 +837,7 @@ class LeaveController extends GetxController {
     fromDate.value = null;
     toDate.value = null;
     prescriptionFileName.value = '';
+    prescriptionFilePath.value = '';
   }
 
   void _showError(String message) {
@@ -681,6 +855,7 @@ void refreshAll() {
     fetchLeaveTypes();
     fetchEmployeeLeaves();
     fetchEmployeeLeaveList();
+    if (employeeRole != EmployeeRole.employee) fetchTeamLeaveList();
   }
 }
 

@@ -38,8 +38,11 @@ class LeaveManagementScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isApprover = _c.employeeRole != EmployeeRole.employee;
     return BottomNavWrapper(
-      child: Scaffold(
+      child: DefaultTabController(
+        length: isApprover ? 2 : 1,
+        child: Scaffold(
         backgroundColor: const Color(0xFFF6F1ED),
         appBar: AppBar(
           title: Obx(() => _searchVisible.value
@@ -65,6 +68,19 @@ class LeaveManagementScreen extends StatelessWidget {
                 )),
           backgroundColor: const Color(0xFFF6F1ED),
           elevation: 0,
+          bottom: isApprover
+              ? TabBar(
+                  labelColor: const Color(0xFFB54A3A),
+                  unselectedLabelColor: const Color(0xFF8B7D77),
+                  indicatorColor: const Color(0xFFB54A3A),
+                  labelStyle: GoogleFonts.manrope(
+                      fontSize: 13.sp, fontWeight: FontWeight.w700),
+                  tabs: const [
+                    Tab(text: "My Leaves"),
+                    Tab(text: "Team Leaves"),
+                  ],
+                )
+              : null,
           actions: [
             Obx(() => IconButton(
                   icon: Icon(
@@ -87,72 +103,12 @@ class LeaveManagementScreen extends StatelessWidget {
             ),
           ],
         ),
-        body: Obx(() {
-          if (_c.isLoadingLeaves.value) {
-            return const Center(
-                child: CircularProgressIndicator(color: Color(0xFFB54A3A)));
-          }
-          final visibleLeaves = _c.filteredLeaves;
-          return Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
-            child: Column(
-              children: [
-                SizedBox(height: 4.h),
-                _LeaveStatsCard(),
-                SizedBox(height: 14.h),
-                Obx(() => Row(
-                      children: [
-                        Text(
-                          _c.selectedFilter.value == 'Total'
-                              ? "Leave/WFH History"
-                              : "${_c.selectedFilter.value} Leaves",
-                          style: GoogleFonts.manrope(
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.w800,
-                              color: const Color(0xFF241917)),
-                        ),
-                        SizedBox(width: 8.w),
-                        if (_c.selectedFilter.value != 'Total')
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 8.w, vertical: 2.h),
-                            decoration: BoxDecoration(
-                              color: _filterColor(_c.selectedFilter.value)
-                                  .withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(20.r),
-                            ),
-                            child: Text(
-                              "${visibleLeaves.length}",
-                              style: GoogleFonts.manrope(
-                                fontSize: 11.sp,
-                                fontWeight: FontWeight.w700,
-                                color: _filterColor(_c.selectedFilter.value),
-                              ),
-                            ),
-                          ),
-                      ],
-                    )),
-                SizedBox(height: 12.h),
-                Expanded(
-                  child: visibleLeaves.isEmpty
-                      ? _emptyState()
-                      : RefreshIndicator(
-                          color: const Color(0xFFB54A3A),
-                          onRefresh: () async => _c.refreshAll(),
-                          child: ListView.builder(
-                            itemCount: visibleLeaves.length,
-                            itemBuilder: (_, i) => _LeaveCard(
-                              leave: visibleLeaves[i],
-                              onApprove: (id) => _c.approveLeave(id),
-                              onReject: (id) => _showRejectDialog(id),
-                            ),
-                          ),
-                        ),
-                ),
-              ],
-            ),
-          );
-        }),
+        body: isApprover
+            ? TabBarView(children: [
+                _myLeavesBody(),
+                _teamLeavesBody(),
+              ])
+            : _myLeavesBody(),
         floatingActionButton: FloatingActionButton(
           onPressed: _openLeaveForm,
           backgroundColor: const Color(0xFFB54A3A),
@@ -160,7 +116,113 @@ class LeaveManagementScreen extends StatelessWidget {
           child: const Icon(Icons.add, color: Colors.white, size: 28),
         ),
       ),
-    );
+    ));
+  }
+  Widget _myLeavesBody() {
+    return Obx(() {
+      if (_c.isLoadingLeaves.value) {
+        return const Center(
+            child: CircularProgressIndicator(color: Color(0xFFB54A3A)));
+      }
+      final visibleLeaves = _c.filteredLeaves;
+      return Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.w),
+        child: Column(
+          children: [
+            SizedBox(height: 4.h),
+            _LeaveStatsCard(),
+            SizedBox(height: 14.h),
+            Obx(() => Row(
+                  children: [
+                    Text(
+                      _c.selectedFilter.value == 'Total'
+                          ? "Leave/WFH History"
+                          : "${_c.selectedFilter.value} Leaves",
+                      style: GoogleFonts.manrope(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFF241917)),
+                    ),
+                    SizedBox(width: 8.w),
+                    if (_c.selectedFilter.value != 'Total')
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 8.w, vertical: 2.h),
+                        decoration: BoxDecoration(
+                          color: _filterColor(_c.selectedFilter.value)
+                              .withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(20.r),
+                        ),
+                        child: Text(
+                          "${visibleLeaves.length}",
+                          style: GoogleFonts.manrope(
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.w700,
+                            color: _filterColor(_c.selectedFilter.value),
+                          ),
+                        ),
+                      ),
+                  ],
+                )),
+            SizedBox(height: 12.h),
+            Expanded(
+              child: visibleLeaves.isEmpty
+                  ? _emptyState()
+                  : RefreshIndicator(
+                      color: const Color(0xFFB54A3A),
+                      onRefresh: () async => _c.refreshAll(),
+                      child: ListView.builder(
+                        itemCount: visibleLeaves.length,
+                        itemBuilder: (_, i) => _LeaveCard(
+                          leave: visibleLeaves[i],
+                          onApprove: (id) => _c.approveLeave(id),
+                          onReject: (id) => _showRejectDialog(id),
+                        ),
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _teamLeavesBody() {
+    return Obx(() {
+      if (_c.isLoadingTeamLeaves.value) {
+        return const Center(
+            child: CircularProgressIndicator(color: Color(0xFFB54A3A)));
+      }
+      if (_c.teamLeaveHistory.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.group_outlined,
+                  size: 56.sp, color: const Color(0xFF8B7D77)),
+              SizedBox(height: 12.h),
+              Text("No team leave requests",
+                  style: GoogleFonts.manrope(
+                      fontSize: 15.sp, color: const Color(0xFF8B7D77))),
+            ],
+          ),
+        );
+      }
+      return RefreshIndicator(
+        color: const Color(0xFFB54A3A),
+        onRefresh: () async => _c.fetchTeamLeaveList(),
+        child: ListView.builder(
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+          itemCount: _c.teamLeaveHistory.length,
+          itemBuilder: (_, i) => _LeaveCard(
+            leave: _c.teamLeaveHistory[i],
+            onApprove: (id) => _c.approveLeave(id),
+            onReject: (id) => _showRejectDialog(id),
+            showEmployeeName: true,
+          ),
+        ),
+      );
+    });
   }
 
   void _showRejectDialog(String id) {
@@ -424,11 +486,13 @@ class _LeaveCard extends StatefulWidget {
   final Map<String, dynamic> leave;
   final Function(String) onApprove;
   final Function(String) onReject;
+  final bool showEmployeeName;
 
   const _LeaveCard({
     required this.leave,
     required this.onApprove,
     required this.onReject,
+    this.showEmployeeName = false,
   });
 
   @override
@@ -601,6 +665,7 @@ class _LeaveCardState extends State<_LeaveCard>
                     color: _statusColor.withOpacity(0.15),
                     height: 1,
                     indent: 14.w,
+                    
                     endIndent: 14.w),
                 Padding(
                   padding:
@@ -608,6 +673,11 @@ class _LeaveCardState extends State<_LeaveCard>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      if (widget.showEmployeeName && (leave['employee_name'] ?? '').isNotEmpty) ...[
+                        _infoRow(Icons.person_outline_rounded, "Employee",
+                            '${leave['employee_name']} (${leave['employee_code']})'),
+                        SizedBox(height: 10.h),
+                      ],
                       _infoRow(Icons.description_outlined, "Reason",
                           leave['reason'] ?? ''),
                       if (workHandover.isNotEmpty) ...[
@@ -891,6 +961,7 @@ class _LeaveFormBottomSheetState extends State<LeaveFormBottomSheet> {
     _c.fromDate.value = null;
     _c.toDate.value = null;
     _c.prescriptionFileName.value = '';
+    _c.prescriptionFilePath.value = '';
   }
 
   @override
@@ -967,8 +1038,10 @@ class _LeaveFormBottomSheetState extends State<LeaveFormBottomSheet> {
                   final XFile? image = await ImagePicker().pickImage(
                       source: ImageSource.camera, imageQuality: 85);
                   if (image != null) {
-                    setState(
-                        () => _c.prescriptionFileName.value = image.name);
+                    setState(() {
+                      _c.prescriptionFileName.value = image.name;
+                      _c.prescriptionFilePath.value = image.path;
+                    });
                   }
                 },
                 leading: _uploadIcon(Icons.camera_alt_rounded),
@@ -989,8 +1062,10 @@ class _LeaveFormBottomSheetState extends State<LeaveFormBottomSheet> {
                   final XFile? image = await ImagePicker().pickImage(
                       source: ImageSource.gallery, imageQuality: 85);
                   if (image != null) {
-                    setState(
-                        () => _c.prescriptionFileName.value = image.name);
+                    setState(() {
+                      _c.prescriptionFileName.value = image.name;
+                      _c.prescriptionFilePath.value = image.path;
+                    });
                   }
                 },
                 leading: _uploadIcon(Icons.photo_library_rounded),
@@ -1012,8 +1087,10 @@ class _LeaveFormBottomSheetState extends State<LeaveFormBottomSheet> {
                       type: FileType.custom,
                       allowedExtensions: ['pdf']);
                   if (result != null && result.files.isNotEmpty) {
-                    setState(() => _c.prescriptionFileName.value =
-                        result.files.first.name);
+                    setState(() {
+                      _c.prescriptionFileName.value = result.files.first.name;
+                      _c.prescriptionFilePath.value = result.files.first.path ?? '';
+                    });
                   }
                 },
                 leading: _uploadIcon(Icons.picture_as_pdf_rounded),
@@ -1312,7 +1389,10 @@ class _LeaveFormBottomSheetState extends State<LeaveFormBottomSheet> {
             ),
             if (hasFile)
               GestureDetector(
-                onTap: () => _c.prescriptionFileName.value = '',
+                onTap: () {
+                  _c.prescriptionFileName.value = '';
+                  _c.prescriptionFilePath.value = '';
+                },
                 child: Padding(
                   padding: EdgeInsets.only(left: 8.w),
                   child: Icon(Icons.close_rounded,
