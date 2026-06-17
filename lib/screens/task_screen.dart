@@ -2746,25 +2746,25 @@ class _TaskFormState extends State<_TaskForm> {
     super.dispose();
   }
 
-  Future<void> _pickFiles() async {
-    final result = await FilePicker.platform.pickFiles(
-      allowMultiple: true,
-      type: FileType.custom,
-      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'webp'],
-    );
-    if (result == null) return;
-    setState(() {
-      for (final f in result.files) {
-        if (f.path != null) {
-          _attachments.add({
-            'name': f.name,
-            'path': f.path!,
-            'type': f.extension?.toLowerCase() == 'pdf' ? 'pdf' : 'image',
-          });
-        }
-      }
-    });
-  }
+  // Future<void> _pickFiles() async {
+  //   final result = await FilePicker.platform.pickFiles(
+  //     allowMultiple: true,
+  //     type: FileType.custom,
+  //     allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'webp'],
+  //   );
+  //   if (result == null) return;
+  //   setState(() {
+  //     for (final f in result.files) {
+  //       if (f.path != null) {
+  //         _attachments.add({
+  //           'name': f.name,
+  //           'path': f.path!,
+  //           'type': f.extension?.toLowerCase() == 'pdf' ? 'pdf' : 'image',
+  //         });
+  //       }
+  //     }
+  //   });
+  // }
 
   Future<void> _pickCamera() async {
     final picked = await ImagePicker()
