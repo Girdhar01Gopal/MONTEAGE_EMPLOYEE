@@ -6,6 +6,17 @@ import 'package:get_storage/get_storage.dart';
 import 'infrastructure/routes/admin_routes.dart';
 import 'services/attendance_sync_service.dart';
 
+
+
+void firebaseInit() async {
+  // Initialize Firebase
+  await Firebase.initializeApp();
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+  messaging.subscribeToTopic('task').then((value) => print('Subscribed to task topic'))
+};
+
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
