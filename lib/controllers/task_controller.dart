@@ -8,6 +8,7 @@ import '../models/project_model.dart';
 import '../models/givenmodelpm.dart' as given;
 import '../models/recevedmodel.dart' as received;
 import '../models/empdropdownmode.dart' as empdrop;
+import '../services/push_notification_service.dart';
 
 class TaskController extends GetxController {
   final _box = GetStorage();
@@ -32,6 +33,9 @@ class TaskController extends GetxController {
 
   final boundEmployees = <empdrop.Data>[].obs;
   final isEmpLoading = false.obs;
+
+  final teamLeaders = <empdrop.Data>[].obs;
+  final isTlLoading = false.obs;
 
   // ── Auth ───────────────────────────────────────────────────────────────────
   Map<String, String> get _headers => {
@@ -180,6 +184,83 @@ class TaskController extends GetxController {
     }
   }
 
+  // ── Project Manager's Team Leaders ────────────────────────────────────────
+  Future<void> fetchProjectManagerTeamList() async {
+    try {
+      isTlLoading(true);
+      teamLeaders.clear();
+      final url = '$_apiBase/ProjectManagerTeamList/${empid.value}';
+      debugPrint('fetchProjectManagerTeamList url: $url');
+      final res = await http
+          .get(Uri.parse(url), headers: _headers)
+          .timeout(const Duration(seconds: 12));
+      debugPrint('fetchProjectManagerTeamList [${res.statusCode}]: ${res.body}');
+      if (res.statusCode == 200) {
+        final parsed = empdrop.empdropdown.fromJson(jsonDecode(res.body));
+        teamLeaders.value = parsed.data ?? [];
+      }
+    } catch (e) {
+      debugPrint('fetchProjectManagerTeamList error: $e');
+    } finally {
+      isTlLoading(false);
+    }
+  }
+
+  // ── Assign Project To Team Leader ─────────────────────────────────────────
+  final isAssigningToTl = false.obs;
+
+  static const String _assignToTlUrl = '$_apiBase/AddAssignProjectTeam';
+
+  Future<bool> assignProjectToTeamLead({
+    required int sProjectId,
+    required int employeeId,
+  }) async {
+    try {
+      isAssigningToTl(true);
+      final body = {
+        'employeeId': employeeId,
+        'sProjectId': sProjectId,
+        'assignBy': empid.value,
+      };
+
+      debugPrint('assignProjectToTeamLead body: ${jsonEncode(body)}');
+
+      final res = await http
+          .post(Uri.parse(_assignToTlUrl),
+              headers: _headers, body: jsonEncode(body))
+          .timeout(const Duration(seconds: 12));
+
+      debugPrint('assignProjectToTeamLead [${res.statusCode}]: ${res.body}');
+
+      if (res.statusCode == 200) {
+        fetchProjects();
+        final assignedBy = (_box.read('EmployeeName') ?? 'Your manager').toString();
+        PushNotificationService.instance.sendToEmployee(
+          employeeId: employeeId.toString(),
+          title: 'New Project Assigned',
+          body: '$assignedBy assigned you a project',
+          data: {'type': 'project_assigned', 'sProjectId': sProjectId.toString()},
+        );
+        return true;
+      } else {
+        Get.snackbar('Failed', 'Server error: ${res.statusCode}',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: const Color(0xFFB54A3A),
+            colorText: Colors.white);
+        return false;
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Could not assign project: $e',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: const Color(0xFFB54A3A),
+          colorText: Colors.white);
+      debugPrint('assignProjectToTeamLead error: $e');
+      return false;
+    } finally {
+      isAssigningToTl(false);
+    }
+  }
+
   // ── Assign Task ────────────────────────────────────────────────────────────
   final isAssigning = false.obs;
 
@@ -231,6 +312,13 @@ class TaskController extends GetxController {
 
       if (res.statusCode == 200) {
         fetchTaskWorks();
+        final assignedBy = (_box.read('EmployeeName') ?? 'Your manager').toString();
+        PushNotificationService.instance.sendToEmployee(
+          employeeId: employeeId.toString(),
+          title: 'New Task Assigned',
+          body: '$assignedBy assigned you: $taskTitle',
+          data: {'type': 'task_assigned', 'sProjectId': sProjectId.toString()},
+        );
         return true;
       } else {
         Get.snackbar('Failed', 'Server error: ${res.statusCode}',
@@ -301,6 +389,56 @@ class TaskController extends GetxController {
       return false;
     } finally {
       isUpdatingProgress(false);
+    }
+  }
+
+  // ── Project Status Update (PM) ────────────────────────────────────────────
+  final isUpdatingStatus = false.obs;
+
+  static const String _statusUpdateUrl =
+      '$_apiBase/MObProjectStatusUpdate';
+
+  Future<bool> updateProjectStatus({
+    required int sProjectId,
+    required String status,
+  }) async {
+    try {
+      isUpdatingStatus(true);
+      final body = {
+        'SProjectId': sProjectId,
+        'AStatus': status,
+        'StatusUpdateBy': empid.value,
+      };
+
+      debugPrint('updateProjectStatus body: ${jsonEncode(body)}');
+      debugPrint('updateProjectStatus url: $_statusUpdateUrl');
+
+      final res = await http
+          .post(Uri.parse(_statusUpdateUrl),
+              headers: _headers, body: jsonEncode(body))
+          .timeout(const Duration(seconds: 12));
+
+      debugPrint('updateProjectStatus [${res.statusCode}]: ${res.body}');
+
+      if (res.statusCode == 200) {
+        fetchProjects();
+        return true;
+      } else {
+        Get.snackbar('Failed', 'Server error: ${res.statusCode}',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: const Color(0xFFB54A3A),
+            colorText: Colors.white);
+        return false;
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Could not update status: $e',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: const Color(0xFFB54A3A),
+          colorText: Colors.white);
+      debugPrint('updateProjectStatus error: $e');
+      return false;
+    } finally {
+      isUpdatingStatus(false);
     }
   }
 }

@@ -102,7 +102,7 @@ class TaskScreen extends GetView<TaskController> {
     ];
 
     final tabViews = <Widget>[
-      if (!isDev) _MyProjectsTab(),
+      if (!isDev) _MyProjectsTab(canAssignToTl: isPM, canUpdateStatus: isPM),
       if (!isDev) _GivenProjectsTab(canUpdate: isPM),
       if (!isPM)
         _ReceivedProjectsTab(canAssign: isTL, canUpdate: isTL || isDev),
@@ -211,6 +211,10 @@ class TaskScreen extends GetView<TaskController> {
 // ── Tab 1: My Projects ────────────────────────────────────────────────────────
 
 class _MyProjectsTab extends StatefulWidget {
+  final bool canAssignToTl;
+  final bool canUpdateStatus;
+  const _MyProjectsTab({this.canAssignToTl = false, this.canUpdateStatus = false});
+
   @override
   State<_MyProjectsTab> createState() => _MyProjectsTabState();
 }
@@ -282,8 +286,11 @@ class _MyProjectsTabState extends State<_MyProjectsTab> {
                   : ListView.builder(
                       padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 24.h),
                       itemCount: filtered.length,
-                      itemBuilder: (_, i) =>
-                          _ProjectCard(project: filtered[i]),
+                      itemBuilder: (_, i) => _ProjectCard(
+                        project: filtered[i],
+                        canAssignToTl: widget.canAssignToTl,
+                        canUpdateStatus: widget.canUpdateStatus,
+                      ),
                     ),
             ),
           ),
@@ -1063,6 +1070,7 @@ class _ReceivedCard extends StatelessWidget {
       backgroundColor: Colors.transparent,
     );
   }
+  
 
   void _showUpdateSheet(BuildContext context) {
     Get.bottomSheet(
@@ -1158,13 +1166,42 @@ class _ReceivedCard extends StatelessWidget {
 
 class _ProjectCard extends StatelessWidget {
   final ProjectModel project;
-  const _ProjectCard({required this.project});
+  final bool canAssignToTl;
+  final bool canUpdateStatus;
+  const _ProjectCard({
+    required this.project,
+    this.canAssignToTl = false,
+    this.canUpdateStatus = false,
+  });
 
   void _showAssignSheet(BuildContext context) {
     Get.bottomSheet(
       _AssignTaskSheet(
         projectId: project.projectId,
         projectName: project.projectName,
+      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+    );
+  }
+
+  void _showAssignToTlSheet(BuildContext context) {
+    Get.bottomSheet(
+      _Assignprojecttotl(
+        projectId: project.projectId,
+        projectName: project.projectName,
+      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+    );
+  }
+
+  void _showUpdateStatusSheet(BuildContext context) {
+    Get.bottomSheet(
+      _UpdateStatusSheet(
+        projectId: project.projectId,
+        projectName: project.projectName,
+        currentStatus: project.projectStatus,
       ),
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -1238,6 +1275,23 @@ class _ProjectCard extends StatelessWidget {
             icon: Icons.add_task_rounded,
             onPressed: () => _showAssignSheet(context),
           ),
+          if (canAssignToTl) ...[
+            SizedBox(height: 12.h),
+            _CardActionButton(
+              label: 'Assign Project To TL',
+              icon: Icons.add_task_rounded,
+              onPressed: () => _showAssignToTlSheet(context),
+            ),
+          ],
+          if (canUpdateStatus) ...[
+            SizedBox(height: 12.h),
+            _CardActionButton(
+              label: 'Update Project Status',
+              icon: Icons.update_rounded,
+              filled: false,
+              onPressed: () => _showUpdateStatusSheet(context),
+            ),
+          ],
         ],
       ),
     );
@@ -1257,7 +1311,6 @@ class _TaskWorkCard extends StatelessWidget {
         proAllocatId: task.proAllocatId ?? 0,
         taskTitle: task.projectName ?? task.taskTittle ?? '',
         currentProgress: task.progress?.toString(),
-        allowReject: true,
       ),
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -1785,6 +1838,168 @@ class _AssignTaskSheetState extends State<_AssignTaskSheet> {
 
 // ── Update Progress Bottom Sheet ────────────────────────────────────────────
 
+
+class _Assignprojecttotl extends StatefulWidget {
+  final int projectId;
+  final String projectName;
+  const _Assignprojecttotl({required this.projectId, required this.projectName});
+
+  @override
+  State<_Assignprojecttotl> createState() => _AssignprojecttotlState();
+}
+
+class _AssignprojecttotlState extends State<_Assignprojecttotl> {
+  final _c = Get.find<TaskController>();
+  int? _selectedEmpId;
+
+  @override
+  void initState() {
+    super.initState();
+    _c.fetchProjectManagerTeamList();
+  }
+
+  Future<void> _submit() async {
+    if (_selectedEmpId == null) {
+      Get.snackbar('Missing', 'Please select a team leader',
+          snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+    final ok = await _c.assignProjectToTeamLead(
+      sProjectId: widget.projectId,
+      employeeId: _selectedEmpId!,
+    );
+    if (ok) {
+      Get.back();
+      Get.snackbar('Success', 'Project assigned to team leader',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: _kSuccess,
+          colorText: Colors.white);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: _kBg,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+      ),
+      padding: EdgeInsets.only(
+        left: 20.w,
+        right: 20.w,
+        top: 12.h,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24.h,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SheetHeader(
+              icon: Icons.add_task_rounded,
+              title: 'Assign Project To TL',
+              subtitle: widget.projectName,
+            ),
+            SizedBox(height: 20.h),
+            _sheetLabel('Team Leader *'),
+            Obx(() {
+              if (_c.isTlLoading.value) {
+                return Container(
+                  height: 48.h,
+                  decoration: BoxDecoration(
+                    color: _kSurface,
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(color: _kBorder),
+                  ),
+                  child: const Center(
+                    child: SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                          color: _kBrand, strokeWidth: 2),
+                    ),
+                  ),
+                );
+              }
+              if (_c.teamLeaders.isEmpty) {
+                return Container(
+                  height: 48.h,
+                  padding: EdgeInsets.symmetric(horizontal: 14.w),
+                  decoration: BoxDecoration(
+                    color: _kSurface,
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(color: _kBorder),
+                  ),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text('No team leaders found',
+                        style: GoogleFonts.inter(
+                            fontSize: 13.sp, color: const Color(0xFFCBC0BA))),
+                  ),
+                );
+              }
+              return Container(
+                padding: EdgeInsets.symmetric(horizontal: 14.w),
+                decoration: BoxDecoration(
+                  color: _kSurface,
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(color: _kBorder),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<int>(
+                    value: _selectedEmpId,
+                    isExpanded: true,
+                    icon: const Icon(Icons.keyboard_arrow_down_rounded,
+                        color: _kTextMuted),
+                    hint: Text('Select team leader',
+                        style: GoogleFonts.inter(
+                            fontSize: 13.sp, color: const Color(0xFFCBC0BA))),
+                    style: GoogleFonts.inter(fontSize: 14.sp, color: _kTextPrimary),
+                    items: _c.teamLeaders
+                        .where((e) => e.employeeId != null)
+                        .map((e) => DropdownMenuItem<int>(
+                              value: e.employeeId,
+                              child: Text(e.employeeName ?? 'ID ${e.employeeId}'),
+                            ))
+                        .toList(),
+                    onChanged: (v) => setState(() => _selectedEmpId = v),
+                  ),
+                ),
+              );
+            }),
+            SizedBox(height: 24.h),
+            Obx(() => SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _c.isAssigningToTl.value ? null : _submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _kBrand,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r)),
+                    ),
+                    child: _c.isAssigningToTl.value
+                        ? SizedBox(
+                            height: 20.h,
+                            width: 20.h,
+                            child: const CircularProgressIndicator(
+                                color: Colors.white, strokeWidth: 2))
+                        : Text('Assign Project',
+                            style: GoogleFonts.manrope(
+                                fontSize: 15.sp, fontWeight: FontWeight.w700)),
+                  ),
+                )),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Update Progress Bottom Sheet ────────────────────────────────────────────
+
+
 class _StatusOption {
   final String label;
   final IconData icon;
@@ -1839,12 +2054,10 @@ class _UpdateProgressSheet extends StatefulWidget {
   final int proAllocatId;
   final String taskTitle;
   final String? currentProgress;
-  final bool allowReject;
   const _UpdateProgressSheet({
     required this.proAllocatId,
     required this.taskTitle,
     this.currentProgress,
-    this.allowReject = false,
   });
 
   @override
@@ -1857,18 +2070,12 @@ class _UpdateProgressSheetState extends State<_UpdateProgressSheet> {
   final _progressCtrl = TextEditingController();
   String? _selectedStatus;
 
-  static const _baseStatusOptions = [
+  static const _statusOptions = [
     _StatusOption('Pending', Icons.hourglass_empty_rounded, _kDanger),
-    _StatusOption('In Progress', Icons.autorenew_rounded, _kWarning),
+    _StatusOption('Running', Icons.autorenew_rounded, _kWarning),
+    _StatusOption('On-Hold', Icons.autorenew_rounded, _kWarning),
     _StatusOption('Completed', Icons.check_circle_rounded, _kSuccess),
   ];
-  static const _rejectOption =
-      _StatusOption('Reject', Icons.cancel_rounded, _kDanger);
-
-  List<_StatusOption> get _statusOptions => [
-        ..._baseStatusOptions,
-        if (widget.allowReject) _rejectOption,
-      ];
 
   @override
   void initState() {
@@ -1986,6 +2193,128 @@ class _UpdateProgressSheetState extends State<_UpdateProgressSheet> {
                           borderRadius: BorderRadius.circular(12.r)),
                     ),
                     child: _c.isUpdatingProgress.value
+                        ? SizedBox(
+                            height: 20.h,
+                            width: 20.h,
+                            child: const CircularProgressIndicator(
+                                color: Colors.white, strokeWidth: 2))
+                        : Text('Update',
+                            style: GoogleFonts.manrope(
+                                fontSize: 15.sp, fontWeight: FontWeight.w700)),
+                  ),
+                )),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Update Project Status Bottom Sheet (PM) ─────────────────────────────────
+
+class _UpdateStatusSheet extends StatefulWidget {
+  final int projectId;
+  final String projectName;
+  final String? currentStatus;
+  const _UpdateStatusSheet({
+    required this.projectId,
+    required this.projectName,
+    this.currentStatus,
+  });
+
+  @override
+  State<_UpdateStatusSheet> createState() => _UpdateStatusSheetState();
+}
+
+class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
+  final _c = Get.find<TaskController>();
+  String? _selectedStatus;
+
+  static const _statusOptions = [
+    _StatusOption('Pending', Icons.hourglass_empty_rounded, _kDanger),
+    _StatusOption('In Progress', Icons.autorenew_rounded, _kWarning),
+    _StatusOption('Completed', Icons.check_circle_rounded, _kSuccess),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedStatus = widget.currentStatus;
+  }
+
+  Future<void> _submit() async {
+    if (_selectedStatus == null) {
+      Get.snackbar('Missing', 'Please select a status',
+          snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+    final ok = await _c.updateProjectStatus(
+      sProjectId: widget.projectId,
+      status: _selectedStatus!,
+    );
+    if (ok) {
+      Get.back();
+      Get.snackbar('Success', 'Status updated successfully',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: _kSuccess,
+          colorText: Colors.white);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: _kBg,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+      ),
+      padding: EdgeInsets.only(
+        left: 20.w,
+        right: 20.w,
+        top: 12.h,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24.h,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SheetHeader(
+              icon: Icons.update_rounded,
+              title: 'Update Project Status',
+              subtitle: widget.projectName,
+            ),
+            SizedBox(height: 20.h),
+            _sheetLabel('Status *'),
+            Row(
+              children: _statusOptions
+                  .map((opt) => Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                              right: opt == _statusOptions.last ? 0 : 8.w),
+                          child: _StatusCard(
+                            option: opt,
+                            selected: _selectedStatus == opt.label,
+                            onTap: () =>
+                                setState(() => _selectedStatus = opt.label),
+                          ),
+                        ),
+                      ))
+                  .toList(),
+            ),
+            SizedBox(height: 24.h),
+            Obx(() => SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _c.isUpdatingStatus.value ? null : _submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _kBrand,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r)),
+                    ),
+                    child: _c.isUpdatingStatus.value
                         ? SizedBox(
                             height: 20.h,
                             width: 20.h,

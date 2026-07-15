@@ -92,6 +92,7 @@ dependencies:
   connectivity_plus: ^6.0.3
   upgrader: ^11.4.0
   table_calendar: ^3.2.0
+  googleapis_auth: ^1.6.0
  
 
 
@@ -124,6 +125,7 @@ flutter:
   assets:
       - assets/images/
       - assets/images/
+      - assets/secrets/fcm_service_account.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
