@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
@@ -188,7 +189,9 @@ class LeaveController extends GetxController {
   static const String _leaveSubmitUrl = '$_baseUrl/MObAddEmployyeLeaveA';
   static const String _leaveSubmitImageUrl = '$_baseUrl/MObAddEmployyeLeaveimageA';
 
-  // Set from your AuthController / session before using this controller.
+  // Read from the same GetStorage session box used across the app (see
+  // login_controller.dart / project_controller.dart) — no manual wiring needed.
+  final GetStorage box = GetStorage();
   String authToken = '';
   int employeeId = 0;
   EmployeeRole employeeRole = EmployeeRole.employee;
@@ -242,7 +245,7 @@ class LeaveController extends GetxController {
   /// Balance for currently selected leave type — from MobEmployeeLeaveId API.
   int get currentBalance {
     if (selectedLeaveType.value == null) return 0;
-    return leaveBalanceMap.value[selectedLeaveType.value!.leaveTypeId] ?? 0;
+    return leaveBalanceMap[selectedLeaveType.value!.leaveTypeId] ?? 0;
   }
 
   bool get exceedsBalance => numberOfDays > 0 && numberOfDays > currentBalance;
@@ -300,7 +303,38 @@ class LeaveController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _loadSession();
     _initData();
+  }
+
+  // Pulls the logged-in employee's id, token and designation from local
+  // storage, same keys used by project_controller.dart / task_controller.dart.
+  void _loadSession() {
+    authToken = (box.read('access_token') ?? '').toString().trim();
+    employeeId = int.tryParse((box.read('EmployeeId') ??
+                box.read('employeeId') ??
+                box.read('employee_id') ??
+                '0')
+            .toString()
+            .trim()) ??
+        0;
+    final designation = (box.read('Designation') ?? box.read('designation') ?? '')
+        .toString()
+        .toLowerCase()
+        .trim();
+    employeeRole = _resolveRole(designation);
+  }
+
+  EmployeeRole _resolveRole(String designation) {
+    if (designation.contains('hr')) return EmployeeRole.hrManager;
+    if (designation.contains('admin')) return EmployeeRole.admin;
+    if (designation.contains('project') && designation.contains('manager')) {
+      return EmployeeRole.projectManager;
+    }
+    if (designation.contains('team') && designation.contains('lead')) {
+      return EmployeeRole.teamLeader;
+    }
+    return EmployeeRole.employee;
   }
 
   Future<void> _initData() async {
@@ -340,11 +374,14 @@ class LeaveController extends GetxController {
     }
   }
 
-  // ── API 2: Fetch Employee Leave History ───────────────────────────────────
-  // MobEmployeeLeave(EmployeeId) — returns applied leave history rows
+  // ── API 2: Fetch Employee Leave Balances ──────────────────────────────────
+  // MobEmployeeLeave(EmployeeId) — one row per leave type with its running
+  // balance (TotalBalanceLeave). Rows here never carry a real applied From/To
+  // date, so this is a BALANCE source only — actual applied leaves/history
+  // come from fetchEmployeeLeaveList() below. Do not write leaveHistory here,
+  // it previously raced with fetchEmployeeLeaveList() and wiped it out.
 
   Future<void> fetchEmployeeLeaves() async {
-    isLoadingLeaves.value = true;
     try {
       final response = await http.get(
         Uri.parse('$_baseUrl/MobEmployeeLeave/$employeeId'),
@@ -360,26 +397,17 @@ class LeaveController extends GetxController {
 
           employeeLeaves.value = records;
 
-          final List<Map<String, dynamic>> history = [];
           final Map<int, int> balances = {};
           for (final r in records) {
-            // Always read balance — every row has TotalBalanceLeave
             balances[r.leaveTypeId] = r.totalBalanceLeave;
-            // Only add to history if it has a valid applied date range
-            if (r.fromDate != null && r.toDate != null) {
-              history.add(_buildHistoryEntry(r));
-            }
           }
-          leaveHistory.value = history;
           leaveBalanceMap.value = balances;
         }
       } else {
-        _showError('Could not load leave history (${response.statusCode})');
+        _showError('Could not load leave balances (${response.statusCode})');
       }
     } catch (e) {
       _showError('Network error: $e');
-    } finally {
-      isLoadingLeaves.value = false;
     }
   }
 
@@ -547,6 +575,7 @@ class LeaveController extends GetxController {
         'id': r.employeeLeaveId > 0
             ? '${r.employeeLeaveId}'
             : '${r.employeeId}_${r.leaveTypeId}_${r.fromDate?.millisecondsSinceEpoch ?? 0}',
+        'e_leave_a_id': r.eLeaveAId,
         'leave_type': r.leaveType,
         'leave_type_id': r.leaveTypeId,
         'reason': r.leaveReason ?? '',
@@ -556,7 +585,13 @@ class LeaveController extends GetxController {
             : '',
         'to_date':
             r.toDate != null ? DateFormat('yyyy-MM-dd').format(r.toDate!) : '',
-        'status': r.isActive ? 'Approved' : 'Pending',
+        // Same 3-slot logic the approver's Team Leaves list uses — keeps
+        // "My Leaves" in sync once a TL/HR/PM approves or rejects.
+        'approve_status1': r.approveStatus1,
+        'approve_status2': r.approveStatus2,
+        'approve_status3': r.approveStatus3,
+        'status': _resolveOverallStatus(
+            r.approveStatus1, r.approveStatus2, r.approveStatus3),
         'approved_to': approvers.join(', '),
         'applied_on': r.fromDate != null
             ? DateFormat('dd-MM-yyyy').format(r.fromDate!)
@@ -576,7 +611,9 @@ class LeaveController extends GetxController {
   }) async {
     if (selectedLeaveType.value == null ||
         fromDate.value == null ||
-        toDate.value == null) return;
+        toDate.value == null) {
+      return;
+    }
 
     isSubmitting.value = true;
     try {
@@ -590,7 +627,7 @@ class LeaveController extends GetxController {
             fileBase64 = base64Encode(bytes);
           }
         } catch (e) {
-          print('Error reading prescription file: $e');
+          debugPrint('Error reading prescription file: $e');
         }
       }
 

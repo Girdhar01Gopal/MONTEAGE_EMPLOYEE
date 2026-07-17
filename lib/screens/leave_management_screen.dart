@@ -177,6 +177,8 @@ class LeaveManagementScreen extends StatelessWidget {
                           leave: visibleLeaves[i],
                           onApprove: (id) => _c.approveLeave(id),
                           onReject: (id) => _showRejectDialog(id),
+                          // View-only here — you can't approve your own leave.
+                          canApprove: false,
                         ),
                       ),
                     ),
@@ -188,41 +190,7 @@ class LeaveManagementScreen extends StatelessWidget {
   }
 
   Widget _teamLeavesBody() {
-    return Obx(() {
-      if (_c.isLoadingTeamLeaves.value) {
-        return const Center(
-            child: CircularProgressIndicator(color: Color(0xFFB54A3A)));
-      }
-      if (_c.teamLeaveHistory.isEmpty) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.group_outlined,
-                  size: 56.sp, color: const Color(0xFF8B7D77)),
-              SizedBox(height: 12.h),
-              Text("No team leave requests",
-                  style: GoogleFonts.manrope(
-                      fontSize: 15.sp, color: const Color(0xFF8B7D77))),
-            ],
-          ),
-        );
-      }
-      return RefreshIndicator(
-        color: const Color(0xFFB54A3A),
-        onRefresh: () async => _c.fetchTeamLeaveList(),
-        child: ListView.builder(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-          itemCount: _c.teamLeaveHistory.length,
-          itemBuilder: (_, i) => _LeaveCard(
-            leave: _c.teamLeaveHistory[i],
-            onApprove: (id) => _c.approveLeave(id),
-            onReject: (id) => _showRejectDialog(id),
-            showEmployeeName: true,
-          ),
-        ),
-      );
-    });
+    return _TeamLeavesTab(onReject: _showRejectDialog);
   }
 
   void _showRejectDialog(String id) {
@@ -338,6 +306,256 @@ class LeaveManagementScreen extends StatelessWidget {
           ],
         ),
       );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TEAM LEAVES TAB — "By Employee" quick filter for TL/HR/PM approvers.
+// Selecting an employee shows all of that employee's leaves; the ones still
+// Pending carry Approve/Reject actions. Which employees appear here (HR/PM
+// see everyone, TL sees only their juniors) is decided by the backend's
+// MobTeamEmployeeLeaveList response for the logged-in approver.
+// ─────────────────────────────────────────────────────────────────────────────
+
+Color _teamStatusColor(String status) {
+  switch (status) {
+    case 'Pending':
+      return Colors.orange;
+    case 'Approved':
+      return Colors.green;
+    case 'Rejected':
+      return Colors.red;
+    default:
+      return const Color(0xFF6A3027);
+  }
+}
+
+class _TeamLeavesTab extends StatefulWidget {
+  final void Function(String) onReject;
+  const _TeamLeavesTab({required this.onReject});
+
+  @override
+  State<_TeamLeavesTab> createState() => _TeamLeavesTabState();
+}
+
+class _TeamLeavesTabState extends State<_TeamLeavesTab> {
+  LeaveController get _c => LeaveController.to;
+  String? _employeeFilter;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      if (_c.isLoadingTeamLeaves.value) {
+        return const Center(
+            child: CircularProgressIndicator(color: Color(0xFFB54A3A)));
+      }
+      final all = _c.teamLeaveHistory;
+      if (all.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.group_outlined,
+                  size: 56.sp, color: const Color(0xFF8B7D77)),
+              SizedBox(height: 12.h),
+              Text("No team leave requests",
+                  style: GoogleFonts.manrope(
+                      fontSize: 15.sp, color: const Color(0xFF8B7D77))),
+            ],
+          ),
+        );
+      }
+
+      // Group leaves by employee so the approver can pick a person first.
+      final Map<String, Map<String, int>> byEmployee = {};
+      for (final l in all) {
+        final name = (l['employee_name'] ?? '').toString().trim();
+        if (name.isEmpty) continue;
+        final entry = byEmployee.putIfAbsent(
+            name, () => {'Pending': 0, 'Approved': 0, 'Rejected': 0});
+        final status = (l['status'] ?? 'Pending').toString();
+        entry[status] = (entry[status] ?? 0) + 1;
+      }
+
+      final filtered = _employeeFilter == null
+          ? all
+          : all
+              .where((l) =>
+                  (l['employee_name'] ?? '').toString().trim() ==
+                  _employeeFilter)
+              .toList();
+
+      return RefreshIndicator(
+        color: const Color(0xFFB54A3A),
+        onRefresh: () async => _c.fetchTeamLeaveList(),
+        child: ListView(
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+          children: [
+            if (byEmployee.isNotEmpty) ...[
+              Text('By Employee',
+                  style: GoogleFonts.manrope(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF241917))),
+              SizedBox(height: 10.h),
+              ...byEmployee.entries.map((e) => _EmployeeLeaveRow(
+                    name: e.key,
+                    counts: e.value,
+                    selected: _employeeFilter == e.key,
+                    onTap: () => setState(() {
+                      _employeeFilter =
+                          _employeeFilter == e.key ? null : e.key;
+                    }),
+                  )),
+              SizedBox(height: 18.h),
+            ],
+            Row(
+              children: [
+                Text(
+                  _employeeFilter == null
+                      ? 'Leave Requests'
+                      : "$_employeeFilter's Leaves",
+                  style: GoogleFonts.manrope(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF241917)),
+                ),
+                SizedBox(width: 8.w),
+                Text('(${filtered.length})',
+                    style: GoogleFonts.inter(
+                        fontSize: 12.sp, color: const Color(0xFF8B7D77))),
+                const Spacer(),
+                if (_employeeFilter != null)
+                  GestureDetector(
+                    onTap: () => setState(() => _employeeFilter = null),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.close_rounded,
+                            size: 14.sp, color: const Color(0xFFB54A3A)),
+                        SizedBox(width: 3.w),
+                        Text('Clear',
+                            style: GoogleFonts.inter(
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFFB54A3A))),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+            SizedBox(height: 10.h),
+            if (filtered.isEmpty)
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: 24.h),
+                child: Center(
+                  child: Text('No leave requests for this employee',
+                      style: GoogleFonts.inter(
+                          fontSize: 13.sp, color: const Color(0xFF8B7D77))),
+                ),
+              )
+            else
+              ...filtered.map((l) => _LeaveCard(
+                    leave: l,
+                    onApprove: (id) => _c.approveLeave(id),
+                    onReject: widget.onReject,
+                    showEmployeeName: _employeeFilter == null,
+                    canApprove: true,
+                  )),
+          ],
+        ),
+      );
+    });
+  }
+}
+
+class _EmployeeLeaveRow extends StatelessWidget {
+  final String name;
+  final Map<String, int> counts;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _EmployeeLeaveRow({
+    required this.name,
+    required this.counts,
+    required this.selected,
+    required this.onTap,
+  });
+
+  String _initials(String n) {
+    final parts = n.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty || parts.first.isEmpty) return '?';
+    if (parts.length == 1) return parts.first[0].toUpperCase();
+    return (parts.first[0] + parts.last[0]).toUpperCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const brand = Color(0xFFB54A3A);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12.r),
+      child: Container(
+        margin: EdgeInsets.only(bottom: 8.h),
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+        decoration: BoxDecoration(
+          color: selected ? brand.withOpacity(0.08) : Colors.white,
+          borderRadius: BorderRadius.circular(12.r),
+          border:
+              Border.all(color: selected ? brand : const Color(0xFFE0D5D0)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 28.w,
+              height: 28.w,
+              decoration: BoxDecoration(
+                color: brand.withOpacity(0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  _initials(name),
+                  style: GoogleFonts.manrope(
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w800,
+                      color: brand),
+                ),
+              ),
+            ),
+            SizedBox(width: 10.w),
+            Expanded(
+              child: Text(name,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.manrope(
+                      fontSize: 12.5.sp,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF241917))),
+            ),
+            for (final status in ['Pending', 'Approved', 'Rejected'])
+              if ((counts[status] ?? 0) > 0)
+                Padding(
+                  padding: EdgeInsets.only(left: 6.w),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                        horizontal: 7.w, vertical: 4.h),
+                    decoration: BoxDecoration(
+                      color: _teamStatusColor(status).withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(7.r),
+                    ),
+                    child: Text(
+                      '${counts[status]}',
+                      style: GoogleFonts.inter(
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w700,
+                          color: _teamStatusColor(status)),
+                    ),
+                  ),
+                ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -487,12 +705,14 @@ class _LeaveCard extends StatefulWidget {
   final Function(String) onApprove;
   final Function(String) onReject;
   final bool showEmployeeName;
+  final bool canApprove;
 
   const _LeaveCard({
     required this.leave,
     required this.onApprove,
     required this.onReject,
     this.showEmployeeName = false,
+    this.canApprove = false,
   });
 
   @override
@@ -760,7 +980,7 @@ class _LeaveCardState extends State<_LeaveCard>
                           ),
                         ),
                       ],
-                      if (isPending) ...[
+                      if (isPending && widget.canApprove) ...[
                         SizedBox(height: 14.h),
                         Row(
                           children: [
@@ -1187,15 +1407,6 @@ class _LeaveFormBottomSheetState extends State<LeaveFormBottomSheet> {
                     padding:
                         EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 40.h),
                     children: [
-                      // ── Balance summary banner ────────────────────────
-                      if (selectedType != null) ...[
-                        _BalanceBanner(
-                          leaveType: selectedType.leaveType,
-                          balance: balance,
-                          requestedDays: days,
-                        ),
-                        SizedBox(height: 16.h),
-                      ],
                       _label("Type *"),
                       SizedBox(height: 6.h),
                       _leaveTypeDropdown(),
@@ -1242,21 +1453,14 @@ class _LeaveFormBottomSheetState extends State<LeaveFormBottomSheet> {
                             : "—",
                         valueColor: exceeds ? Colors.red.shade700 : null,
                       ),
-                      if (exceeds) ...[
-                        SizedBox(height: 6.h),
-                        Row(children: [
-                          Icon(Icons.warning_amber_rounded,
-                              size: 14.sp,
-                              color: Colors.red.shade700),
-                          SizedBox(width: 6.w),
-                          Text(
-                            "Exceeds balance by ${days - balance} day(s)",
-                            style: GoogleFonts.inter(
-                                fontSize: 11.sp,
-                                color: Colors.red.shade700,
-                                fontWeight: FontWeight.w600),
-                          ),
-                        ]),
+                      // ── Balance summary banner (right after Number of Days) ──
+                      if (selectedType != null) ...[
+                        SizedBox(height: 10.h),
+                        _BalanceBanner(
+                          leaveType: selectedType.leaveType,
+                          balance: balance,
+                          requestedDays: days,
+                        ),
                       ],
                       if (needsPrescription) ...[
                         SizedBox(height: 16.h),
